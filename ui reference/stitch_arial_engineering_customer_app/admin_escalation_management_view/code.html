@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Escalation Management - Arial Engineering Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-container": "#c07dff",
+                        "on-secondary-container": "#005371",
+                        "tertiary": "#300056",
+                        "on-tertiary-fixed": "#2c0050",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#004c68",
+                        "tertiary-container": "#4e0086",
+                        "surface-container": "#e5efff",
+                        "primary": "#001e40",
+                        "on-tertiary-fixed-variant": "#6712aa",
+                        "primary-container": "#003366",
+                        "inverse-surface": "#243141",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#cddbf0",
+                        "outline-variant": "#c3c6d1",
+                        "outline": "#737780",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dbe9fe",
+                        "on-background": "#0f1c2c",
+                        "surface-container-highest": "#d6e4f9",
+                        "secondary-fixed": "#c3e8ff",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "inverse-primary": "#a7c8ff",
+                        "on-secondary-fixed": "#001e2c",
+                        "surface-variant": "#d6e4f9",
+                        "error-container": "#ffdad6",
+                        "surface": "#f8f9ff",
+                        "tertiary-fixed-dim": "#deb7ff",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "background": "#f8f9ff",
+                        "surface-container-low": "#eef4ff",
+                        "on-surface-variant": "#43474f",
+                        "inverse-on-surface": "#e9f1ff",
+                        "surface-tint": "#3a5f94",
+                        "secondary": "#006689",
+                        "primary-fixed": "#d5e3ff",
+                        "error": "#ba1a1a",
+                        "on-surface": "#0f1c2c",
+                        "tertiary-fixed": "#f0dbff",
+                        "secondary-fixed-dim": "#78d1ff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-primary-container": "#799dd6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#5bcaff",
+                        "on-primary-fixed": "#001b3c",
+                        "brand-teal": "#0099CC",
+                        "brand-navy": "#003366",
+                        "status-orange": "#F59E0B",
+                        "status-red": "#E63946",
+                        "status-green": "#10B981"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "base": "4px"
+                    },
+                    fontFamily: {
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700" }],
+                        "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+                        "headline-lg-mobile": ["22px", { lineHeight: "28px", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f8f9ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-on-surface">
+<!-- TopAppBar JSON Component Map -->
+<header class="bg-primary-container flex justify-between items-center w-full px-margin-desktop h-16 shadow-sm border-b border-outline-variant text-on-primary sticky top-0 z-50">
+<div class="flex items-center gap-stack-md">
+<span class="material-symbols-outlined text-on-primary">engineering</span>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary">Arial Engineering</h1>
+</div>
+<div class="flex items-center gap-stack-lg">
+<span class="font-headline-sm text-headline-sm text-on-primary font-semibold">Escalation Management</span>
+<div class="h-6 w-px bg-on-primary/30"></div>
+<span class="font-body-md text-body-md text-on-primary">Manager: R. Sharma</span>
+<span class="material-symbols-outlined text-on-primary">notifications</span>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-margin-desktop py-stack-lg flex flex-col gap-stack-lg">
+<!-- Stats Row -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<!-- Stat Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-stack-md flex items-center justify-between">
+<div>
+<h3 class="font-body-md text-body-md text-on-surface-variant">Escalated Now</h3>
+<p class="font-headline-lg text-headline-lg text-on-surface">3</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-status-orange/10 flex items-center justify-center text-status-orange">
+<span class="material-symbols-outlined text-[28px]">warning</span>
+</div>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-stack-md flex items-center justify-between">
+<div>
+<h3 class="font-body-md text-body-md text-on-surface-variant">Avg Response</h3>
+<p class="font-headline-lg text-headline-lg text-on-surface">22 min</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-status-green/10 flex items-center justify-center text-status-green">
+<span class="material-symbols-outlined text-[28px]">timer</span>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-stack-md flex items-center justify-between">
+<div>
+<h3 class="font-body-md text-body-md text-on-surface-variant">SLA Breach Today</h3>
+<p class="font-headline-lg text-headline-lg text-status-red">1</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-status-red/10 flex items-center justify-center text-status-red">
+<span class="material-symbols-outlined text-[28px]">error</span>
+</div>
+</div>
+<!-- Stat Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-stack-md flex items-center justify-between">
+<div>
+<h3 class="font-body-md text-body-md text-on-surface-variant">Resolved Today</h3>
+<p class="font-headline-lg text-headline-lg text-on-surface">14</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-brand-teal/10 flex items-center justify-center text-brand-teal">
+<span class="material-symbols-outlined text-[28px]">check_circle</span>
+</div>
+</div>
+</section>
+<!-- Main Section: Kanban Pipeline -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter items-start">
+<!-- Column 1: CRM Team -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden flex flex-col h-[600px]">
+<div class="bg-primary/5 p-stack-sm px-stack-md border-b border-outline-variant flex justify-between items-center">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">CRM Team — Level 1</h2>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">5 active | 1 critical</p>
+</div>
+</div>
+<div class="p-stack-sm flex flex-col gap-stack-sm overflow-y-auto">
+<!-- Ticket Card -->
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-stack-md hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-label-lg text-label-lg text-primary">TKT-0091</span>
+<span class="bg-status-red/10 text-status-red font-label-md text-label-md px-2 py-1 rounded">P1</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-semibold mb-1">Noise Issue</h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>25 min open</span>
+</div>
+</div>
+<!-- Ticket Card -->
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-stack-md hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-label-lg text-label-lg text-primary">TKT-0090</span>
+<span class="bg-status-orange/10 text-status-orange font-label-md text-label-md px-2 py-1 rounded">P2</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-semibold mb-1">Not Cooling</h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>18 min open</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: Service Managers -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden flex flex-col h-[600px]">
+<div class="bg-status-orange/10 p-stack-sm px-stack-md border-b border-status-orange/20 flex justify-between items-center">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-status-orange font-semibold">Service Managers — Level 2</h2>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">2 active | 1 SLA breach</p>
+</div>
+</div>
+<div class="p-stack-sm flex flex-col gap-stack-sm overflow-y-auto">
+<!-- Ticket Card - Breached -->
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border-2 border-status-red/50 p-stack-md">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-label-lg text-label-lg text-primary">TKT-0089</span>
+<span class="bg-status-orange/10 text-status-orange font-label-md text-label-md px-2 py-1 rounded">P2</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-semibold mb-2">Not Cooling</h4>
+<div class="bg-status-red/10 text-status-red font-label-md text-label-md px-2 py-1 rounded-md inline-flex items-center gap-1 mb-stack-md">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                            🔴 BREACHED 12 min ago
+                        </div>
+<button class="w-full bg-status-red hover:bg-status-red/90 text-on-primary font-label-lg text-label-lg py-2 rounded-md flex items-center justify-center gap-2 transition-colors">
+                            Escalate to L3 <span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+</div>
+<!-- Ticket Card -->
+<div class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant p-stack-md hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-stack-sm">
+<span class="font-label-lg text-label-lg text-primary">TKT-0085</span>
+<span class="bg-surface-dim text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">P3</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface font-semibold mb-1">Water Leak</h4>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>42 min open</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Management -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden flex flex-col h-[600px]">
+<div class="bg-status-red/10 p-stack-sm px-stack-md border-b border-status-red/20 flex justify-between items-center">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-status-red font-semibold">Management — Level 3</h2>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">0 active</p>
+</div>
+</div>
+<div class="p-stack-sm flex-1 flex flex-col items-center justify-center text-center opacity-50">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant mb-2">done_all</span>
+<p class="font-body-md text-body-md text-on-surface-variant">No tickets at management level</p>
+</div>
+</div>
+</section>
+<!-- Bottom Section: Escalation Log -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="p-stack-md border-b border-outline-variant">
+<h2 class="font-headline-md text-headline-md text-primary">Escalation Log</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">Time</th>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">Ticket</th>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">From</th>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">To</th>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">Reason</th>
+<th class="p-stack-md font-label-lg text-label-lg text-on-surface-variant font-semibold">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<tr class="border-b border-outline-variant hover:bg-surface-container-high transition-colors">
+<td class="p-stack-md whitespace-nowrap">4:16 PM</td>
+<td class="p-stack-md font-medium text-primary">TKT-0089</td>
+<td class="p-stack-md">L1 (CRM)</td>
+<td class="p-stack-md text-status-orange font-medium">L2 (Manager)</td>
+<td class="p-stack-md text-on-surface-variant">Auto: 30min timeout</td>
+<td class="p-stack-md"><span class="bg-surface-dim px-3 py-1 rounded text-label-md font-label-md">System Escalate</span></td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="p-stack-md whitespace-nowrap">2:30 PM</td>
+<td class="p-stack-md font-medium text-primary">TKT-0082</td>
+<td class="p-stack-md">L2 (Manager)</td>
+<td class="p-stack-md text-status-red font-medium">L3 (Mgmt)</td>
+<td class="p-stack-md text-on-surface-variant">Manual escalation</td>
+<td class="p-stack-md"><span class="bg-surface-dim px-3 py-1 rounded text-label-md font-label-md">User Escalate</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

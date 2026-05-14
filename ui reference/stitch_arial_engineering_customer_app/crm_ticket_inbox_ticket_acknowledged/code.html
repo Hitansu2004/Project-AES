@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AES CRM Dashboard — Level 1</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#cddbf0",
+                    "surface-container-low": "#eef4ff",
+                    "on-secondary-fixed-variant": "#004c68",
+                    "secondary-fixed-dim": "#78d1ff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#1f477b",
+                    "on-secondary-fixed": "#001e2c",
+                    "on-error": "#ffffff",
+                    "outline-variant": "#c3c6d1",
+                    "on-primary-container": "#799dd6",
+                    "tertiary-container": "#4e0086",
+                    "on-secondary-container": "#005371",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#c07dff",
+                    "on-tertiary-fixed-variant": "#6712aa",
+                    "surface": "#f8f9ff",
+                    "on-primary-fixed": "#001b3c",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#deb7ff",
+                    "surface-variant": "#d6e4f9",
+                    "secondary-container": "#5bcaff",
+                    "surface-container-high": "#dbe9fe",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#2c0050",
+                    "tertiary-fixed": "#f0dbff",
+                    "outline": "#737780",
+                    "surface-bright": "#f8f9ff",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#300056",
+                    "primary": "#001e40",
+                    "on-surface": "#0f1c2c",
+                    "surface-tint": "#3a5f94",
+                    "secondary": "#006689",
+                    "primary-fixed": "#d5e3ff",
+                    "on-background": "#0f1c2c",
+                    "surface-container-highest": "#d6e4f9",
+                    "primary-fixed-dim": "#a7c8ff",
+                    "surface-container": "#e5efff",
+                    "primary-container": "#003366",
+                    "inverse-surface": "#243141",
+                    "on-surface-variant": "#43474f",
+                    "inverse-on-surface": "#e9f1ff",
+                    "secondary-fixed": "#c3e8ff",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#a7c8ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "stack-sm": "8px",
+                    "base": "4px",
+                    "margin-desktop": "40px",
+                    "gutter": "16px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopAppBar from JSON -->
+<header class="bg-surface dark:bg-on-surface border-b border-outline-variant dark:border-outline shadow-sm flex justify-between items-center w-full px-margin-mobile h-14 docked full-width top-0 z-50">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="engineering">engineering</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">Arial Engineering</span>
+<span class="ml-4 font-label-lg text-label-lg text-on-surface-variant dark:text-surface-variant pl-4 border-l border-outline-variant">CRM Dashboard — Level 1</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<div class="flex items-center gap-stack-sm">
+<span class="font-label-md text-label-md text-on-surface">Agent: J. Smith</span>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-full p-1 cursor-pointer" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 bg-error text-on-error font-label-md text-[10px] w-4 h-4 flex items-center justify-center rounded-full leading-none">4</span>
+</div>
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-full p-1 cursor-pointer" data-icon="logout">logout</span>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar (Custom, matching Enterprise Style) -->
+<aside class="w-[240px] bg-primary text-on-primary flex flex-col shadow-md hidden md:flex z-40 border-r border-outline-variant">
+<nav class="flex-1 py-stack-lg flex flex-col gap-base px-stack-sm">
+<!-- My Inbox (Active) -->
+<a class="flex items-center justify-between px-stack-sm py-stack-sm bg-primary-container text-on-primary rounded-lg transition-colors" href="#">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined filled">inbox</span>
+<span class="font-label-lg text-label-lg font-bold">My Inbox</span>
+</div>
+<span class="bg-secondary text-on-secondary font-label-md text-[10px] px-2 py-0.5 rounded-full">3</span>
+</a>
+<!-- All Tickets -->
+<a class="flex items-center justify-between px-stack-sm py-stack-sm text-primary-fixed-dim hover:bg-surface-tint hover:text-on-primary rounded-lg transition-colors" href="#">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-label-lg text-label-lg">All Tickets</span>
+</div>
+</a>
+<!-- Escalated -->
+<a class="flex items-center justify-between px-stack-sm py-stack-sm text-primary-fixed-dim hover:bg-surface-tint hover:text-on-primary rounded-lg transition-colors" href="#">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-label-lg text-label-lg">Escalated</span>
+</div>
+<span class="bg-error text-on-error font-label-md text-[10px] px-2 py-0.5 rounded-full">1</span>
+</a>
+<!-- Resolved Today -->
+<a class="flex items-center justify-between px-stack-sm py-stack-sm text-primary-fixed-dim hover:bg-surface-tint hover:text-on-primary rounded-lg transition-colors" href="#">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-label-lg text-label-lg">Resolved Today</span>
+</div>
+</a>
+</nav>
+<div class="p-stack-sm border-t border-surface-tint">
+<a class="flex items-center gap-stack-sm px-stack-sm py-stack-sm text-primary-fixed-dim hover:bg-surface-tint hover:text-on-primary rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 bg-background overflow-y-auto flex flex-col">
+<!-- SLA Alert Banner -->
+<div class="bg-error text-on-error px-margin-desktop py-stack-sm flex items-center justify-center gap-stack-sm shadow-sm sticky top-0 z-30">
+<span class="material-symbols-outlined filled text-[20px]">warning</span>
+<span class="font-label-lg text-label-lg font-bold">⚠ TKT-2024-0089 — 12 min to SLA breach! Respond immediately.</span>
+</div>
+<div class="p-margin-desktop max-w-[1200px] w-full mx-auto flex flex-col gap-stack-lg">
+<!-- Filters Row -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-stack-sm rounded-lg border border-outline-variant shadow-sm">
+<div class="flex items-center gap-stack-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase px-2">Filter:</span>
+<button class="bg-secondary text-on-secondary font-label-lg text-label-lg px-3 py-1.5 rounded-lg">All</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low font-label-lg text-label-lg px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-[#7B2FBE]"></span> P1 AMC
+                        </button>
+<button class="text-on-surface-variant hover:bg-surface-container-low font-label-lg text-label-lg px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-[#0099CC]"></span> P2 Warranty
+                        </button>
+<button class="text-on-surface-variant hover:bg-surface-container-low font-label-lg text-label-lg px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-[#E63946]"></span> P3 Paid
+                        </button>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Sort:</span>
+<select class="bg-surface-container-lowest border border-outline-variant text-on-surface font-label-lg text-label-lg rounded-lg px-3 py-1.5 focus:border-[#0099CC] focus:ring-0 cursor-pointer">
+<option>SLA Critical</option>
+<option>Newest First</option>
+<option>Oldest First</option>
+</select>
+</div>
+</div>
+<!-- Tickets List -->
+<div class="flex flex-col gap-stack-sm">
+<!-- Ticket 1: ACKNOWLEDGED -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant border-l-4 border-l-[#00C896] flex flex-col p-stack-md transition-all hover:shadow-md">
+<div class="flex justify-between items-start mb-stack-sm">
+<div class="flex items-center gap-stack-sm">
+<span class="bg-[#0099CC] text-white font-label-md text-[10px] uppercase px-2 py-1 rounded">P2 Warranty</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">TKT-2024-0089</span>
+<span class="font-body-md text-body-md text-on-surface-variant">• 14 min ago</span>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-headline-sm text-headline-sm font-bold text-[#00C896] flex items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">check</span>
+                                    Acknowledged
+                                </span>
+</div>
+</div>
+<div class="mb-stack-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">AC Not Cooling — Master Bedroom</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant font-body-md text-body-md">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span>Sarah Jenkins</span>
+<span class="text-outline">•</span>
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Downtown Apartments, Unit 4B</span>
+</div>
+</div>
+<div class="flex flex-col gap-stack-sm pt-stack-sm border-t border-outline-variant">
+<div class="flex justify-between items-center w-full">
+<div class="flex gap-stack-sm">
+<button class="h-[52px] bg-[#0099CC] text-white font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-opacity-90 transition-opacity">
+<span class="material-symbols-outlined">call</span>
+                                    Call Customer
+                                </button>
+<button class="h-[52px] bg-[#0099CC] text-white font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-opacity-90 transition-opacity">
+<span class="material-symbols-outlined">engineering</span>
+                                    Assign Engineer
+                                </button>
+<button class="h-[52px] border border-[#00C896] text-[#00C896] font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">check_circle</span>
+                                    Resolve
+                                </button>
+</div>
+</div>
+<div class="flex justify-end">
+<button class="font-label-lg text-label-lg text-outline hover:text-on-surface flex items-center gap-1 transition-colors">
+                                Escalate to L2 <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Ticket 2: URGENT -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant border-l-4 border-l-[#F59E0B] flex flex-col p-stack-md transition-all hover:shadow-md">
+<div class="flex justify-between items-start mb-stack-sm">
+<div class="flex items-center gap-stack-sm">
+<span class="bg-[#7B2FBE] text-white font-label-md text-[10px] uppercase px-2 py-1 rounded">P1 AMC</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">TKT-2024-0088</span>
+<span class="font-body-md text-body-md text-on-surface-variant">• 8 min ago</span>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-headline-sm text-headline-sm font-bold text-[#F59E0B] flex items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">timer</span>
+                                    22 min remaining
+                                </span>
+</div>
+</div>
+<div class="mb-stack-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Gas Top-Up — Living Room</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant font-body-md text-body-md">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span>Michael Chang</span>
+<span class="text-outline">•</span>
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Westside Villas, Villa 12</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-stack-sm border-t border-outline-variant">
+<div class="flex gap-stack-sm">
+<button class="h-[52px] bg-[#0099CC] text-white font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-opacity-90 transition-opacity">
+<span class="material-symbols-outlined">call</span>
+                                    Call Customer
+                                </button>
+<button class="h-[52px] border border-[#003366] text-[#003366] font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">check</span>
+                                    Mark Acknowledged
+                                </button>
+</div>
+<button class="font-label-lg text-label-lg text-outline hover:text-on-surface flex items-center gap-1 transition-colors">
+                                Escalate to L2 <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+</button>
+</div>
+</div>
+<!-- Ticket 3: NORMAL -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant border-l-4 border-l-[#0099CC] flex flex-col p-stack-md transition-all hover:shadow-md">
+<div class="flex justify-between items-start mb-stack-sm">
+<div class="flex items-center gap-stack-sm">
+<span class="bg-[#E63946] text-white font-label-md text-[10px] uppercase px-2 py-1 rounded">P3 Paid</span>
+<span class="font-headline-sm text-headline-sm font-bold text-primary">TKT-2024-0087</span>
+<span class="font-body-md text-body-md text-on-surface-variant">• 2 min ago</span>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">timer</span>
+                                    28 min remaining
+                                </span>
+</div>
+</div>
+<div class="mb-stack-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Water Leak — Guest Room</h3>
+<div class="flex items-center gap-stack-sm text-on-surface-variant font-body-md text-body-md">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span>Elena Rodriguez</span>
+<span class="text-outline">•</span>
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>North Park Towers, Apt 804</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-stack-sm border-t border-outline-variant">
+<div class="flex gap-stack-sm">
+<button class="h-[52px] bg-[#0099CC] text-white font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-opacity-90 transition-opacity">
+<span class="material-symbols-outlined">call</span>
+                                    Call Customer
+                                </button>
+<button class="h-[52px] border border-[#003366] text-[#003366] font-label-lg text-label-lg px-stack-md rounded-lg font-bold flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">check</span>
+                                    Mark Acknowledged
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

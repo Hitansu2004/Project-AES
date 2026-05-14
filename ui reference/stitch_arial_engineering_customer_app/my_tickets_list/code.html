@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Tickets</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#cddbf0",
+                        "surface-container-low": "#eef4ff",
+                        "on-secondary-fixed-variant": "#004c68",
+                        "secondary-fixed-dim": "#78d1ff",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#001e2c",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#c3c6d1",
+                        "on-primary-container": "#799dd6",
+                        "tertiary-container": "#4e0086",
+                        "on-secondary-container": "#005371",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#c07dff",
+                        "on-tertiary-fixed-variant": "#6712aa",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed": "#001b3c",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed-dim": "#deb7ff",
+                        "surface-variant": "#d6e4f9",
+                        "secondary-container": "#5bcaff",
+                        "surface-container-high": "#dbe9fe",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#2c0050",
+                        "tertiary-fixed": "#f0dbff",
+                        "outline": "#737780",
+                        "surface-bright": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#300056",
+                        "primary": "#001e40",
+                        "on-surface": "#0f1c2c",
+                        "surface-tint": "#3a5f94",
+                        "secondary": "#006689",
+                        "primary-fixed": "#d5e3ff",
+                        "on-background": "#0f1c2c",
+                        "surface-container-highest": "#d6e4f9",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "surface-container": "#e5efff",
+                        "primary-container": "#003366",
+                        "inverse-surface": "#243141",
+                        "on-surface-variant": "#43474f",
+                        "inverse-on-surface": "#e9f1ff",
+                        "secondary-fixed": "#c3e8ff",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#a7c8ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px",
+                        "base": "4px",
+                        "margin-desktop": "40px",
+                        "gutter": "16px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background pb-[72px] md:pb-0 font-body-md min-h-screen">
+<!-- TopAppBar (Web & Mobile) -->
+<header class="bg-surface dark:bg-on-surface shadow-sm docked full-width top-0 border-b border-outline-variant dark:border-outline flex justify-between items-center w-full px-margin-mobile h-14 sticky z-50 md:hidden">
+<div class="flex items-center gap-2 text-primary dark:text-primary-fixed-dim opacity-80 scale-95 transition-all">
+<span class="material-symbols-outlined">engineering</span>
+<span class="font-headline-sm-mobile text-headline-sm-mobile font-bold text-primary dark:text-primary-fixed">My Tickets</span>
+</div>
+<button class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-full p-2">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Web Top Nav -->
+<header class="hidden md:flex bg-surface shadow-sm docked full-width top-0 border-b border-outline-variant flex justify-between items-center w-full px-margin-desktop h-16 sticky z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[28px]">engineering</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">Arial Engineering</span>
+</div>
+<nav class="flex gap-8">
+<a class="text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>Home
+            </a>
+<a class="text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">build</span>Services
+            </a>
+<a class="text-secondary font-bold font-label-lg text-label-lg flex items-center gap-2 relative" href="#">
+<span class="material-symbols-outlined text-[20px]">confirmation_number</span>My Tickets
+                <div class="absolute -bottom-[22px] left-0 w-full h-1 bg-secondary rounded-t-sm"></div>
+</a>
+<a class="text-on-surface-variant hover:text-primary font-label-lg text-label-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">person</span>Account
+            </a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary text-center leading-8 font-label-lg">JD</div>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pt-stack-md pb-stack-lg">
+<!-- Header & Filter Tabs -->
+<div class="mb-stack-lg">
+<div class="flex justify-between items-center mb-stack-md hidden md:flex">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">My Tickets</h1>
+<button class="flex items-center gap-2 text-on-surface-variant border border-outline-variant px-4 py-2 rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Filter
+                </button>
+</div>
+<div class="flex justify-between items-center mb-stack-sm md:hidden">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">My Tickets</h1>
+<button class="text-on-surface-variant hover:bg-surface-container-low rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+<!-- Scrollable Tabs -->
+<div class="flex overflow-x-auto pb-2 -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 gap-2 hide-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 bg-secondary text-on-primary rounded-full font-label-md text-label-md font-semibold">All</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant border border-outline-variant rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">Open</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant border border-outline-variant rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">In Progress</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant border border-outline-variant rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">Resolved</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant border border-outline-variant rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">Escalated</button>
+</div>
+</div>
+<!-- Ticket Cards Stack -->
+<div class="flex flex-col gap-stack-md">
+<!-- Card 1: Escalated -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-outline-variant relative overflow-hidden group hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow cursor-pointer">
+<!-- Red-orange left border indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#E63946]"></div>
+<div class="p-4 md:p-6 pl-5 md:pl-7 flex flex-col gap-stack-sm md:flex-row md:justify-between md:items-start">
+<div class="flex-1">
+<div class="flex flex-wrap items-center gap-2 mb-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">TKT-2024-0089</span>
+<span class="px-2 py-0.5 rounded bg-[#0099CC]/10 text-[#0099CC] font-label-md text-[10px] font-bold uppercase tracking-wide">P2 Warranty</span>
+<span class="px-2 py-0.5 rounded bg-[#F4A261]/10 text-[#E76F51] font-label-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">Escalated <span class="text-[10px]">🔶</span></span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">AC Not Cooling — Master Bedroom</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-md mb-3">
+<div class="w-2 h-2 rounded-full bg-[#F4A261] animate-pulse"></div>
+<span>Level 2 — Service Managers</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-auto">
+<div class="flex items-center gap-1 text-[#E76F51] font-label-md text-label-md font-bold">
+<span class="material-symbols-outlined text-[16px]">timer</span> 45 min SLA remaining
+                            </div>
+<span class="text-on-surface-variant font-body-md text-[13px]">Oct 22, 2024</span>
+</div>
+</div>
+<div class="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface-container hover:bg-surface-variant transition-colors self-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Resolved -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-outline-variant relative overflow-hidden group hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow cursor-pointer">
+<!-- Green left border indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#2A9D8F]"></div>
+<div class="p-4 md:p-6 pl-5 md:pl-7 flex flex-col gap-stack-sm md:flex-row md:justify-between md:items-start">
+<div class="flex-1">
+<div class="flex flex-wrap items-center gap-2 mb-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">TKT-2024-0071</span>
+<span class="px-2 py-0.5 rounded bg-[#7B2FBE]/10 text-[#7B2FBE] font-label-md text-[10px] font-bold uppercase tracking-wide">P1 AMC</span>
+<span class="px-2 py-0.5 rounded bg-[#2A9D8F]/10 text-[#2A9D8F] font-label-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">Resolved ✓</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Water Leaking — Living Room</h3>
+<div class="flex flex-col md:flex-row md:items-center gap-x-4 gap-y-2 text-on-surface-variant font-body-md text-[13px]">
+<span>Resolved in 3h 20min · Oct 15, 2024</span>
+<a class="text-[#0099CC] hover:underline font-label-md text-label-md flex items-center gap-1 font-semibold mt-1 md:mt-0" href="#">
+                                ⭐ Rate your experience
+                            </a>
+</div>
+</div>
+<div class="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface-container hover:bg-surface-variant transition-colors self-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Old Resolved Paid -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-outline-variant relative overflow-hidden group hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow cursor-pointer opacity-80">
+<!-- Green left border indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#2A9D8F]"></div>
+<div class="p-4 md:p-6 pl-5 md:pl-7 flex flex-col gap-stack-sm md:flex-row md:justify-between md:items-start">
+<div class="flex-1">
+<div class="flex flex-wrap items-center gap-2 mb-2">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">TKT-2024-0044</span>
+<span class="px-2 py-0.5 rounded bg-[#E63946]/10 text-[#E63946] font-label-md text-[10px] font-bold uppercase tracking-wide">P3 Paid</span>
+<span class="px-2 py-0.5 rounded bg-[#2A9D8F]/10 text-[#2A9D8F] font-label-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">Resolved ✓</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Compressor Issue — Office Room</h3>
+<div class="text-on-surface-variant font-body-md text-[13px]">
+                            Resolved Oct 1, 2024 · <span class="font-semibold text-on-surface">₹2,400 charged</span>
+</div>
+</div>
+<div class="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface-container hover:bg-surface-variant transition-colors self-center">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface dark:bg-inverse-surface shadow-md docked full-width bottom-0 h-[72px] border-t border-outline-variant dark:border-outline fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all rounded-lg p-2 w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all rounded-lg p-2 w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">build</span>
+<span class="font-label-md text-label-md">Services</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#0099CC] dark:text-secondary-fixed-dim font-bold scale-90 duration-150 rounded-lg p-2 w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-label-md text-label-md">My Tickets</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all rounded-lg p-2 w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1">person</span>
+<span class="font-label-md text-label-md">Account</span>
+</a>
+</nav>
+<style>
+        /* Utility to hide scrollbar for horizontal scrolling tabs */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Confirm Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#c07dff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#dbe9fe",
+                        "secondary-container": "#5bcaff",
+                        "background": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-secondary-fixed-variant": "#004c68",
+                        "on-tertiary-fixed": "#2c0050",
+                        "error-container": "#ffdad6",
+                        "outline": "#737780",
+                        "inverse-primary": "#a7c8ff",
+                        "tertiary": "#300056",
+                        "inverse-on-surface": "#e9f1ff",
+                        "tertiary-fixed-dim": "#deb7ff",
+                        "surface-container-highest": "#d6e4f9",
+                        "outline-variant": "#c3c6d1",
+                        "surface-variant": "#d6e4f9",
+                        "tertiary-container": "#4e0086",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#cddbf0",
+                        "on-surface-variant": "#43474f",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e5efff",
+                        "on-background": "#0f1c2c",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#f0dbff",
+                        "surface-tint": "#3a5f94",
+                        "on-secondary-container": "#005371",
+                        "secondary-fixed-dim": "#78d1ff",
+                        "primary": "#001e40",
+                        "on-secondary-fixed": "#001e2c",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#243141",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#0f1c2c",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "secondary-fixed": "#c3e8ff",
+                        "on-tertiary-fixed-variant": "#6712aa",
+                        "on-primary-fixed": "#001b3c",
+                        "on-primary-container": "#799dd6",
+                        "primary-container": "#003366",
+                        "surface-container-low": "#eef4ff",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary": "#006689",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-mobile h-14 bg-surface dark:bg-on-surface border-b border-outline-variant dark:border-outline shadow-sm sticky top-0 z-50">
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-sm-mobile text-headline-sm-mobile font-bold text-primary dark:text-primary-fixed">Confirm Booking</h1>
+<div class="w-10"></div> <!-- Placeholder for balance -->
+</header>
+<main class="flex-grow pb-32">
+<!-- Priority Banner -->
+<div class="bg-secondary-container text-on-secondary-container px-margin-mobile py-stack-sm flex items-start gap-3">
+<span class="material-symbols-outlined mt-0.5 text-secondary">verified</span>
+<div>
+<p class="font-label-lg text-label-lg font-bold">P2 — Under Warranty</p>
+<p class="font-body-md text-body-md">Parts and labor covered | Expected resolution: 24h</p>
+</div>
+</div>
+<div class="px-margin-mobile mt-stack-lg space-y-stack-lg">
+<!-- Summary Card -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-4 border border-outline-variant/30">
+<div class="flex justify-between items-center mb-stack-md border-b border-outline-variant/30 pb-3">
+<h2 class="font-headline-sm text-headline-sm text-primary">Service Summary</h2>
+<button class="text-secondary flex items-center gap-1 font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">edit</span> Edit
+                    </button>
+</div>
+<div class="space-y-stack-md">
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-outline">location_on</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Property</p>
+<p class="font-body-md text-body-md text-on-surface font-medium">Villa #42</p>
+</div>
+</div>
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-outline">ac_unit</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">AC Unit</p>
+<p class="font-body-md text-body-md text-on-surface font-medium">Daikin - Master Bedroom</p>
+</div>
+</div>
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-outline">report_problem</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">Problem Description</p>
+<p class="font-body-md text-body-md text-on-surface font-medium">Not Cooling + E1 Error Code</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Schedule Selection -->
+<section>
+<h2 class="font-headline-sm text-headline-sm text-primary mb-stack-md">Select Date &amp; Time</h2>
+<!-- Date Picker -->
+<div class="flex overflow-x-auto no-scrollbar gap-3 pb-2 -mx-margin-mobile px-margin-mobile">
+<button class="flex-none w-16 h-20 rounded-lg border border-outline-variant flex flex-col items-center justify-center gap-1 bg-surface-container-lowest">
+<span class="font-label-md text-label-md text-on-surface-variant">Wed</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">12</span>
+</button>
+<button class="flex-none w-16 h-20 rounded-lg border-2 border-secondary bg-surface-container-low flex flex-col items-center justify-center gap-1">
+<span class="font-label-md text-label-md text-secondary">Thu</span>
+<span class="font-headline-sm text-headline-sm text-secondary">13</span>
+</button>
+<button class="flex-none w-16 h-20 rounded-lg border border-outline-variant flex flex-col items-center justify-center gap-1 bg-surface-container-lowest">
+<span class="font-label-md text-label-md text-on-surface-variant">Fri</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">14</span>
+</button>
+<button class="flex-none w-16 h-20 rounded-lg border border-outline-variant flex flex-col items-center justify-center gap-1 bg-surface-container-lowest opacity-50">
+<span class="font-label-md text-label-md text-on-surface-variant">Sat</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">15</span>
+</button>
+<button class="flex-none w-16 h-20 rounded-lg border border-outline-variant flex flex-col items-center justify-center gap-1 bg-surface-container-lowest opacity-50">
+<span class="font-label-md text-label-md text-on-surface-variant">Sun</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">16</span>
+</button>
+</div>
+<!-- Time Slots -->
+<div class="grid grid-cols-3 gap-3 mt-stack-md">
+<button class="py-3 px-2 rounded-lg border border-outline-variant font-label-md text-label-md text-on-surface bg-surface-container-lowest">
+                        09:00 - 11:00
+                    </button>
+<button class="py-3 px-2 rounded-lg border-2 border-secondary bg-surface-container-low font-label-md text-label-md text-secondary font-bold">
+                        14:00 - 16:00
+                    </button>
+<button class="py-3 px-2 rounded-lg border border-outline-variant font-label-md text-label-md text-on-surface bg-surface-container-lowest">
+                        16:00 - 18:00
+                    </button>
+</div>
+</section>
+<!-- What Happens Next -->
+<section class="bg-surface-container-low rounded-xl p-4 border border-outline-variant/20">
+<h3 class="font-label-lg text-label-lg text-primary mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary">info</span>
+                    What Happens Next
+                </h3>
+<div class="space-y-4 pl-2 border-l-2 border-outline-variant/30 ml-2 relative">
+<div class="relative">
+<div class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-secondary"></div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-4">Ticket generated &amp; assigned to available technician.</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-outline-variant"></div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-4">Technician confirms dispatch time via app.</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-outline-variant"></div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-4">Service performed and documented.</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[13px] top-1 w-2 h-2 rounded-full bg-outline-variant"></div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-4">Review and closure.</p>
+</div>
+</div>
+</section>
+<!-- Charges Note -->
+<div class="bg-[#e8f5e9] text-[#1b5e20] p-4 rounded-lg flex items-center gap-3 border border-[#c8e6c9]">
+<span class="material-symbols-outlined">check_circle</span>
+<p class="font-label-lg text-label-lg font-bold">✓ No charges for this service (P2 Warranty)</p>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant/30 p-margin-mobile z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] pb-safe">
+<button class="w-full h-[52px] bg-[#0099CC] hover:bg-[#007da8] text-white rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 transition-colors shadow-sm">
+            Raise Service Ticket <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</body></html>

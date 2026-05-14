@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Installation Step 4 - Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#e5efff",
+                        "primary-fixed": "#d5e3ff",
+                        "primary-container": "#003366",
+                        "on-tertiary-fixed": "#2c0050",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "secondary-container": "#5bcaff",
+                        "on-secondary-fixed-variant": "#004c68",
+                        "primary": "#001e40",
+                        "secondary-fixed-dim": "#78d1ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#c07dff",
+                        "tertiary-container": "#4e0086",
+                        "inverse-on-surface": "#e9f1ff",
+                        "inverse-primary": "#a7c8ff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#6712aa",
+                        "tertiary": "#300056",
+                        "on-surface": "#0f1c2c",
+                        "outline": "#737780",
+                        "outline-variant": "#c3c6d1",
+                        "surface-tint": "#3a5f94",
+                        "on-primary-fixed": "#001b3c",
+                        "on-surface-variant": "#43474f",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#cddbf0",
+                        "surface-container-high": "#dbe9fe",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#005371",
+                        "secondary": "#006689",
+                        "surface-container-low": "#eef4ff",
+                        "surface": "#f8f9ff",
+                        "tertiary-fixed-dim": "#deb7ff",
+                        "surface-variant": "#d6e4f9",
+                        "on-primary-container": "#799dd6",
+                        "on-secondary-fixed": "#001e2c",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d6e4f9",
+                        "on-background": "#0f1c2c",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed": "#c3e8ff",
+                        "inverse-surface": "#243141",
+                        "tertiary-fixed": "#f0dbff",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-mobile": "20px",
+                        "stack-sm": "8px",
+                        "stack-lg": "24px",
+                        "stack-md": "16px",
+                        "margin-desktop": "40px",
+                        "gutter": "16px",
+                        "base": "4px"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-sans">
+<header class="flex justify-between items-center px-margin-mobile h-14 bg-surface sticky top-0 z-20 border-b border-outline-variant/50">
+<div class="flex items-center gap-3">
+<button class="text-on-surface hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<span class="font-headline-sm text-headline-sm text-on-surface">New Installation</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container py-1 px-2 rounded">4 of 6</span>
+</header>
+<main class="flex-1 px-margin-mobile py-stack-md pb-32">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-stack-md">When should we visit?</h1>
+<div class="flex items-start gap-3 p-4 bg-surface-container rounded-xl mb-stack-md shadow-sm">
+<span class="material-symbols-outlined text-secondary icon-fill mt-0.5">info</span>
+<p class="font-body-md text-body-md text-on-surface">Free site visit. Our engineer will assess and provide a detailed quote within 24 hours.</p>
+</div>
+<section class="mb-stack-lg">
+<div class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 snap-x" style="margin-left: -20px; padding-left: 20px; margin-right: -20px; padding-right: 20px;">
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Mon</span>
+<span class="font-headline-md text-headline-md text-on-surface">28</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-secondary bg-secondary text-on-secondary flex flex-col items-center justify-center gap-1 shadow-md scale-[1.02] transition-transform">
+<span class="font-label-md text-label-md opacity-90 uppercase tracking-wider">Tue</span>
+<span class="font-headline-md text-headline-md">29</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Wed</span>
+<span class="font-headline-md text-headline-md text-on-surface">30</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Thu</span>
+<span class="font-headline-md text-headline-md text-on-surface">31</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Fri</span>
+<span class="font-headline-md text-headline-md text-on-surface">1</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Sat</span>
+<span class="font-headline-md text-headline-md text-on-surface">2</span>
+</button>
+<button class="snap-start shrink-0 w-[64px] h-[84px] rounded-xl border border-outline-variant bg-surface flex flex-col items-center justify-center gap-1 transition-colors hover:bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Sun</span>
+<span class="font-headline-md text-headline-md text-on-surface">3</span>
+</button>
+</div>
+</section>
+<section class="mb-stack-lg flex flex-col gap-stack-sm">
+<button class="flex items-center justify-between p-4 rounded-xl border-2 border-secondary bg-surface-container shadow-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary"></div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined">wb_sunny</span>
+</div>
+<div class="text-left flex flex-col gap-0.5">
+<span class="font-label-lg text-label-lg text-on-surface">Morning</span>
+<span class="font-body-md text-body-md text-on-surface-variant">9AM – 12PM</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary icon-fill text-[28px]">check_circle</span>
+</button>
+<button class="flex items-center justify-between p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">partly_cloudy_day</span>
+</div>
+<div class="text-left flex flex-col gap-0.5">
+<span class="font-label-lg text-label-lg text-on-surface">Afternoon</span>
+<span class="font-body-md text-body-md text-on-surface-variant">12PM – 4PM</span>
+</div>
+</div>
+</button>
+<button class="flex items-center justify-between p-4 rounded-xl border border-outline-variant bg-surface hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">bedtime</span>
+</div>
+<div class="text-left flex flex-col gap-0.5">
+<span class="font-label-lg text-label-lg text-on-surface">Evening</span>
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface-variant">4PM – 7PM</span>
+<span class="font-label-md text-label-md text-error bg-error-container px-1.5 py-0.5 rounded">Limited slots</span>
+</div>
+</div>
+</div>
+</button>
+</section>
+<section class="bg-surface rounded-xl shadow-sm border border-outline-variant overflow-hidden mb-8">
+<div class="bg-surface-container-low px-4 py-3 border-b border-outline-variant">
+<h3 class="font-label-lg text-label-lg text-on-surface">Installation Summary</h3>
+</div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-start justify-between pb-3 border-b border-outline-variant/50">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant mb-1">Equipment</span>
+<span class="font-body-md text-body-md text-on-surface">Split AC • Daikin • 1.5T • FTKF35TV</span>
+</div>
+<button class="text-primary p-1 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+</div>
+<div class="flex items-start justify-between pb-3 border-b border-outline-variant/50">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant mb-1">Location details</span>
+<span class="font-body-md text-body-md text-on-surface">2 Rooms @ Villa #42</span>
+</div>
+<button class="text-primary p-1 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+</div>
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant mb-1">Scheduled Visit</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Tue Oct 29, Morning</span>
+</div>
+<button class="text-primary p-1 hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-0 left-0 w-full bg-surface p-margin-mobile border-t border-outline-variant shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-30">
+<button class="w-full h-[52px] bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 hover:bg-secondary/90 active:scale-[0.98] transition-all">
+            Submit Request
+            <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</body></html>

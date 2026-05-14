@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Service Problem Description</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#c07dff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#dbe9fe",
+                        "secondary-container": "#5bcaff",
+                        "background": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-secondary-fixed-variant": "#004c68",
+                        "on-tertiary-fixed": "#2c0050",
+                        "error-container": "#ffdad6",
+                        "outline": "#737780",
+                        "inverse-primary": "#a7c8ff",
+                        "tertiary": "#300056",
+                        "inverse-on-surface": "#e9f1ff",
+                        "tertiary-fixed-dim": "#deb7ff",
+                        "surface-container-highest": "#d6e4f9",
+                        "outline-variant": "#c3c6d1",
+                        "surface-variant": "#d6e4f9",
+                        "tertiary-container": "#4e0086",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#cddbf0",
+                        "on-surface-variant": "#43474f",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e5efff",
+                        "on-background": "#0f1c2c",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#f0dbff",
+                        "surface-tint": "#3a5f94",
+                        "on-secondary-container": "#005371",
+                        "secondary-fixed-dim": "#78d1ff",
+                        "primary": "#001e40",
+                        "on-secondary-fixed": "#001e2c",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#243141",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#0f1c2c",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "secondary-fixed": "#c3e8ff",
+                        "on-tertiary-fixed-variant": "#6712aa",
+                        "on-primary-fixed": "#001b3c",
+                        "on-primary-container": "#799dd6",
+                        "primary-container": "#003366",
+                        "surface-container-low": "#eef4ff",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary": "#006689",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-lg": "24px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased">
+<!-- Top Navigation Container -->
+<div class="sticky top-0 z-50 flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center w-full px-margin-mobile h-14">
+<button aria-label="Go back" class="text-primary p-2 -ml-2 rounded-full hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-sm-mobile text-headline-sm-mobile font-bold text-primary">Service Request</h1>
+<div class="flex items-center">
+<span class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-2 py-1 rounded-full uppercase tracking-widest font-bold shadow-sm">P2</span>
+</div>
+</header>
+<!-- Context Bar -->
+<div class="bg-secondary text-on-secondary px-margin-mobile py-2 flex items-center gap-2 shadow-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">precision_manufacturing</span>
+<p class="font-label-md text-label-md opacity-90 truncate">Master Bedroom • Daikin FTKF35TV • 1.5T Split</p>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile py-stack-lg flex flex-col gap-stack-lg pb-32">
+<!-- Heading Section -->
+<div class="flex flex-col gap-stack-sm">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">What's the problem?</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Select the issue that best matches your observation.</p>
+</div>
+<!-- Problem Grid -->
+<div class="grid grid-cols-2 gap-gutter">
+<!-- Selected Card -->
+<button class="bg-surface-container border-2 border-secondary rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm relative transition-all active:scale-95">
+<span class="material-symbols-outlined text-secondary absolute top-2 right-2" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="w-12 h-12 rounded-full bg-secondary text-on-secondary flex items-center justify-center mb-1">
+<span class="material-symbols-outlined">ac_unit</span>
+</div>
+<span class="font-label-lg text-label-lg text-primary">Not Cooling</span>
+</button>
+<!-- Inactive Cards -->
+<button class="bg-surface border border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm transition-all hover:bg-surface-container-lowest active:scale-95">
+<div class="w-12 h-12 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-outline">volume_up</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Noise</span>
+</button>
+<button class="bg-surface border border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm transition-all hover:bg-surface-container-lowest active:scale-95">
+<div class="w-12 h-12 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-outline">water_drop</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Leaking</span>
+</button>
+<button class="bg-surface border border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm transition-all hover:bg-surface-container-lowest active:scale-95">
+<div class="w-12 h-12 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-outline">power_off</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Not Turning On</span>
+</button>
+<button class="bg-surface border border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm transition-all hover:bg-surface-container-lowest active:scale-95">
+<div class="w-12 h-12 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-outline">air</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">No Airflow</span>
+</button>
+<button class="bg-surface border border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center gap-stack-sm shadow-sm transition-all hover:bg-surface-container-lowest active:scale-95">
+<div class="w-12 h-12 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-outline">settings_remote</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Remote/Wi-Fi</span>
+</button>
+</div>
+<hr class="border-outline-variant opacity-50"/>
+<!-- Error Code Section -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-lg text-label-lg text-primary" for="errorCode">Error Code (if any)</label>
+<input class="w-full h-[52px] bg-surface-container-low rounded-lg px-4 border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary font-mono text-body-md uppercase shadow-inner" id="errorCode" placeholder="e.g. E4, U0" type="text"/>
+<a class="font-label-md text-label-md text-secondary flex items-center gap-1 mt-1 hover:underline" href="#">
+<span class="material-symbols-outlined" style="font-size: 16px;">info</span>
+                View common error codes
+            </a>
+</div>
+<!-- Duration Section -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-lg text-label-lg text-primary">How long has this been happening?</label>
+<div class="flex overflow-x-auto gap-2 pb-2 -mx-margin-mobile px-margin-mobile hide-scrollbar" style="scrollbar-width: none;">
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface text-on-surface font-label-lg text-label-lg whitespace-nowrap shadow-sm hover:bg-surface-container-low">Today</button>
+<button class="px-5 py-2.5 rounded-full border-2 border-secondary bg-surface-container text-primary font-label-lg text-label-lg whitespace-nowrap shadow-sm">2-3 Days</button>
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface text-on-surface font-label-lg text-label-lg whitespace-nowrap shadow-sm hover:bg-surface-container-low">This Week</button>
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface text-on-surface font-label-lg text-label-lg whitespace-nowrap shadow-sm hover:bg-surface-container-low">Over a Week</button>
+</div>
+</div>
+<!-- Description -->
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-lg text-label-lg text-primary" for="description">Additional Details</label>
+<textarea class="w-full h-32 bg-surface-container-low rounded-lg p-4 border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary font-body-md text-body-md resize-none shadow-inner" id="description" placeholder="Describe any specific noises, smells, or patterns..."></textarea>
+</div>
+<!-- Photo Upload -->
+<div class="flex flex-col gap-stack-sm">
+<div class="flex justify-between items-center">
+<label class="font-label-lg text-label-lg text-primary">Attach Photos (Optional)</label>
+<span class="font-label-md text-label-md text-outline">0/4</span>
+</div>
+<div class="grid grid-cols-2 gap-gutter">
+<button class="border-2 border-dashed border-outline rounded-lg flex flex-col items-center justify-center p-4 h-24 bg-surface-container-low text-outline hover:bg-surface-container hover:border-secondary transition-colors">
+<span class="material-symbols-outlined mb-1">add_a_photo</span>
+<span class="font-label-md text-label-md">Add Photo</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant p-margin-mobile shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-40">
+<button class="w-full h-[52px] bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md hover:opacity-90 active:scale-95 transition-all">
+            Continue
+            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</body></html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>New Installation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "secondary": "#006689",
+                "surface-tint": "#3a5f94",
+                "inverse-on-surface": "#e9f1ff",
+                "on-surface": "#0f1c2c",
+                "error": "#ba1a1a",
+                "primary-fixed": "#d5e3ff",
+                "secondary-fixed-dim": "#78d1ff",
+                "primary-fixed-dim": "#a7c8ff",
+                "tertiary-fixed": "#f0dbff",
+                "on-primary-fixed": "#001b3c",
+                "secondary-container": "#5bcaff",
+                "surface-container-lowest": "#ffffff",
+                "on-primary-container": "#799dd6",
+                "surface-container": "#e5efff",
+                "tertiary-container": "#4e0086",
+                "primary": "#001e40",
+                "on-tertiary-container": "#c07dff",
+                "on-secondary-container": "#005371",
+                "on-secondary-fixed-variant": "#004c68",
+                "on-tertiary-fixed": "#2c0050",
+                "on-error-container": "#93000a",
+                "tertiary": "#300056",
+                "inverse-surface": "#243141",
+                "on-secondary": "#ffffff",
+                "on-tertiary-fixed-variant": "#6712aa",
+                "primary-container": "#003366",
+                "error-container": "#ffdad6",
+                "surface-variant": "#d6e4f9",
+                "on-secondary-fixed": "#001e2c",
+                "tertiary-fixed-dim": "#deb7ff",
+                "surface": "#f8f9ff",
+                "surface-container-high": "#dbe9fe",
+                "on-background": "#0f1c2c",
+                "outline-variant": "#c3c6d1",
+                "outline": "#737780",
+                "surface-dim": "#cddbf0",
+                "on-tertiary": "#ffffff",
+                "inverse-primary": "#a7c8ff",
+                "surface-container-highest": "#d6e4f9",
+                "on-primary-fixed-variant": "#1f477b",
+                "secondary-fixed": "#c3e8ff",
+                "background": "#f8f9ff",
+                "surface-bright": "#f8f9ff",
+                "on-error": "#ffffff",
+                "surface-container-low": "#eef4ff",
+                "on-surface-variant": "#43474f",
+                "on-primary": "#ffffff"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "stack-lg": "24px",
+                "gutter": "16px",
+                "stack-md": "16px",
+                "margin-mobile": "20px",
+                "margin-desktop": "40px",
+                "base": "4px",
+                "stack-sm": "8px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "headline-xl": [
+                        "Inter"
+                ],
+                "headline-sm": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "label-lg": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-md": [
+                        "20px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-xl": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-sm": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.02em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-lg": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col pb-[72px]">
+<!-- Top App Bar (Transactional/Linear flow, but keeping structure as requested, typically suppressed for linear flows per instructions, but requested in prompt. Let's make it a step header) -->
+<header class="bg-surface border-b border-outline-variant shadow-sm w-full sticky top-0 z-50">
+<div class="h-14 px-margin-mobile flex justify-between items-center w-full">
+<button class="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-sm-mobile text-headline-sm-mobile font-bold text-primary">New Installation</h1>
+<div class="font-label-md text-label-md text-secondary bg-secondary-container/20 px-3 py-1 rounded-full border border-secondary-container">
+                1 of 6
+            </div>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-container h-1">
+<div class="bg-[#0099CC] h-1" style="width: 16.66%;"></div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow px-margin-mobile pt-stack-lg pb-stack-lg flex flex-col max-w-[1200px] mx-auto w-full">
+<!-- Header Section -->
+<div class="mb-stack-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-base">What type of AC do you need?</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Choose based on your space requirements</p>
+</div>
+<!-- AC Type Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg">
+<!-- Card 1: Split AC (Selected State) -->
+<button class="relative bg-[#E6F5FA] border-2 border-[#0099CC] rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all text-on-surface h-full">
+<div class="absolute top-stack-sm right-stack-sm bg-[#0099CC] rounded-full w-6 h-6 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[16px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="bg-white p-3 rounded-lg mb-stack-sm shadow-sm border border-[#0099CC]/20 text-[#0099CC]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">splitscreen</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">Split AC</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">1-3 rooms</p>
+<div class="mt-auto inline-block bg-white text-[#0099CC] font-label-md text-label-md px-2 py-1 rounded border border-[#0099CC]/20">
+                    1T to 3T
+                </div>
+</button>
+<!-- Card 2: Cassette AC -->
+<button class="relative bg-white border border-outline-variant hover:border-[#0099CC]/50 rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all hover:shadow-md text-on-surface h-full">
+<div class="bg-surface-container-low p-3 rounded-lg mb-stack-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">view_cozy</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">Cassette AC</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">Ceiling mounted</p>
+<div class="mt-auto inline-block bg-surface-container-low text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">
+                    2T to 5T
+                </div>
+</button>
+<!-- Card 3: Central AC/Ducted -->
+<button class="relative bg-white border border-outline-variant hover:border-[#0099CC]/50 rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all hover:shadow-md text-on-surface h-full">
+<div class="bg-surface-container-low p-3 rounded-lg mb-stack-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">air</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">Central AC/Ducted</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">Whole home</p>
+<div class="mt-auto inline-block bg-surface-container-low text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">
+                    3T to 20T
+                </div>
+</button>
+<!-- Card 4: VRF/VRV -->
+<button class="relative bg-white border border-outline-variant hover:border-[#0099CC]/50 rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all hover:shadow-md text-on-surface h-full">
+<div class="bg-surface-container-low p-3 rounded-lg mb-stack-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">domain</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">VRF/VRV</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">Multi-unit premium</p>
+<div class="mt-auto inline-block bg-surface-container-low text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">
+                    Commercial
+                </div>
+</button>
+<!-- Card 5: Window AC -->
+<button class="relative bg-white border border-outline-variant hover:border-[#0099CC]/50 rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all hover:shadow-md text-on-surface h-full">
+<div class="bg-surface-container-low p-3 rounded-lg mb-stack-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">window</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">Window AC</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">Budget single room</p>
+<div class="mt-auto inline-block bg-surface-container-low text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">
+                    0.75T to 2T
+                </div>
+</button>
+<!-- Card 6: Portable AC -->
+<button class="relative bg-white border border-outline-variant hover:border-[#0099CC]/50 rounded-xl p-stack-md flex flex-col items-start text-left shadow-sm transition-all hover:shadow-md text-on-surface h-full">
+<div class="bg-surface-container-low p-3 rounded-lg mb-stack-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">mode_fan</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary mb-base">Portable AC</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-base">No install</p>
+<div class="mt-auto inline-block bg-surface-container-low text-on-surface-variant font-label-md text-label-md px-2 py-1 rounded">
+                    1T to 1.5T
+                </div>
+</button>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full z-40 bg-surface border-t border-outline-variant px-margin-mobile py-stack-sm pb-[calc(env(safe-area-inset-bottom)+8px)]">
+<div class="max-w-[1200px] mx-auto w-full">
+<button class="w-full bg-[#0099CC] hover:bg-[#007da8] text-white h-[52px] rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 transition-colors shadow-md">
+                Continue <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Note: Bottom NavBar from JSON is intentionally suppressed here per the Semantic Shell Mandate: "Automatic Suppression: You MUST exclude the navigation shell if the page intent is: Linear/Transactional: Login, Sign-up, Onboarding, Checkout, or 'Success/Confirmation' splash screens." This is a step in a multi-step installation flow. However, the prompt explicitly asked to "Include standard Bottom Navigation." 
+    If I strictly follow the prompt over the JSON rules, I should include it. The conflict resolution says Prompt > Everything if explicitly requested. I will add it beneath the action button or instead of it. 
+    Wait, the action area is fixed to the bottom. If I add a BottomNav, it needs to sit below the action area or replace it. I'll place the Bottom Nav at the very bottom, and the action button slightly above it. -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center bg-surface dark:bg-inverse-surface px-margin-mobile pb-safe h-[72px] border-t border-outline-variant dark:border-outline shadow-md md:hidden">
+<!-- Services is active conceptually for an installation flow, though Home could also work. Let's make Home active as fallback -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">home</span>
+            Home
+        </a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim font-bold font-label-md text-label-md scale-90 duration-150 p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1 text-secondary" style="font-variation-settings: 'FILL' 1;">build</span>
+            Services
+        </a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">confirmation_number</span>
+            My Tickets
+        </a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant font-label-md text-label-md hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-all p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">person</span>
+            Account
+        </a>
+</nav>
+<!-- Adjust body padding and action area positioning for Bottom Nav -->
+<style>
+        body {
+            padding-bottom: 144px; /* 72px for nav + 72px for action area */
+        }
+        .action-area {
+            bottom: 72px; /* Sits above Bottom Nav */
+        }
+    </style>
+<script>
+        // Apply class via script to avoid complex inline CSS
+        document.querySelector('.z-40').classList.add('bottom-[72px]');
+        document.querySelector('.z-40').classList.remove('bottom-0');
+    </script>
+</body></html>
