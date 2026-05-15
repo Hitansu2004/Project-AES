@@ -1,0 +1,136 @@
+.page { min-height: 100dvh; }
+
+.mobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+}
+.mobileHeader > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.mobileTitle { font-size: 17px; font-weight: 700; color: var(--primary-dark); }
+.mobileRight { display: flex; align-items: center; gap: var(--space-3); }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--secondary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+}
+
+@media (min-width: 768px) { .mobileHeader { display: none; } }
+
+/* Greeting */
+.greeting {
+  background: linear-gradient(135deg, #001e40 0%, #003366 100%);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  color: #fff;
+  margin-bottom: var(--space-5);
+}
+.greetingTitle { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #fff; }
+.greetingSubtext { font-size: 14px; opacity: 0.8; margin-bottom: var(--space-4); }
+.greetingBadges { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.greetingBadge {
+  background: rgba(255,255,255,0.15);
+  padding: 5px 12px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+}
+
+/* Action Cards */
+.actionCards {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+@media (min-width: 640px) { .actionCards { grid-template-columns: 1fr 1fr; } }
+
+.actionCard {
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.actionCard::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+.actionCard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+.installCard { background: linear-gradient(135deg, #003366 0%, #0066a6 100%); }
+.serviceCard { background: linear-gradient(135deg, #004d80 0%, #0099CC 100%); }
+
+.actionIcon { font-size: 28px; }
+.actionTitle { font-size: 18px; font-weight: 700; color: #fff; }
+.actionDesc { font-size: 13px; opacity: 0.8; }
+.actionTags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.actionTags span {
+  background: rgba(255,255,255,0.15);
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  font-size: 11px; font-weight: 600;
+}
+.actionBtn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.2);
+  padding: 8px 16px; border-radius: var(--radius);
+  font-size: 14px; font-weight: 700;
+  align-self: flex-start; margin-top: var(--space-2);
+  transition: background var(--transition-fast);
+}
+.actionCard:hover .actionBtn { background: rgba(255,255,255,0.3); }
+
+/* Sections */
+.section { margin-bottom: var(--space-6); }
+.sectionHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.viewAll { color: var(--secondary); font-size: 14px; font-weight: 600; }
+
+/* Tickets */
+.ticketList { display: flex; flex-direction: column; gap: var(--space-3); }
+.ticketCard {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  border-left: 4px solid var(--secondary);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.ticketCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.ticketTop { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.ticketId { font-size: 13px; font-weight: 700; color: var(--on-surface-variant); }
+.ticketTitle { font-size: 15px; font-weight: 600; color: var(--primary-dark); margin-bottom: var(--space-2); }
+.ticketMeta { display: flex; align-items: center; gap: var(--space-3); }
+.ticketDate { font-size: 12px; color: var(--outline); }
+
+/* AMC Banner */
+.amcBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-decoration: none;
+  border: 1px solid var(--border-light);
+  transition: box-shadow var(--transition);
+}
+.amcBanner:hover { box-shadow: var(--shadow-md); }
+.amcIcon { font-size: 36px; }
+.amcInfo h3 { font-size: 16px; font-weight: 700; color: var(--primary-dark); }
+.amcInfo p { font-size: 13px; color: var(--outline); margin: 2px 0; }
+.amcLink { font-size: 13px; color: var(--secondary); font-weight: 600; }

@@ -1,0 +1,145 @@
+.page { min-height: 100dvh; }
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--outline);
+  margin-top: var(--space-2);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.card {
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  right: -30px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.installCard {
+  background: linear-gradient(135deg, #002244 0%, #003d73 100%);
+}
+
+.serviceCard {
+  background: linear-gradient(135deg, #004d80 0%, #0099CC 100%);
+}
+
+.amcCard {
+  background: linear-gradient(135deg, #6b21a8 0%, #a855f7 100%);
+}
+
+.cardBadge {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.cardIcon {
+  font-size: 32px;
+  width: 52px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cardDesc {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cardTags span {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardArrow {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: var(--space-2);
+  transition: background var(--transition-fast);
+}
+
+.card:hover .cardArrow {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.help {
+  text-align: center;
+  font-size: 14px;
+  color: var(--outline);
+  margin-top: var(--space-8);
+}
+
+.helpLink {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .cards {
+    max-width: 600px;
+  }
+}

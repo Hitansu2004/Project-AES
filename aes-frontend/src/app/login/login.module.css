@@ -1,0 +1,109 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #001e40 0%, #003366 50%, #004d80 100%);
+  padding: var(--space-5);
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.4s ease;
+}
+
+.logoSection {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--space-4);
+  background: var(--surface-container);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--outline);
+}
+
+.tabSwitch {
+  display: flex;
+  background: var(--surface-container-low);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: var(--space-6);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--outline);
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.tabActive {
+  background: var(--surface-container-lowest);
+  color: var(--primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.otpInfo {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  text-align: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-container-low);
+  border-radius: var(--radius);
+}
+
+.error {
+  padding: var(--space-3) var(--space-4);
+  background: var(--error-container);
+  color: var(--error);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--space-4);
+}
+
+.footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--outline);
+  margin-top: var(--space-6);
+}
+
+.link {
+  color: var(--secondary);
+  font-weight: 600;
+}

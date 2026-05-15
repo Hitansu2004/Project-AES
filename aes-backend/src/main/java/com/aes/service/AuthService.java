@@ -57,6 +57,7 @@ public class AuthService {
 
         OtpResponse response = OtpResponse.builder()
                 .expiresInSeconds(600) // 10 minutes
+
                 .build();
 
 

@@ -1,0 +1,101 @@
+.header {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--primary);
+  color: var(--on-primary);
+  height: 56px;
+  box-shadow: var(--shadow);
+}
+
+@media (min-width: 768px) {
+  .header { display: block; }
+}
+
+.inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--margin-desktop);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--on-primary);
+  text-decoration: none;
+}
+
+.brandName {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.roleLabel {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.7;
+  padding-left: var(--space-4);
+  border-left: 1px solid rgba(255,255,255,0.2);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navLink {
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
+}
+
+.navLink:hover {
+  color: var(--on-primary);
+  background: rgba(255,255,255,0.1);
+}
+
+.navLinkActive {
+  color: var(--on-primary);
+  background: rgba(255,255,255,0.15);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.greeting {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}

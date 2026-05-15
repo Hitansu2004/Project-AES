@@ -1,0 +1,78 @@
+.page { min-height: 100dvh; }
+
+/* Profile Header */
+.profileHeader {
+  display: flex; align-items: center; gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+.avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #003366, #0099CC);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; flex-shrink: 0;
+}
+.profileName { font-size: 22px; font-weight: 700; color: var(--primary-dark); }
+.profilePhone { font-size: 14px; color: var(--outline); margin: 2px 0 6px; }
+
+/* Tabs */
+.tabs {
+  display: flex; background: var(--surface-container-low); border-radius: var(--radius);
+  padding: 4px; margin-bottom: var(--space-5);
+}
+.tab {
+  flex: 1; padding: 10px; border: none; background: transparent;
+  font-size: 14px; font-weight: 600; color: var(--outline);
+  border-radius: 6px; cursor: pointer; transition: all var(--transition-fast);
+}
+.tabActive { background: var(--surface-container-lowest); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+
+.tabContent { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* Card */
+.card {
+  background: var(--surface-container-lowest); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); padding: var(--space-5);
+}
+.cardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); }
+.cardHeader h3 { font-size: 16px; font-weight: 700; color: var(--primary-dark); }
+
+.infoGrid { display: flex; flex-direction: column; gap: var(--space-4); }
+.infoRow span { font-size: 11px; font-weight: 700; color: var(--outline); letter-spacing: 0.06em; text-transform: uppercase; }
+.infoRow p { font-size: 15px; font-weight: 600; color: var(--primary-dark); margin-top: 4px; }
+
+.formGrid { display: flex; flex-direction: column; gap: var(--space-4); }
+.formActions { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2); }
+.formTitle { font-size: 16px; font-weight: 700; color: var(--primary-dark); margin-bottom: var(--space-4); }
+
+/* Property */
+.propertyCard {
+  display: flex; align-items: center; gap: var(--space-4);
+  background: var(--surface-container-lowest); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); padding: var(--space-5);
+}
+.propIcon {
+  width: 48px; height: 48px; background: var(--surface-container);
+  border-radius: var(--radius); display: flex; align-items: center;
+  justify-content: center; font-size: 24px; flex-shrink: 0;
+}
+.propInfo h3 { font-size: 16px; font-weight: 700; color: var(--primary-dark); }
+.propInfo p { font-size: 13px; color: var(--outline); margin: 2px 0 4px; }
+.propType { font-size: 11px; font-weight: 700; background: var(--surface-container); padding: 3px 8px; border-radius: var(--radius-sm); color: var(--on-surface-variant); }
+
+/* AMC */
+.amcCard {
+  background: var(--surface-container-lowest); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); padding: var(--space-5);
+}
+.amcHeader { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.amcContract { font-size: 13px; color: var(--outline); font-weight: 600; }
+.amcCard h3 { font-size: 16px; font-weight: 700; color: var(--primary-dark); margin-bottom: var(--space-2); }
+.amcCard p { font-size: 13px; color: var(--on-surface-variant); margin-bottom: 2px; }
+
+.emptyState {
+  text-align: center; padding: var(--space-10);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+}
+.emptyState span { font-size: 48px; opacity: 0.5; }
+.emptyState h3 { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
+.emptyState p { font-size: 14px; color: var(--outline); }
