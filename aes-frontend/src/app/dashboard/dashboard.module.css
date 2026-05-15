@@ -3,7 +3,7 @@
   min-height: 100dvh;
   background: var(--surface);
   width: 100%;
-  max-width: 480px;
+  max-width: var(--max-width-content);
   margin: 0 auto;
   position: relative;
 }
@@ -21,6 +21,10 @@
   backdrop-filter: saturate(180%) blur(10px);
   -webkit-backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 1px solid var(--border-light);
+}
+/* On tablet+ the global Header takes over nav — hide the page top bar. */
+@media (min-width: 768px) {
+  .topBar { display: none; }
 }
 
 .brandRow { display: flex; align-items: center; gap: 10px; }
@@ -79,7 +83,33 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 20px 16px calc(var(--nav-height) + 32px);
+  padding: 20px var(--page-pad-x) calc(var(--nav-height) + 32px);
+}
+
+/* Tablet — slightly more breathing room */
+@media (min-width: 768px) {
+  .main { gap: 28px; padding-top: 28px; padding-bottom: calc(var(--nav-height) + 48px); }
+}
+
+/* Desktop — two-column layout: hero+ctas full-width on top,
+   then projects/tickets side by side underneath. */
+@media (min-width: 1024px) {
+  .main {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    grid-template-areas:
+      "hero hero"
+      "cta  cta"
+      "projects amc"
+      "tickets  amc";
+    gap: 24px 28px;
+    padding-top: 32px;
+  }
+  .hero      { grid-area: hero; }
+  .ctaGrid   { grid-area: cta; }
+  .projectsSection { grid-area: projects; }
+  .ticketsSection  { grid-area: tickets; }
+  .amcSection      { grid-area: amc; }
 }
 
 /* ─── Hero card ─────────────────────────────────────────── */
@@ -142,6 +172,11 @@
 }
 @media (min-width: 380px) {
   .ctaGrid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1024px) {
+  .ctaGrid { gap: 20px; }
+  .cta { min-height: 220px; padding: 22px; }
+  .ctaTitle { font-size: 19px; }
 }
 
 .cta {

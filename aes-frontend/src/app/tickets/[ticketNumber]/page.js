@@ -110,7 +110,7 @@ export default function TicketDetailPage({ params }) {
   if (!ticket) {
     return (
       <div className={styles.shell}>
-        <AppTopBar title="Ticket not found" />
+        <AppTopBar title="Ticket not found" width="detail" />
         <div className={styles.empty}>
           <h2>We couldn&apos;t find that ticket.</h2>
           <p>It may have been removed, or you might not have access.</p>
@@ -135,6 +135,7 @@ export default function TicketDetailPage({ params }) {
     <div className={styles.shell}>
       <AppTopBar
         title={`Ticket ${ticket.ticketNumber}`}
+        width="detail"
         right={
           <button className={styles.iconBtn} aria-label="More" type="button">
             <MoreHorizontal size={20} />

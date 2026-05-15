@@ -13,10 +13,11 @@
   border-bottom: none;
 }
 
-.row {
+.row,
+.rowContent,
+.rowDetail {
   height: 56px;
   width: 100%;
-  max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 12px;
   display: grid;
@@ -24,6 +25,9 @@
   align-items: center;
   gap: 8px;
 }
+.row         { max-width: var(--max-width); }
+.rowContent  { max-width: var(--max-width-content); }
+.rowDetail   { max-width: var(--max-width-detail); }
 
 .left,
 .right {

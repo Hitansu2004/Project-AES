@@ -210,7 +210,10 @@ export default function CustomerDashboard() {
 
         {/* Projects */}
         {activeProjects.length > 0 && (
-          <motion.section variants={fadeInUp} className={styles.section}>
+          <motion.section
+            variants={fadeInUp}
+            className={`${styles.section} ${styles.projectsSection}`}
+          >
             <SectionHeader title="My Projects" href="/tickets" />
             <div className={styles.scrollRow}>
               {activeProjects.slice(0, 5).map((req) => (
@@ -221,7 +224,10 @@ export default function CustomerDashboard() {
         )}
 
         {/* Tickets */}
-        <motion.section variants={fadeInUp} className={styles.section}>
+        <motion.section
+          variants={fadeInUp}
+          className={`${styles.section} ${styles.ticketsSection}`}
+        >
           <SectionHeader title="My Tickets" href="/tickets" />
           {recentTickets.length === 0 ? (
             <EmptyState
@@ -237,7 +243,10 @@ export default function CustomerDashboard() {
         </motion.section>
 
         {/* AMC */}
-        <motion.section variants={fadeInUp} className={styles.section}>
+        <motion.section
+          variants={fadeInUp}
+          className={`${styles.section} ${styles.amcSection}`}
+        >
           {activeContract ? (
             <Link href="/services/amc" className={styles.amcCard}>
               <div className={styles.amcIcon} aria-hidden="true">

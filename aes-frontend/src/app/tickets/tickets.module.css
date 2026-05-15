@@ -2,7 +2,7 @@
   min-height: 100dvh;
   background: var(--surface);
   width: 100%;
-  max-width: var(--max-width);
+  max-width: var(--max-width-content);
   margin: 0 auto;
   padding-bottom: calc(var(--nav-height) + 32px);
 }
@@ -14,10 +14,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 14px var(--page-pad-x);
   background: rgba(248, 249, 255, 0.85);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--outline-variant);
+}
+/* Tablet+ — global Header takes over, hide the page header */
+@media (min-width: 768px) {
+  .header { display: none; }
 }
 .iconBtn {
   width: 40px; height: 40px;
@@ -32,7 +36,11 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 18px 20px 10px;
+  padding: 18px var(--page-pad-x) 10px;
+}
+@media (min-width: 768px) {
+  .titleRow { padding-top: 28px; }
+  .title { font-size: 30px; }
 }
 .title {
   font-size: 26px;
@@ -62,9 +70,12 @@
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 4px 20px 12px;
+  padding: 4px var(--page-pad-x) 12px;
   margin-bottom: 4px;
   scrollbar-width: none;
+}
+@media (min-width: 768px) {
+  .filterScroll { flex-wrap: wrap; overflow: visible; }
 }
 .filterScroll::-webkit-scrollbar { display: none; }
 
@@ -105,7 +116,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0 20px;
+  padding: 0 var(--page-pad-x);
+}
+@media (min-width: 1024px) {
+  .list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+  }
 }
 
 .card {

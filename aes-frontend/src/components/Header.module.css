@@ -14,7 +14,7 @@
 }
 
 .inner {
-  max-width: var(--max-width);
+  max-width: var(--max-width-detail);
   margin: 0 auto;
   padding: 0 var(--margin-desktop);
   height: 100%;

@@ -2,17 +2,20 @@
   min-height: 100dvh;
   background: var(--surface);
   width: 100%;
-  max-width: 880px;
+  max-width: var(--max-width-detail);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
 
 .body {
-  padding: 16px 20px 80px;
+  padding: 16px var(--page-pad-x) 80px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+@media (min-width: 768px) {
+  .body { padding-top: 24px; gap: 20px; }
 }
 
 .iconBtn {
@@ -113,8 +116,8 @@
   grid-template-columns: 1fr;
   gap: 16px;
 }
-@media (min-width: 900px) {
-  .twoCol { grid-template-columns: 1fr 1fr; }
+@media (min-width: 768px) {
+  .twoCol { grid-template-columns: 1fr 1fr; gap: 20px; }
 }
 
 /* ─── Detail rows ────────────────────────────────────────── */

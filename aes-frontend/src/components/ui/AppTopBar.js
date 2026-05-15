@@ -13,7 +13,8 @@ export default function AppTopBar({
   onBack,
   right = null,
   showBack = true,
-  variant = 'light', // "light" | "transparent"
+  variant = 'light',         // "light" | "transparent"
+  width = 'narrow',          // "narrow" | "content" | "detail"
 }) {
   const router = useRouter();
   const handleBack = () => {
@@ -21,9 +22,15 @@ export default function AppTopBar({
     else router.back();
   };
 
+  const widthClass = width === 'content'
+    ? styles.rowContent
+    : width === 'detail'
+      ? styles.rowDetail
+      : styles.row;
+
   return (
     <header className={`${styles.bar} ${variant === 'transparent' ? styles.transparent : ''}`}>
-      <div className={styles.row}>
+      <div className={widthClass}>
         <div className={styles.left}>
           {showBack ? (
             <button

@@ -10,7 +10,10 @@
   flex-direction: column;
 }
 
-.body { flex: 1; padding: 16px 20px 140px; }
+.body { flex: 1; padding: 16px var(--page-pad-x) 140px; }
+@media (min-width: 768px) {
+  .body { padding-top: 24px; }
+}
 
 .stepBody {
   display: flex;
@@ -25,7 +28,7 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: var(--max-width);
-  padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+  padding: 12px var(--page-pad-x) calc(20px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(248, 249, 255, 0) 0%, var(--surface) 32%);
   z-index: 40;
   pointer-events: none;

@@ -10,6 +10,9 @@
   position: relative;
   overflow: hidden;
 }
+@media (min-width: 768px) {
+  .page { padding: 48px 32px; }
+}
 
 .blob {
   position: absolute;

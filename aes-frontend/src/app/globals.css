@@ -110,12 +110,35 @@
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Layout */
-  --max-width: 480px;        /* mobile-first content cap */
-  --max-width-wide: 1200px;  /* dashboards */
+  --max-width: 480px;          /* narrow shell — wizards, login, single-column forms */
+  --max-width-content: 480px;  /* content/list pages — grows on tablet & desktop */
+  --max-width-wide: 1200px;    /* full dashboards (CRM, escalation) */
+  --max-width-detail: 480px;   /* ticket detail / property detail — grows to 2-col layout */
   --nav-height: 72px;
   --header-height: 56px;
   --margin-mobile: 20px;
   --margin-desktop: 40px;
+  --page-pad-x: 16px;
+}
+
+/* Tablet — 720px content, slightly wider forms, generous padding */
+@media (min-width: 768px) {
+  :root {
+    --max-width: 560px;
+    --max-width-content: 760px;
+    --max-width-detail: 760px;
+    --page-pad-x: 24px;
+  }
+}
+
+/* Desktop — full content & detail layouts, wider padding still */
+@media (min-width: 1024px) {
+  :root {
+    --max-width: 600px;
+    --max-width-content: 980px;
+    --max-width-detail: 1120px;
+    --page-pad-x: 32px;
+  }
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
@@ -347,7 +370,7 @@ input[type="number"] { -moz-appearance: textfield; }
 /* ─── Layout helpers ─────────────────────────────────────── */
 .mobile-shell {
   width: 100%;
-  max-width: var(--max-width);
+  max-width: var(--max-width-content);
   margin: 0 auto;
   min-height: 100dvh;
   background: var(--surface);
@@ -358,6 +381,12 @@ input[type="number"] { -moz-appearance: textfield; }
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 var(--margin-mobile);
+}
+.container-content {
+  width: 100%;
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: 0 var(--page-pad-x);
 }
 .container-wide {
   width: 100%;

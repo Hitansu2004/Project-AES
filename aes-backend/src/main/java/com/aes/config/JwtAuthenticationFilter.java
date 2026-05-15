@@ -35,6 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** Request attributes consumed by RequestLoggingFilter for the access log. */
+    public static final String ATTR_USER_ID = "aes.userId";
+    public static final String ATTR_USER_ROLE = "aes.userRole";
+
     private final JwtService jwtService;
 
     @Override
@@ -61,6 +65,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                // Stash on the request so the access log can render user info AFTER
+                // Spring Security has cleared the SecurityContext on the way out.
+                request.setAttribute(ATTR_USER_ID, userId);
+                request.setAttribute(ATTR_USER_ROLE, role);
             }
         } catch (Exception ex) {
             // Do not abort the filter chain — Spring Security will subsequently
