@@ -36,6 +36,7 @@ public class TicketActionService {
     private final WebSocketService webSocketService;
     private final AssignmentService assignmentService;
     private final AppProperties appProperties;
+    private final SmsService smsService;
 
     /**
      * Acknowledge ticket.
@@ -71,11 +72,13 @@ public class TicketActionService {
         webSocketService.broadcastTicketUpdate(ticketNumber, "ACKNOWLEDGED",
                 ticket.getCurrentLevel(), 0, agent != null ? agent.getName() : "CRM Agent");
 
-        // 4. Notify customer (line 677)
+        // 4. Notify customer (line 677) — in-app + best-effort SMS
         notificationService.notifyUser(ticket.getCustomer().getId(),
                 "Ticket " + ticketNumber + " Acknowledged",
                 "Your ticket has been acknowledged by our CRM team. We're working on it.",
                 NotificationType.TICKET_ASSIGNED, ticket.getId());
+        smsService.sendTicketSms(ticket.getCustomer().getPhoneNumber(),
+                "AES: ticket " + ticketNumber + " acknowledged. Our team is on it.");
 
         log.info("Ticket {} acknowledged by {}", ticketNumber, agentId);
         return ticketService.toFullResponse(ticket);
@@ -195,6 +198,8 @@ public class TicketActionService {
                 "Update on ticket " + ticket.getTicketNumber(),
                 "Your request has been escalated to our " + assignedTeam + " for faster resolution.",
                 NotificationType.TICKET_ESCALATED, ticket.getId());
+        smsService.sendTicketSms(ticket.getCustomer().getPhoneNumber(),
+                "AES: ticket " + ticket.getTicketNumber() + " escalated to " + assignedTeam + ".");
 
         notificationService.notifyUser(newAssignee.getId(),
                 "New escalated ticket",
@@ -237,11 +242,13 @@ public class TicketActionService {
         ticketService.createActivity(ticket, resolver, ActivityType.RESOLVED,
                 "Resolved. Notes: " + request.getResolutionNotes());
 
-        // 3. Notify customer (line 700)
+        // 3. Notify customer (line 700) — in-app + best-effort SMS
         notificationService.notifyUser(ticket.getCustomer().getId(),
                 "Ticket " + ticketNumber + " Resolved",
                 "Your ticket has been resolved. Please rate your experience.",
                 NotificationType.TICKET_RESOLVED, ticket.getId());
+        smsService.sendTicketSms(ticket.getCustomer().getPhoneNumber(),
+                "AES: ticket " + ticketNumber + " resolved. We'd love your feedback in the app.");
 
         // WebSocket update
         webSocketService.broadcastTicketUpdate(ticketNumber, "RESOLVED",

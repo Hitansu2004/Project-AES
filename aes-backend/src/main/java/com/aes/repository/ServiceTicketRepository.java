@@ -38,6 +38,33 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     // All tickets (admin)
     Page<ServiceTicket> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    /**
+     * Active (non-terminal) tickets currently held by a given assignee.
+     * Used by the admin team-workload view so each staff card shows
+     * exactly the tickets sitting in their inbox right now.
+     *
+     * Note: the assignee is mapped as a {@code @ManyToOne User currentAssignee}
+     * on the entity, so the HQL path is {@code t.currentAssignee.id}.
+     */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.currentAssignee.id = :assigneeId " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +
+           "ORDER BY t.createdAt DESC")
+    List<ServiceTicket> findActiveByAssignee(@Param("assigneeId") UUID assigneeId);
+
+    /** Active ticket count regardless of level — used for KPI rollups. */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countActive();
+
+    /** Active P1 ticket count — used for KPI rollups. */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.priority = com.aes.enums.Priority.P1 " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countActiveCritical();
+
+    /** Active ticket count for a specific level. */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.currentLevel = :level " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countActiveAtLevel(@Param("level") int level);
+
     // Escalation engine queries — CRITICAL
     @Query("SELECT t FROM ServiceTicket t WHERE t.currentLevel = 1 " +
            "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +

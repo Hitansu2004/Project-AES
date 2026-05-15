@@ -86,6 +86,39 @@ public class SmsService {
         }
     }
 
+    /**
+     * Best-effort transactional SMS for a ticket event (acknowledged / engineer
+     * assigned / resolved / escalated).
+     *
+     * <p>Always logs the message so the dev/demo console stays informative;
+     * only attempts a real send when Twilio is configured and demo mode is
+     * disabled. Failures never propagate.</p>
+     */
+    public void sendTicketSms(String phoneNumber, String message) {
+        if (phoneNumber == null || phoneNumber.isBlank() || message == null) {
+            return;
+        }
+        if (appProperties.isDemoMode() || !twilioInitialized) {
+            log.info("[sms-skip] {} — \"{}\"", phoneNumber, abbreviate(message));
+            return;
+        }
+        try {
+            Message sent = Message.creator(
+                    new PhoneNumber(phoneNumber),
+                    new PhoneNumber(fromNumber),
+                    message
+            ).create();
+            log.info("[sms-sent] {} sid={} \"{}\"", phoneNumber, sent.getSid(), abbreviate(message));
+        } catch (Exception ex) {
+            log.error("[sms-fail] {} \"{}\": {}", phoneNumber, abbreviate(message), ex.getMessage());
+        }
+    }
+
+    private static String abbreviate(String s) {
+        if (s == null) return "";
+        return s.length() <= 80 ? s : s.substring(0, 77) + "…";
+    }
+
     private boolean hasTwilioCredentials() {
         return accountSid != null && !accountSid.isBlank() && !accountSid.startsWith("AC" + "xxxxx")
                 && authToken != null && !authToken.isBlank()

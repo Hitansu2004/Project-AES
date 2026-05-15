@@ -14,8 +14,25 @@ import AppTopBar from '@/components/ui/AppTopBar';
 import PriorityBadge from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
 import EscalationLadder from '@/components/ui/EscalationLadder';
+import useStompTopic from '@/hooks/useStompTopic';
 import { slotLabel } from '@/lib/constants';
 import styles from './ticketDetail.module.css';
+
+const TICKET_EVENT_TONE = {
+  ACKNOWLEDGED: 'success',
+  ENGINEER_ASSIGNED: 'info',
+  ESCALATED_TO_L2: 'warning',
+  ESCALATED_TO_L3: 'warning',
+  RESOLVED: 'success',
+};
+
+const TICKET_EVENT_TEXT = {
+  ACKNOWLEDGED: 'CRM team acknowledged your ticket',
+  ENGINEER_ASSIGNED: 'An engineer has been assigned',
+  ESCALATED_TO_L2: 'Ticket escalated to Service Manager',
+  ESCALATED_TO_L3: 'Ticket escalated to Management',
+  RESOLVED: 'Your ticket has been resolved',
+};
 
 const PROBLEM_LABEL = {
   NOT_COOLING: 'Not Cooling',
@@ -87,6 +104,21 @@ export default function TicketDetailPage({ params }) {
     return () => { cancelled = true; clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketNumber, user]);
+
+  // Live updates — refresh on any ticket-level WS event and toast meaningful ones
+  useStompTopic(
+    user?.role === 'CUSTOMER' ? `/topic/tickets/${ticketNumber}` : null,
+    (msg) => {
+      const text = TICKET_EVENT_TEXT[msg?.event];
+      if (text) {
+        const tone = TICKET_EVENT_TONE[msg.event] || 'info';
+        const fn = tone === 'warning' ? toast.info : toast[tone];
+        (fn || toast.info)(text);
+      }
+      ticketsApi.get(ticketNumber).then(setTicket).catch(() => {});
+    },
+    [ticketNumber],
+  );
 
   const escalated = ticket && (ticket.currentLevel || 1) > 1;
   const resolved = ticket && (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED');

@@ -1,6 +1,7 @@
 package com.aes.dto.request;
 
 import com.aes.enums.AcType;
+import com.aes.enums.PropertyType;
 import com.aes.enums.TimeSlot;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -35,6 +36,14 @@ public class CreateInstallationRequest {
 
     @Size(max = 500, message = "Property address must be at most 500 characters")
     private String propertyAddress;
+
+    /**
+     * Building type (Residential / Commercial / Industrial / Hospital / Hotel /
+     * Institutional). Optional — when supplied for a free-form address,
+     * the backend annotates the request notes so the design / sales team
+     * sees it in the CRM list.
+     */
+    private PropertyType propertyType;
 
     @NotNull(message = "AC type is required")
     private AcType acType;

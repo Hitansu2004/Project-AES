@@ -24,6 +24,7 @@
   .header { display: none; }
 }
 .iconBtn {
+  position: relative;
   width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-full);
@@ -31,6 +32,23 @@
   transition: background var(--transition-fast);
 }
 .iconBtn:hover { background: var(--surface-container); }
+.iconBadge {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--surface);
+}
 
 .titleRow {
   display: flex;

@@ -8,6 +8,7 @@ import {
   Bell, ChevronRight, Inbox, Filter, Star, ArrowRight, Sparkles,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import { tickets as ticketsApi } from '@/lib/api';
 import PriorityBadge from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
@@ -75,6 +76,7 @@ function ticketTitle(t) {
 export default function TicketsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { unread } = useNotifications();
   const [ticketList, setTicketList] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -130,9 +132,12 @@ export default function TicketsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <Logo />
-        <button type="button" className={styles.iconBtn} aria-label="Notifications">
+        <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
           <Bell size={20} />
-        </button>
+          {unread > 0 && (
+            <span className={styles.iconBadge}>{unread > 99 ? '99+' : unread}</span>
+          )}
+        </Link>
       </header>
 
       <div className={styles.titleRow}>

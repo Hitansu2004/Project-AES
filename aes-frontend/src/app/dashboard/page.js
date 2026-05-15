@@ -9,6 +9,7 @@ import {
   CalendarDays, ArrowRight,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import {
   dashboard as dashboardApi,
   amc as amcApi,
@@ -72,6 +73,7 @@ const stagger = {
 
 export default function CustomerDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { unread } = useNotifications();
   const router = useRouter();
   const [dash, setDash] = useState(null);
   const [contracts, setContracts] = useState([]);
@@ -137,7 +139,7 @@ export default function CustomerDashboard() {
 
   return (
     <div className={styles.shell}>
-      <TopBar userName={user.name} unread={0} />
+      <TopBar userName={user.name} unread={unread} />
 
       <motion.main
         className={styles.main}
@@ -305,10 +307,14 @@ function TopBar({ userName, unread }) {
         <span className={styles.brandText}>Arial Engineering</span>
       </div>
       <div className={styles.topRight}>
-        <button className={styles.bellButton} aria-label="Notifications">
+        <Link href="/notifications" className={styles.bellButton} aria-label="Notifications">
           <Bell size={20} />
-          {unread > 0 && <span className={styles.bellBadge}>{unread}</span>}
-        </button>
+          {unread > 0 && (
+            <span className={styles.bellBadge}>
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+        </Link>
         <div className={styles.avatar}>
           {(userName || 'U').charAt(0).toUpperCase()}
         </div>

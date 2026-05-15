@@ -1,5 +1,6 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { ToastProvider } from '@/components/ui/Toast';
 import Shell from '@/components/Shell';
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
           <ToastProvider>
-            <Shell>{children}</Shell>
+            <NotificationProvider>
+              <Shell>{children}</Shell>
+            </NotificationProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

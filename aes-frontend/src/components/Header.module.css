@@ -83,6 +83,36 @@
   gap: var(--space-3);
 }
 
+.bellBtn {
+  position: relative;
+  width: 38px; height: 38px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-primary);
+  background: rgba(255, 255, 255, 0.08);
+  transition: background var(--transition-fast);
+}
+.bellBtn:hover { background: rgba(255, 255, 255, 0.16); }
+.bellBadge {
+  position: absolute;
+  top: 2px; right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--primary);
+}
+
 .greeting {
   font-size: 13px;
   opacity: 0.8;

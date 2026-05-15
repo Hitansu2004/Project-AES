@@ -10,6 +10,7 @@ import {
   X, MapPin, User,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import {
   tickets as ticketsApi,
   ticketActions,
@@ -19,6 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
 import useSlaCountdown, { formatRemaining } from '@/hooks/useSlaCountdown';
+import useStompTopic from '@/hooks/useStompTopic';
 import Logo from '@/components/ui/Logo';
 import styles from './crm.module.css';
 
@@ -65,6 +67,7 @@ function relMin(stamp) {
 export default function CrmDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { unread } = useNotifications();
   const toast = useToast();
 
   const [view, setView] = useState('inbox');
@@ -112,6 +115,17 @@ export default function CrmDashboard() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Live: new tickets land in the inbox immediately
+  useStompTopic(
+    user?.role === 'CRM_AGENT' || user?.role === 'ADMIN' ? '/topic/crm/inbox' : null,
+    (msg) => {
+      if (msg?.event === 'NEW_TICKET') {
+        toast.info(`New ticket ${msg.ticketNumber} • ${msg.priority}`);
+      }
+      fetchAll();
+    },
+  );
 
   // Filtered list
   const visibleTickets = useMemo(() => {
@@ -283,10 +297,10 @@ export default function CrmDashboard() {
             />
           </div>
           <span className={styles.agentBadge}>Agent: {user.name?.split(' ')[0] || 'Agent'}</span>
-          <button type="button" className={styles.iconBtn} aria-label="Notifications">
+          <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
             <Bell size={18} />
-            {counts.escalated > 0 && <span className={styles.notifDot}>{counts.escalated}</span>}
-          </button>
+            {unread > 0 && <span className={styles.notifDot}>{unread > 99 ? '99+' : unread}</span>}
+          </Link>
           <button type="button" className={styles.iconBtn} onClick={logout} aria-label="Sign out">
             <LogOut size={18} />
           </button>

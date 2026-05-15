@@ -6,6 +6,7 @@ const STORAGE_KEY = 'aes_install_draft_v1';
 
 /** Steps in the install wizard. */
 export const INSTALL_STEPS = [
+  { key: 'space',    label: 'Space' },
   { key: 'ac-type',  label: 'AC Type' },
   { key: 'brand',    label: 'Brand & Model' },
   { key: 'property', label: 'Property & Rooms' },
@@ -16,6 +17,7 @@ export const INSTALL_STEPS = [
 const EMPTY_ROOM = { roomType: 'Master Bedroom', sizeSqft: '', acType: '' };
 
 const DEFAULT_STATE = {
+  buildingType: '',
   acType: '',
   brand: '',
   modelNumber: '',

@@ -106,9 +106,13 @@ public class TicketResponse {
     @AllArgsConstructor
     public static class EscalationLogResponse {
         private UUID id;
+        /** Convenience for dashboards/log tables. */
+        private String ticketNumber;
         private Integer fromLevel;
         private Integer toLevel;
         private UUID fromUserId;
+        /** Resolved display name of the user who triggered the escalation. */
+        private String fromUserName;
         private String reason;
         private String escalationType;
         private OffsetDateTime escalatedAt;

@@ -218,3 +218,11 @@ export const dashboard = {
   crm: () => request('/dashboard/crm'),
   escalation: () => request('/dashboard/escalation'),
 };
+
+// ─── Notifications ──────────────────────────────────────────
+export const notifications = {
+  list: (limit = 50) => request(`/notifications?limit=${limit}`),
+  unreadCount: () => request('/notifications/unread-count'),
+  markRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllRead: () => request('/notifications/read-all', { method: 'POST' }),
+};

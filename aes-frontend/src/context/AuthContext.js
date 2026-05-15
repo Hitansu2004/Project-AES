@@ -8,6 +8,7 @@ import {
   clearAuthTokens,
   setAuthFailureHandler,
 } from '@/lib/api';
+import { reconnectStompClient } from '@/lib/websocket/stompClient';
 
 const AuthContext = createContext(null);
 
@@ -70,6 +71,7 @@ export function AuthProvider({ children }) {
     const data = await authApi.verifyOtp(phoneNumber, otp);
     persistTokens(data.accessToken, data.refreshToken);
     setUser(data.user || null);
+    reconnectStompClient();
     return data;
   }, []);
 
@@ -77,6 +79,7 @@ export function AuthProvider({ children }) {
     const data = await authApi.staffLogin(phoneNumber, password);
     persistTokens(data.accessToken, data.refreshToken);
     setUser(data.user || null);
+    reconnectStompClient();
     return data;
   }, []);
 
@@ -88,6 +91,7 @@ export function AuthProvider({ children }) {
     } catch { /* ignore */ }
     clearAuthTokens();
     setUser(null);
+    reconnectStompClient();
     router.replace('/login');
   }, [router]);
 

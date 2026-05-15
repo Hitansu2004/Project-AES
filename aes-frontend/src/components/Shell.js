@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import NotificationToastBridge from '@/components/NotificationToastBridge';
 
 /**
  * Routes that should render fullscreen with no global chrome (Header/BottomNav).
@@ -17,6 +18,8 @@ const NO_CHROME_PREFIXES = [
   '/services/select',
   '/services/error-codes',
   '/crm',
+  '/admin',
+  '/notifications',
 ];
 
 /** /tickets is the list (chrome on); /tickets/{n} is detail (chrome off). */
@@ -37,6 +40,7 @@ export default function Shell({ children }) {
       {!hide && <Header />}
       <main>{children}</main>
       {!hide && <BottomNav />}
+      <NotificationToastBridge />
     </>
   );
 }

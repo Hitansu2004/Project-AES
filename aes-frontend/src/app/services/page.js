@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Snowflake, Wrench, ShieldCheck, ChevronRight, Phone,
+  Snowflake, Wrench, ShieldCheck, ChevronRight, Phone, LayoutGrid,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { AES_BRANDS } from '@/lib/aesCatalog';
 import AppTopBar from '@/components/ui/AppTopBar';
 import styles from './services.module.css';
 
@@ -41,6 +42,16 @@ const OPTIONS = [
     eyebrow: 'Maintenance',
     Icon: ShieldCheck,
     accent: 'amc',
+  },
+  {
+    id: 'catalog',
+    href: '/services/products',
+    title: 'Browse Products',
+    desc: 'VRF, chillers, ductable, cassettes, AHU, ventilation — see the full range.',
+    chips: ['VRF', 'Chillers', 'Cassette', 'AHU'],
+    eyebrow: 'Catalog',
+    Icon: LayoutGrid,
+    accent: 'catalog',
   },
 ];
 
@@ -117,8 +128,18 @@ export default function ServicesChooserPage() {
         ))}
       </motion.div>
 
-      <a href="tel:+914023540000" className={styles.helpLine}>
-        <Phone size={14} /> Not sure? Call us at <strong>+91 40-2354-XXXX</strong>
+      <section className={styles.brandStrip} aria-label="Authorised partners">
+        <span className={styles.brandLabel}>Authorised dealer for</span>
+        <div className={styles.brandLogos}>
+          {AES_BRANDS.map((b) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={b.name} src={b.logo} alt={b.name} title={b.name} loading="lazy" />
+          ))}
+        </div>
+      </section>
+
+      <a href="tel:+914066131555" className={styles.helpLine}>
+        <Phone size={14} /> Not sure? Call us at <strong>+91 40-6613-1555</strong>
       </a>
     </div>
   );

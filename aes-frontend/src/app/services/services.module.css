@@ -75,6 +75,7 @@
 .install { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); }
 .service { background: linear-gradient(135deg, var(--secondary-strong) 0%, var(--secondary) 70%, var(--secondary-light) 130%); }
 .amc     { background: linear-gradient(135deg, var(--tertiary-strong) 0%, var(--tertiary) 100%); }
+.catalog { background: linear-gradient(135deg, #0f3a52 0%, #1f6f99 60%, #34a3c8 130%); }
 
 .cardDeco {
   position: absolute;
@@ -161,3 +162,45 @@
   text-decoration: none;
 }
 .helpLine strong { color: var(--secondary); font-weight: 700; }
+
+/* Authorised dealer brand strip */
+.brandStrip {
+  margin: 28px var(--page-pad-x) 0;
+  max-width: var(--max-width-content);
+  padding: 16px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .brandStrip { margin-left: auto; margin-right: auto; }
+}
+.brandLabel {
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}
+.brandLogos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+@media (min-width: 720px) {
+  .brandLogos { grid-template-columns: repeat(5, 1fr); }
+}
+.brandLogos img {
+  width: 100%;
+  height: 48px;
+  object-fit: contain;
+  filter: saturate(0.85);
+  opacity: 0.85;
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+.brandLogos img:hover { opacity: 1; filter: saturate(1.1); }

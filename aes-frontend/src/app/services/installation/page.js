@@ -15,14 +15,16 @@ import { properties as propertiesApi, installations as installationsApi } from '
 import {
   AC_TYPES, BRANDS, TONNAGES, ENERGY_RATINGS, SUGGESTED_MODELS,
   ROOM_TYPES, TIME_SLOTS, slotLabel, acTypeLabel,
+  modelDiscount, modelEmi,
 } from '@/lib/constants';
+import { BUILDING_TYPES, AC_TYPE_IMAGES, BRAND_LOGOS } from '@/lib/aesCatalog';
 import AppTopBar from '@/components/ui/AppTopBar';
 import StepIndicator from '@/components/ui/StepIndicator';
 import DayPicker from '@/components/ui/DayPicker';
 import AcTypeIcon from '@/components/ui/AcTypeIcon';
 import styles from './installation.module.css';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 const SLOT_ICONS = { MORNING: Sun, AFTERNOON: CloudSun, EVENING: Moon };
 
 const stepVariants = {
@@ -74,27 +76,29 @@ export default function InstallationWizard() {
   };
 
   // ─── Validations per step ──────────────────────────────
-  const step1Valid = !!state.acType;
-  const step2Valid = !!state.brand;
-  const step3Valid = useMemo(() => {
+  const step1Valid = !!state.buildingType;
+  const step2Valid = !!state.acType;
+  const step3Valid = !!state.brand;
+  const step4Valid = useMemo(() => {
     if (!state.propertyId && !state.propertyAddress?.trim()) return false;
     if (state.rooms.length === 0) return false;
     return state.rooms.every((r) =>
       r.roomType && r.acType && r.sizeSqft && Number(r.sizeSqft) > 0
     );
   }, [state]);
-  const step4Valid = !!state.scheduledDate && !!state.scheduledSlot;
+  const step5Valid = !!state.scheduledDate && !!state.scheduledSlot;
 
-  const stepValid = [step1Valid, step2Valid, step3Valid, step4Valid][step - 1];
+  const stepValid = [step1Valid, step2Valid, step3Valid, step4Valid, step5Valid][step - 1];
 
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!step4Valid) return;
+    if (!step5Valid) return;
     setSubmitting(true);
     try {
       const payload = {
         propertyId: state.propertyId || null,
         propertyAddress: !state.propertyId ? state.propertyAddress?.trim() || null : null,
+        propertyType: state.buildingType || null,
         acType: state.acType,
         brand: state.brand || null,
         modelNumber: state.modelNumber || null,
@@ -149,9 +153,9 @@ export default function InstallationWizard() {
               exit="exit"
               className={styles.stepBody}
             >
-              <Step1
-                value={state.acType}
-                onChange={(v) => set({ acType: v })}
+              <Step1Space
+                value={state.buildingType}
+                onChange={(v) => set({ buildingType: v })}
               />
             </motion.section>
           )}
@@ -166,13 +170,31 @@ export default function InstallationWizard() {
               exit="exit"
               className={styles.stepBody}
             >
-              <Step2 state={state} set={set} />
+              <Step1
+                value={state.acType}
+                buildingType={state.buildingType}
+                onChange={(v) => set({ acType: v })}
+              />
             </motion.section>
           )}
 
           {step === 3 && (
             <motion.section
               key="s3"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              className={styles.stepBody}
+            >
+              <Step2 state={state} set={set} />
+            </motion.section>
+          )}
+
+          {step === 4 && (
+            <motion.section
+              key="s4"
               custom={direction}
               variants={stepVariants}
               initial="initial"
@@ -193,9 +215,9 @@ export default function InstallationWizard() {
             </motion.section>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <motion.section
-              key="s4"
+              key="s5"
               custom={direction}
               variants={stepVariants}
               initial="initial"
@@ -216,10 +238,10 @@ export default function InstallationWizard() {
 
       <div className={styles.actionBar}>
         <div className={styles.actionInner}>
-          {step === 4 ? (
+          {step === TOTAL_STEPS ? (
             <button
               className="btn btn-primary btn-full btn-lg"
-              disabled={!step4Valid || submitting}
+              disabled={!step5Valid || submitting}
               onClick={handleSubmit}
             >
               {submitting ? <span className="spinner spinner-sm" /> : (
@@ -241,14 +263,56 @@ export default function InstallationWizard() {
   );
 }
 
-/* ─── Step 1 — AC Type ────────────────────────────────── */
-function Step1({ value, onChange }) {
+/* ─── Step 1 — Space (residential / commercial / industrial / …) ── */
+function Step1Space({ value, onChange }) {
   return (
     <>
-      <Heading title="What type of AC do you need?" sub="Choose based on your space requirements." />
+      <Heading
+        title="What kind of space is this for?"
+        sub="So we can match the right team and equipment for your project."
+      />
+      <div className={styles.spaceGrid}>
+        {BUILDING_TYPES.map((b) => {
+          const selected = value === b.value;
+          return (
+            <motion.button
+              key={b.value}
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onChange(b.value)}
+              className={`${styles.spaceCard} ${selected ? styles.spaceSelected : ''}`}
+            >
+              {selected && (
+                <span className={styles.checkBadge}><Check size={14} strokeWidth={3} /></span>
+              )}
+              <div className={styles.spaceMedia}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={b.image} alt={b.label} loading="lazy" />
+              </div>
+              <div className={styles.spaceText}>
+                <h4 className={styles.spaceName}>{b.label}</h4>
+                <p className={styles.spaceDesc}>{b.description}</p>
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/* ─── Step 2 — AC Type ────────────────────────────────── */
+function Step1({ value, buildingType, onChange }) {
+  const sub = buildingType
+    ? 'Tap a system to pick the unit type. Photos are reference shots from arialengineering.com.'
+    : 'Choose based on your space requirements.';
+  return (
+    <>
+      <Heading title="What type of AC do you need?" sub={sub} />
       <div className={styles.acTypeGrid}>
         {AC_TYPES.map((t) => {
           const selected = value === t.value;
+          const photo = AC_TYPE_IMAGES[t.value];
           return (
             <motion.button
               key={t.value}
@@ -260,8 +324,13 @@ function Step1({ value, onChange }) {
               {selected && (
                 <span className={styles.checkBadge}><Check size={14} strokeWidth={3} /></span>
               )}
-              <div className={styles.acTypeIcon}>
-                <AcTypeIcon type={t.value} size={22} />
+              <div className={styles.acTypePhoto}>
+                {photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photo} alt={t.label} loading="lazy" />
+                ) : (
+                  <AcTypeIcon type={t.value} size={28} />
+                )}
               </div>
               <div>
                 <h4 className={styles.acTypeName}>{t.label}</h4>
@@ -276,38 +345,72 @@ function Step1({ value, onChange }) {
   );
 }
 
-/* ─── Step 2 — Brand & Model ──────────────────────────── */
+/* ─── Step 3 — Brand & Model ──────────────────────────── */
+const inrFmt = (n) => '₹' + Number(n).toLocaleString('en-IN');
+
 function Step2({ state, set }) {
-  const filteredModels = useMemo(
-    () => SUGGESTED_MODELS.filter(
+  // Models filtered by brand + tonnage (energy rating is a soft filter so we
+  // don't end up with 0 results — we just nudge the matching star rating).
+  const filteredModels = useMemo(() => {
+    if (!state.brand || state.brand === 'Other') return [];
+    const base = SUGGESTED_MODELS.filter(
       (m) => m.brand === state.brand && m.tonnage === state.tonnage
-    ),
-    [state.brand, state.tonnage]
-  );
+    );
+    if (base.length === 0) return [];
+    // Sort: matching star rating first, then offer price ascending.
+    return [...base].sort((a, b) => {
+      const aMatch = a.rating === state.energyRating ? 0 : 1;
+      const bMatch = b.rating === state.energyRating ? 0 : 1;
+      if (aMatch !== bMatch) return aMatch - bMatch;
+      return a.offer - b.offer;
+    });
+  }, [state.brand, state.tonnage, state.energyRating]);
 
   return (
     <>
+      <Heading
+        title="Pick a brand & model"
+        sub="Select a system you want installed — or skip the model and let our engineer recommend during the site visit."
+      />
+
       <SectionLabel>Select Brand</SectionLabel>
       <div className={styles.brandGrid}>
         {BRANDS.map((b) => {
           const selected = state.brand === b;
+          const logo = BRAND_LOGOS[b];
+          const initials = b
+            .split(' ')
+            .map((w) => w[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
           return (
             <button
               key={b}
               type="button"
-              className={`${styles.brandTile} ${selected ? styles.brandSelected : ''}`}
+              className={`${styles.brandTile} ${selected ? styles.brandSelected : ''} ${logo ? styles.brandTileWithLogo : ''}`}
               onClick={() => set({ brand: b, modelNumber: '' })}
             >
               {selected && (
                 <span className={styles.brandCheck}><Check size={12} strokeWidth={3} /></span>
               )}
-              <span>{b}</span>
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt={b} className={styles.brandLogo} loading="lazy" />
+              ) : (
+                <span className={styles.brandInitials} aria-hidden>{initials}</span>
+              )}
+              <span className={styles.brandName}>{b}</span>
             </button>
           );
         })}
       </div>
-      <button type="button" className={styles.linkButton} onClick={() => set({ brand: 'Other' })}>
-        <Plus size={14} /> Other brand
+      <button
+        type="button"
+        className={`${styles.linkButton} ${state.brand === 'Other' ? styles.linkButtonActive : ''}`}
+        onClick={() => set({ brand: state.brand === 'Other' ? '' : 'Other', modelNumber: '' })}
+      >
+        <Plus size={14} /> Other brand — engineer will recommend
       </button>
 
       <SectionLabel>Capacity (Tonnage)</SectionLabel>
@@ -345,45 +448,110 @@ function Step2({ state, set }) {
 
       {state.brand && state.brand !== 'Other' && (
         <>
-          <SectionLabel
-            right={filteredModels.length > 0 ? <span className={styles.swipeHint}>Swipe to view more</span> : null}
-          >
-            Suggested Models
+          <SectionLabel right={
+            filteredModels.length > 0
+              ? <span className={styles.modelCount}>{filteredModels.length} model{filteredModels.length === 1 ? '' : 's'}</span>
+              : null
+          }>
+            Suggested Models · {state.brand} · {state.tonnage}T
           </SectionLabel>
+
           {filteredModels.length === 0 ? (
-            <p className={styles.muted}>
-              No suggested models for {state.brand} {state.tonnage}T. Our engineer will recommend the best fit during the site visit.
-            </p>
+            <div className={styles.emptyModelsCard}>
+              <Sparkles size={18} />
+              <div>
+                <h4>No catalog match for this combo</h4>
+                <p>Try a nearby tonnage or rating — or continue and our engineer will suggest the best fit during the site visit.</p>
+              </div>
+            </div>
           ) : (
-            <div className={styles.modelScroll}>
-              {filteredModels.map((m) => {
-                const selected = state.modelNumber === m.model;
+            <motion.div
+              className={styles.modelGrid}
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+              initial="hidden"
+              animate="show"
+            >
+              {filteredModels.map((mdl) => {
+                const selected = state.modelNumber === mdl.model;
+                const discount = modelDiscount(mdl);
+                const emi = modelEmi(mdl);
+                const isInverter = mdl.features.some((f) => /inverter/i.test(f));
+                const logo = BRAND_LOGOS[mdl.brand];
                 return (
-                  <div key={m.model} className={`${styles.modelCard} ${selected ? styles.modelCardSelected : ''}`}>
-                    <span className={styles.modelEyebrow}>{m.model}</span>
-                    <h4 className={styles.modelTitle}>
-                      {m.brand} {m.tonnage}T {m.features.includes('Inverter') ? 'Inverter' : ''} Split AC
-                    </h4>
-                    <span className={styles.modelPrice}>{m.price} <span className={styles.modelPriceSub}>onwards</span></span>
-                    <div className={styles.modelFeatures}>
-                      {m.features.map((f) => (
-                        <span key={f} className={styles.modelFeature}>{f}</span>
-                      ))}
+                  <motion.div
+                    key={mdl.model}
+                    variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+                    className={`${styles.modelCard} ${selected ? styles.modelCardSelected : ''}`}
+                  >
+                    <div className={styles.modelMedia}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={mdl.photo} alt={`${mdl.brand} ${mdl.model}`} loading="lazy" />
+                      <div className={styles.modelBadges}>
+                        <span className={styles.modelStarBadge}>
+                          {Array.from({ length: mdl.rating }).map((_, i) => (
+                            <span key={i}>★</span>
+                          ))}
+                        </span>
+                        {isInverter && <span className={styles.modelInvBadge}>Inverter</span>}
+                      </div>
+                      {discount > 0 && (
+                        <span className={styles.modelOffBadge}>{discount}% OFF</span>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      className={`${styles.modelButton} ${selected ? styles.modelButtonSelected : ''}`}
-                      onClick={() => set({ modelNumber: selected ? '' : m.model })}
-                    >
-                      {selected ? (
-                        <><Check size={14} strokeWidth={3} /> Selected</>
-                      ) : 'Select Model'}
-                    </button>
-                  </div>
+
+                    <div className={styles.modelBody}>
+                      <div className={styles.modelHead}>
+                        {logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={logo} alt={mdl.brand} className={styles.modelBrandLogo} loading="lazy" />
+                        ) : (
+                          <span className={styles.modelBrandText}>{mdl.brand}</span>
+                        )}
+                        <span className={styles.modelEyebrow}>{mdl.model}</span>
+                      </div>
+
+                      <h4 className={styles.modelTitle}>
+                        {mdl.brand} {mdl.tonnage}T {mdl.rating}-Star {isInverter ? 'Inverter' : ''} Split AC
+                      </h4>
+
+                      <div className={styles.modelPriceRow}>
+                        <div>
+                          <span className={styles.modelOffer}>{inrFmt(mdl.offer)}</span>
+                          {mdl.mrp > mdl.offer && (
+                            <span className={styles.modelMrp}>{inrFmt(mdl.mrp)}</span>
+                          )}
+                        </div>
+                        <span className={styles.modelEmi}>EMI ~ {inrFmt(emi)}/mo</span>
+                      </div>
+
+                      <div className={styles.modelFeatures}>
+                        {mdl.features.slice(0, 3).map((f) => (
+                          <span key={f} className={styles.modelFeature}>{f}</span>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`${styles.modelButton} ${selected ? styles.modelButtonSelected : ''}`}
+                        onClick={() => set({
+                          modelNumber: selected ? '' : mdl.model,
+                          energyRating: selected ? state.energyRating : mdl.rating,
+                        })}
+                      >
+                        {selected ? (
+                          <><Check size={14} strokeWidth={3} /> Selected</>
+                        ) : 'Select this model'}
+                      </button>
+                    </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
+
+          <p className={styles.modelDisclaimer}>
+            Indicative MRP / online-offer prices · final quote shared after the free site visit.
+          </p>
         </>
       )}
     </>
@@ -581,7 +749,7 @@ function RoomCard({ index, room, canRemove, onChange, onRemove, defaultAcType })
   );
 }
 
-/* ─── Step 4 — Schedule + Confirm ─────────────────────── */
+/* ─── Step 5 — Schedule + Confirm ─────────────────────── */
 function Step4({ state, set, propertyList, onEdit }) {
   const property = propertyList.find((p) => p.id === state.propertyId);
   const equipment = [
@@ -590,6 +758,8 @@ function Step4({ state, set, propertyList, onEdit }) {
     acTypeLabel(state.acType),
     state.modelNumber,
   ].filter(Boolean).join(' · ');
+  const spaceLabel = BUILDING_TYPES.find((b) => b.value === state.buildingType)?.label
+    || 'Not specified';
 
   const scheduledLabel = state.scheduledDate
     ? new Date(state.scheduledDate).toLocaleDateString('en-IN', {
@@ -641,9 +811,14 @@ function Step4({ state, set, propertyList, onEdit }) {
           <h3>Installation Summary</h3>
         </div>
         <SummaryRow
+          label="Space"
+          value={spaceLabel}
+          onEdit={() => onEdit(1)}
+        />
+        <SummaryRow
           label="Equipment"
           value={equipment || 'Not specified'}
-          onEdit={() => onEdit(2)}
+          onEdit={() => onEdit(3)}
         />
         <SummaryRow
           label="Location"
@@ -654,7 +829,7 @@ function Step4({ state, set, propertyList, onEdit }) {
                 ? `${state.rooms.length} room${state.rooms.length === 1 ? '' : 's'} @ new address`
                 : 'No address selected'
           }
-          onEdit={() => onEdit(3)}
+          onEdit={() => onEdit(4)}
         />
         <SummaryRow
           label="Scheduled visit"

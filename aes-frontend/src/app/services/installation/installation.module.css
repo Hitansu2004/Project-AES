@@ -92,11 +92,101 @@
 }
 .linkButton:hover { color: var(--secondary-strong); }
 
-/* ─── Step 1 — AC type grid ─────────────────────────────── */
+/* ─── Step 1 — Space (Residential / Commercial / Industrial / …) ── */
+.spaceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .spaceGrid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+}
+
+.spaceCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-container-lowest);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  text-align: left;
+  transition: border 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.spaceCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.spaceSelected {
+  border-color: var(--secondary);
+  background: var(--secondary-soft);
+  box-shadow: var(--shadow);
+}
+
+.spaceMedia {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.spaceMedia img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  filter: saturate(1.05);
+}
+
+.spaceText {
+  padding: 12px 14px 14px;
+}
+.spaceName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+.spaceDesc {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+}
+
+/* ─── Step 2 — AC type grid ─────────────────────────────── */
 .acTypeGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .acTypeGrid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media (min-width: 1024px) {
+  .acTypeGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.acTypePhoto {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--surface-container);
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.acTypePhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.acTypeSelected .acTypePhoto {
+  background: rgba(255,255,255,0.7);
 }
 
 .acTypeCard {
@@ -172,36 +262,88 @@
   justify-content: center;
 }
 
-/* ─── Step 2 — Brand grid ───────────────────────────────── */
+/* ─── Step 3 — Brand grid ───────────────────────────────── */
 .brandGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .brandGrid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 768px) {
+  .brandGrid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+}
+@media (min-width: 1100px) {
+  .brandGrid { grid-template-columns: repeat(6, 1fr); }
 }
 
 .brandTile {
   position: relative;
-  height: 72px;
-  border-radius: 12px;
+  min-height: 84px;
+  border-radius: 14px;
   background: var(--surface-container-lowest);
   border: 1.5px solid var(--border-light);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
+  color: var(--on-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 12px 10px;
+  transition: all 200ms ease;
+}
+.brandTile:hover {
+  border-color: var(--secondary-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.brandSelected {
+  background: var(--secondary-soft);
+  color: var(--secondary-strong);
+  border-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+.brandSelected .brandLogo { filter: none; opacity: 1; }
+
+.brandLogo {
+  width: 100%;
+  max-width: 84px;
+  height: 32px;
+  object-fit: contain;
+  filter: saturate(0.85);
+  opacity: 0.9;
+  transition: filter 200ms ease, opacity 200ms ease;
+}
+
+.brandTileWithLogo .brandName {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.brandInitials {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-container);
   color: var(--primary-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 4px;
-  transition: all 200ms ease;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
 }
-.brandTile:hover { border-color: var(--secondary-light); }
-.brandSelected {
-  background: var(--primary-dark);
+.brandSelected .brandInitials {
+  background: var(--secondary);
   color: #fff;
-  border-color: var(--primary-dark);
-  box-shadow: var(--shadow-sm);
 }
+
 .brandCheck {
   position: absolute;
   top: 6px; right: 6px;
@@ -213,6 +355,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.linkButtonActive {
+  color: var(--secondary-strong);
+  font-weight: 700;
 }
 
 /* ─── Step 2 — Tonnage / energy chips ───────────────────── */
@@ -275,76 +422,204 @@
   color: #fbbf24;
 }
 
-/* ─── Step 2 — Suggested model carousel ─────────────────── */
-.modelScroll {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  margin: 0 -20px;
-  padding: 4px 20px 6px;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
+/* ─── Step 3 — Suggested models grid ────────────────────── */
+.modelCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--secondary-strong);
+  background: var(--secondary-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
 }
-.modelScroll::-webkit-scrollbar { display: none; }
+
+.emptyModelsCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px dashed var(--outline-variant);
+  border-radius: 14px;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+}
+.emptyModelsCard h4 { font-size: 14px; color: var(--on-surface); margin-bottom: 4px; }
+.emptyModelsCard p  { font-size: 12.5px; line-height: 1.45; }
+
+.modelGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .modelGrid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+@media (min-width: 1100px) {
+  .modelGrid { grid-template-columns: repeat(3, 1fr); }
+}
 
 .modelCard {
-  flex: 0 0 240px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px;
   background: var(--surface-container-lowest);
   border: 1.5px solid var(--border-light);
-  border-radius: 14px;
-  scroll-snap-align: start;
-  transition: border 200ms ease, transform 200ms ease;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border 220ms ease, transform 220ms ease, box-shadow 220ms ease;
 }
-.modelCard:hover { transform: translateY(-2px); border-color: var(--secondary-light); }
+.modelCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--secondary-light);
+  box-shadow: var(--shadow);
+}
 .modelCardSelected {
   border-color: var(--secondary);
   background: var(--secondary-soft);
+  box-shadow: var(--shadow);
 }
 
-.modelEyebrow {
-  font-size: 10px;
+.modelMedia {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  background: linear-gradient(135deg, #f3f7fb 0%, #e6edf5 100%);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modelMedia img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(15, 58, 82, 0.18));
+}
+
+.modelBadges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+}
+.modelStarBadge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #f59e0b;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.10em;
-  color: var(--secondary);
+  letter-spacing: 1px;
+  box-shadow: var(--shadow-sm);
+}
+.modelInvBadge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--primary-dark);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
+.modelOffBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f43f5e, #f97316);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.modelBody {
+  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.modelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.modelBrandLogo {
+  height: 22px;
+  max-width: 88px;
+  object-fit: contain;
+}
+.modelBrandText {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: 0.3px;
+}
+.modelEyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+}
+
 .modelTitle {
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.35;
   color: var(--on-surface);
 }
-.modelPrice {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--primary-dark);
+
+.modelPriceRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
 }
-.modelPriceSub {
-  font-size: 11px;
+.modelOffer {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  letter-spacing: -0.01em;
+}
+.modelMrp {
+  margin-left: 8px;
+  font-size: 12px;
   color: var(--on-surface-variant);
+  text-decoration: line-through;
   font-weight: 500;
 }
-.modelFeatures { display: flex; flex-wrap: wrap; gap: 4px; }
+.modelEmi {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  text-align: right;
+}
+
+.modelFeatures { display: flex; flex-wrap: wrap; gap: 6px; }
 .modelFeature {
-  padding: 2px 8px;
+  padding: 3px 8px;
   background: var(--surface-container);
   color: var(--primary-dark);
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
 }
+
 .modelButton {
-  margin-top: 6px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  margin-top: auto;
+  padding: 10px 14px;
+  border-radius: 12px;
   border: 1.5px solid var(--secondary);
   background: transparent;
-  color: var(--secondary);
+  color: var(--secondary-strong);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -355,6 +630,14 @@
 .modelButtonSelected {
   background: var(--secondary);
   color: #fff;
+  border-color: var(--secondary);
+}
+
+.modelDisclaimer {
+  margin-top: 12px;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--on-surface-variant);
 }
 
 /* ─── Step 3 — Segment toggle ───────────────────────────── */

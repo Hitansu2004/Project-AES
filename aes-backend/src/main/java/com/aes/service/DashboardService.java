@@ -2,7 +2,9 @@ package com.aes.service;
 
 import com.aes.dto.response.*;
 import com.aes.entity.*;
+import com.aes.enums.Priority;
 import com.aes.enums.TicketStatus;
+import com.aes.enums.UserRole;
 import com.aes.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Dashboard Service — analytics endpoints.
@@ -36,6 +40,7 @@ public class DashboardService {
     private final TicketEscalationLogRepository escalationLogRepository;
     private final ServiceTicketService ticketService;
     private final PropertyService propertyService;
+    private final UserRepository userRepository;
 
     /**
      * Customer dashboard (lines 856-866).
@@ -133,7 +138,15 @@ public class DashboardService {
     }
 
     /**
-     * Escalation dashboard (lines 880-892).
+     * Escalation / Admin "eagle-view" dashboard (lines 880-892).
+     *
+     * Beyond the spec, this also returns:
+     *   - Per-level active counts (l1Count / l2Count / l3Count + totalActive + criticalActive)
+     *   - Per-staff workload list ({@code teamWorkload}) covering every active CRM_AGENT,
+     *     SERVICE_MANAGER and ADMIN — even those with an empty inbox — so the admin
+     *     view always renders the full team grid.
+     *   - {@code fromUserName} on each escalation log row so the admin can see at a
+     *     glance who triggered each escalation, not just the UUID.
      */
     @Transactional(readOnly = true)
     public EscalationDashboardResponse getEscalationDashboard() {
@@ -149,6 +162,12 @@ public class DashboardService {
                 ? Math.round(avgFromDb * 10.0) / 10.0
                 : 0.0;
 
+        long l1Count = ticketRepository.countActiveAtLevel(1);
+        long l2Count = ticketRepository.countActiveAtLevel(2);
+        long l3Count = ticketRepository.countActiveAtLevel(3);
+        long totalActive = ticketRepository.countActive();
+        long criticalActive = ticketRepository.countActiveCritical();
+
         var l1Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(1, PageRequest.of(0, 20));
         var l2Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(2, PageRequest.of(0, 20));
         var l3Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(3, PageRequest.of(0, 20));
@@ -160,14 +179,49 @@ public class DashboardService {
         List<TicketResponse> l3Tickets = l3Page.getContent().stream()
                 .map(ticketService::toFullResponse).collect(Collectors.toList());
 
+        // ── Team workload ───────────────────────────────────────────────
+        // Every active CRM_AGENT, SERVICE_MANAGER and ADMIN gets a card,
+        // even if their queue is empty.  Sorted by role-level ascending,
+        // then by name, so the grid renders L1 → L2 → L3.
+        List<User> staff = Stream.of(UserRole.CRM_AGENT, UserRole.SERVICE_MANAGER, UserRole.ADMIN)
+                .flatMap(r -> userRepository.findByRoleAndIsActiveTrue(r).stream())
+                .sorted((a, b) -> {
+                    int la = canonicalLevelForRole(a.getRole());
+                    int lb = canonicalLevelForRole(b.getRole());
+                    if (la != lb) return Integer.compare(la, lb);
+                    return a.getName().compareToIgnoreCase(b.getName());
+                })
+                .collect(Collectors.toList());
+
+        List<EscalationDashboardResponse.TeamWorkload> teamWorkload = staff.stream()
+                .map(s -> buildTeamWorkload(s, now))
+                .collect(Collectors.toList());
+
+        // ── Escalation log w/ resolved fromUserName ────────────────────
         List<TicketEscalationLog> logEntities = escalationLogRepository.findAllByOrderByEscalatedAtDesc();
+        Map<UUID, String> staffNamesById = staff.stream()
+                .collect(Collectors.toMap(User::getId, User::getName));
+        // Some escalations may be raised by users not in the staff list (e.g. customers
+        // raising tickets on themselves wouldn't escalate, but defensively we still
+        // resolve any unknown UUIDs against the user repo).
+        List<UUID> missing = logEntities.stream()
+                .map(TicketEscalationLog::getFromUserId)
+                .filter(java.util.Objects::nonNull)
+                .filter(id -> !staffNamesById.containsKey(id))
+                .distinct()
+                .collect(Collectors.toList());
+        if (!missing.isEmpty()) {
+            userRepository.findAllById(missing).forEach(u -> staffNamesById.put(u.getId(), u.getName()));
+        }
         List<TicketResponse.EscalationLogResponse> escalationLog = logEntities.stream()
                 .limit(50)
                 .map(l -> TicketResponse.EscalationLogResponse.builder()
                         .id(l.getId())
+                        .ticketNumber(l.getTicket() != null ? l.getTicket().getTicketNumber() : null)
                         .fromLevel(l.getFromLevel())
                         .toLevel(l.getToLevel())
                         .fromUserId(l.getFromUserId())
+                        .fromUserName(l.getFromUserId() != null ? staffNamesById.get(l.getFromUserId()) : null)
                         .reason(l.getReason())
                         .escalationType(l.getEscalationType().name())
                         .escalatedAt(l.getEscalatedAt())
@@ -179,10 +233,54 @@ public class DashboardService {
                 .avgResponseMinutes(avgResponseMinutes)
                 .slaBreachToday(slaBreachToday)
                 .resolvedToday(resolvedToday)
+                .l1Count(l1Count)
+                .l2Count(l2Count)
+                .l3Count(l3Count)
+                .totalActive(totalActive)
+                .criticalActive(criticalActive)
                 .l1Tickets(l1Tickets)
                 .l2Tickets(l2Tickets)
                 .l3Tickets(l3Tickets)
+                .teamWorkload(teamWorkload)
                 .escalationLog(escalationLog)
                 .build();
+    }
+
+    /** Build a team-workload card for a single staff user. */
+    private EscalationDashboardResponse.TeamWorkload buildTeamWorkload(User staff, OffsetDateTime now) {
+        List<ServiceTicket> active = ticketRepository.findActiveByAssignee(staff.getId());
+        int activeCount = active.size();
+        int criticalCount = (int) active.stream()
+                .filter(t -> t.getPriority() == Priority.P1)
+                .count();
+        int breachedCount = (int) active.stream()
+                .filter(t -> isFinalBreached(t, now))
+                .count();
+        List<TicketResponse> tickets = active.stream()
+                .map(ticketService::toFullResponse)
+                .collect(Collectors.toList());
+        return EscalationDashboardResponse.TeamWorkload.builder()
+                .userId(staff.getId())
+                .name(staff.getName())
+                .role(staff.getRole().name())
+                .level(canonicalLevelForRole(staff.getRole()))
+                .activeCount(activeCount)
+                .criticalCount(criticalCount)
+                .breachedCount(breachedCount)
+                .tickets(tickets)
+                .build();
+    }
+
+    private static boolean isFinalBreached(ServiceTicket t, OffsetDateTime now) {
+        return t.getSlaDeadlineFinal() != null && t.getSlaDeadlineFinal().isBefore(now);
+    }
+
+    private static int canonicalLevelForRole(UserRole role) {
+        return switch (role) {
+            case CRM_AGENT -> 1;
+            case SERVICE_MANAGER -> 2;
+            case ADMIN -> 3;
+            default -> 0;
+        };
     }
 }

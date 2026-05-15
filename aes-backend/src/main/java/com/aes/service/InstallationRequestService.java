@@ -93,6 +93,16 @@ public class InstallationRequestService {
             }
         }
 
+        // Annotate notes with the building type so sales / design see it
+        // in the CRM list even though we don't have a dedicated column yet.
+        String annotatedNotes = request.getNotes();
+        if (request.getPropertyType() != null) {
+            String label = "[Space: " + request.getPropertyType().name() + "]";
+            annotatedNotes = annotatedNotes == null || annotatedNotes.isBlank()
+                    ? label
+                    : label + " " + annotatedNotes;
+        }
+
         InstallationRequest installReq = InstallationRequest.builder()
                 .requestNumber(requestNumber)
                 .customer(customer)
@@ -107,7 +117,7 @@ public class InstallationRequestService {
                 .scheduledDate(request.getScheduledDate())
                 .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
                 .status(InstallationStatus.PENDING)
-                .notes(request.getNotes())
+                .notes(annotatedNotes)
                 .build();
 
         installReq = installationRequestRepository.save(installReq);

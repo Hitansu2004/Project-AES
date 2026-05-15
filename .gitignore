@@ -16,6 +16,10 @@ Icon
 .settings/
 .factorypath
 
+# Cursor agent local tooling
+.cursor/
+.github/java-upgrade/
+
 # Maven
 target/
 pom.xml.tag
@@ -38,7 +42,27 @@ HELP.md
 logs/
 *.log
 
-# Node (just in case for the UI)
+# Node / Next (frontend)
 node_modules/
 dist/
 build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env files (do not commit secrets)
+.env
+.env.*
+!.env.example
+
+# Local-only project references (kept on disk, not pushed)
+Info.txt
+Other Docs/
+ui reference/
+
+# Ad-hoc test scripts
+test_*.py
+*.pyc
+__pycache__/

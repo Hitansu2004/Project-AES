@@ -1,0 +1,308 @@
+================================================================================
+  ARIAL ENGINEERING SERVICES (AES) — CONTENT CATALOG
+  Source:  https://www.arialengineering.com/  (scraped May 2026)
+
+  This file is the single human-readable reference for everything the AES
+  Customer Portal app surfaces about the real business: services, products,
+  brand partners, project portfolio, locations, and the exact CDN-hosted
+  image URLs used by the app.
+
+  Image strategy: nothing is downloaded. The app references the live URLs
+  on arialengineering.com directly so we don't pay for storage or CDN.
+  All URLs below are the canonical absolute paths.
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+1. COMPANY SNAPSHOT
+────────────────────────────────────────────────────────────────────────────────
+Name           : Arial Engineering Services (AES)
+Established    : 2006  (19+ years experience)
+Tagline        : "Cooling and Air Distribution Solutions"
+Strap          : "Creating Comfort Everywhere..!"
+Industry       : HVAC & R contractors / consultants — design, supply, install,
+                 service, AMC.
+Head office    : B-7, Mallareddy Heights, Madhura Nagar, Hyderabad, Telangana
+                 500038, India.
+Branches       : Hyderabad · Tirupati · Bangalore · Goa
+Operating area : Hyderabad, Tirupati, Bangalore, Bidar, Nellore, Rajahmundry,
+                 Telangana, Vizag, Amaravati, Anantapur, Goa, Karimnagar,
+                 Warangal, Madanapalle, Kerala, Bhubaneswar, Gujarat.
+Phone          : +91 040 66131555 / 2555 / 3555  ·  +91 70938-78083  ·
+                 +91 94576 35555
+Email          : info @ arialengineering.com
+Hours          : Mon–Sat 9:30 AM – 7 PM, Sunday closed
+Website        : https://www.arialengineering.com/
+
+Pillars / Process (homepage feature row):
+  Sales · Planning · Designing · Project Execution · Services · Customer Support
+
+Why-Choose-Us pitch:
+  ▸ Distinctive product portfolio
+  ▸ Transparent dealings, long-term quality + clean-air outcomes
+  ▸ Track record of reliability with a performance guarantee
+  ▸ "Customer first, customer last" continual-improvement mindset
+  ▸ ENERGY-STAR-rated equipment, low-noise compact units
+  ▸ Customer-friendly after-sales service, dedicated install/service team
+
+────────────────────────────────────────────────────────────────────────────────
+2. SERVICE LINES
+────────────────────────────────────────────────────────────────────────────────
+Each service has a dedicated page on the marketing site; the customer portal
+mirrors them as in-app flows + AMC management.
+
+  2.1 Designing & Drafting       /designing.html
+  2.2 Installations              /installations.html
+       6-step process: Analysis → Action → Drawing → Equipment →
+                       Commissioning → Handover
+  2.3 Repairs & Services         /repairs.html
+  2.4 AMC's (Annual Maintenance) /amc.html
+  2.5 Quality Policy             /quality.html
+
+────────────────────────────────────────────────────────────────────────────────
+3. PRODUCT FAMILIES
+────────────────────────────────────────────────────────────────────────────────
+The website carries six headline categories. The app's product gallery
+mirrors these families and shows every published variant image.
+
+  ▸ VRF / VRV Systems
+  ▸ Chiller Systems  (Air-cooled + Water-cooled)
+  ▸ DX Systems       (Split, Cassette, Ductable, Tower)
+  ▸ Ventilation Systems  (Bathroom · Kitchen · Parking · Exhaust)
+  ▸ Air Handling Units (AHU)
+  ▸ Air Distribution Products (Diffusers — square, round, linear, eye, swirl)
+
+Tonnages routinely sold (from website quote form):
+  0.5 · 0.8 · 1.0 · 1.1 · 1.2 · 1.5 · 1.6 · 1.7 · 1.8 · 2.0 · 2.2 · 2.5 ·
+  3.0 · 4.0 TR
+Star ratings: 1, 3, 4, 5, Inverter
+Coverage rule of thumb (from quote form):
+  0.8 TR  → up to 75 sq.ft
+  1.0 TR  → up to 170 sq.ft
+  1.5 TR  → 200–250 sq.ft
+  2.2 TR  → up to 450 sq.ft
+
+────────────────────────────────────────────────────────────────────────────────
+4. BRAND PARTNERS (authorized service dealer)
+────────────────────────────────────────────────────────────────────────────────
+  Mitsubishi Electric  https://www.arialengineering.com/pictures/Mitsubishi-Electric.png
+  LG                   https://www.arialengineering.com/pictures/brand2.png
+  Hitachi              https://www.arialengineering.com/pictures/brand3.png
+  O-General            https://www.arialengineering.com/pictures/brand5.png
+  Hisense / Toshiba    https://www.arialengineering.com/pictures/hisense.png
+
+────────────────────────────────────────────────────────────────────────────────
+5. PRODUCT IMAGE URLS (used by /services/products in the app)
+────────────────────────────────────────────────────────────────────────────────
+
+VRF / VRV Systems
+  https://www.arialengineering.com/pictures/products/vrf-product.png   (hero)
+  https://www.arialengineering.com/pictures/products/vrf1.jpg
+  https://www.arialengineering.com/pictures/products/vrf2.jpg
+  https://www.arialengineering.com/pictures/products/vrf3.jpg
+  https://www.arialengineering.com/pictures/products/vrf4.jpg
+  https://www.arialengineering.com/pictures/products/vrf5.jpg
+  Indoor unit illustrations:
+    https://www.arialengineering.com/pictures/products/vrf-cassette1.png
+    https://www.arialengineering.com/pictures/products/vrf-cassette4.png
+    https://www.arialengineering.com/pictures/products/vrf-duct.png
+    https://www.arialengineering.com/pictures/products/vrf-split.png
+  Background:
+    https://www.arialengineering.com/pictures/products/vrf-bg.jpg
+
+Chiller Systems
+  Air-cooled hero:   https://www.arialengineering.com/pictures/products/airchillers.png
+  Water-cooled hero: https://www.arialengineering.com/pictures/products/waterchillers.png
+  Variant photos:
+    https://www.arialengineering.com/pictures/products/chiller1.jpg
+    https://www.arialengineering.com/pictures/products/chiller2.jpg
+    https://www.arialengineering.com/pictures/products/chiller3.jpg
+    https://www.arialengineering.com/pictures/products/chiller4.jpg
+    https://www.arialengineering.com/pictures/products/chiller5.jpg
+  FCU + accessories:
+    https://www.arialengineering.com/pictures/products/chiller-fcu.png
+    https://www.arialengineering.com/pictures/products/chiller-mfd.png
+    https://www.arialengineering.com/pictures/products/chiller-resistant.png
+    https://www.arialengineering.com/pictures/products/chiller-swirl.png
+  Background:
+    https://www.arialengineering.com/pictures/products/chillers-bg.jpg
+
+DX Systems / Ductable AC's
+  https://www.arialengineering.com/pictures/products/duct1.jpg
+  https://www.arialengineering.com/pictures/products/duct2.jpg
+  https://www.arialengineering.com/pictures/products/duct3.jpg
+  https://www.arialengineering.com/pictures/products/duct4.jpg
+  https://www.arialengineering.com/pictures/products/duct5.jpg
+
+DX Systems / Cassette AC's
+  https://www.arialengineering.com/pictures/products/cassette1.jpg
+  https://www.arialengineering.com/pictures/products/cassette2.jpg
+  https://www.arialengineering.com/pictures/products/cassette3.jpg
+  https://www.arialengineering.com/pictures/products/cassette4.jpg
+
+DX Systems / Split + Tower AC's
+  https://www.arialengineering.com/pictures/products/split1.jpg
+  https://www.arialengineering.com/pictures/products/split2.jpg
+  https://www.arialengineering.com/pictures/products/split3.jpg
+  https://www.arialengineering.com/pictures/products/split4.jpg
+  https://www.arialengineering.com/pictures/products/split5.jpg
+
+Air Handling Unit (AHU)
+  Hero:  https://www.arialengineering.com/pictures/products/ahu.png
+  Variants:
+    https://www.arialengineering.com/pictures/products/ahu1.png
+    https://www.arialengineering.com/pictures/products/ahu2.png
+    https://www.arialengineering.com/pictures/products/ahu3.png
+    https://www.arialengineering.com/pictures/products/ahu4.png
+    https://www.arialengineering.com/pictures/products/ahu5.png
+  Background:
+    https://www.arialengineering.com/pictures/products/ahu-bg.jpg
+
+Ventilation Systems
+  Bathroom :  https://www.arialengineering.com/pictures/products/vent-bath.png
+  Kitchen  :  https://www.arialengineering.com/pictures/products/vent-kitchen.png
+  Parking  :  https://www.arialengineering.com/pictures/products/vent-parking.png
+  Exhaust  :  https://www.arialengineering.com/pictures/products/vent-exhaust.png
+  Variant photos:
+    https://www.arialengineering.com/pictures/products/vent1.jpg
+    https://www.arialengineering.com/pictures/products/vent2.jpg
+    https://www.arialengineering.com/pictures/products/vent3.jpg
+    https://www.arialengineering.com/pictures/products/vent4.jpg
+    https://www.arialengineering.com/pictures/products/vent5.jpg
+  Background:
+    https://www.arialengineering.com/pictures/products/ventilation-bg.jpg
+
+Air Distribution Products (Diffusers)
+  Square ceiling : https://www.arialengineering.com/pictures/products/cdiffuser.png
+  Round          : https://www.arialengineering.com/pictures/products/rdiffuser.png
+  Linear         : https://www.arialengineering.com/pictures/products/ldiffuser.png
+  Eye / Jet      : https://www.arialengineering.com/pictures/products/eyediffuser.png
+  Variant photos:
+    https://www.arialengineering.com/pictures/products/diffuser1.jpg
+    https://www.arialengineering.com/pictures/products/diffuser2.jpg
+    https://www.arialengineering.com/pictures/products/diffuser3.jpg
+    https://www.arialengineering.com/pictures/products/diffuser4.jpg
+    https://www.arialengineering.com/pictures/products/diffuser5.jpg
+
+────────────────────────────────────────────────────────────────────────────────
+6. PROJECT TYPE ICONOGRAPHY (homepage feature row)
+────────────────────────────────────────────────────────────────────────────────
+The app reuses these icons on the "What kind of space?" picker.
+
+  Residential : https://www.arialengineering.com/pictures/residential.png
+  Commercial  : https://www.arialengineering.com/pictures/commercial.png
+  Industrial  : https://www.arialengineering.com/pictures/industrial.png
+  Hospitals   : https://www.arialengineering.com/pictures/hospitals.jpg
+  Offices/IT  : https://www.arialengineering.com/pictures/it.png
+  Retail      : https://www.arialengineering.com/pictures/retail.png
+
+Hero slides (used as login / dashboard backdrop accents):
+  https://www.arialengineering.com/pictures/slide1.jpg   (showcase)
+  https://www.arialengineering.com/pictures/slide2.jpg   (VRF)
+  https://www.arialengineering.com/pictures/slide3.jpg   (Water Chilled)
+  https://www.arialengineering.com/pictures/slide4.jpg   (Air Chilled)
+  https://www.arialengineering.com/pictures/slide5.jpg   (DX)
+  https://www.arialengineering.com/pictures/slide6.jpg   (Ventilation)
+  https://www.arialengineering.com/pictures/slide7.jpg   (AHU)
+
+Service workflow icons:
+  Sales            https://www.arialengineering.com/pictures/sales.png
+  Planning         https://www.arialengineering.com/pictures/planning.png
+  Designing        https://www.arialengineering.com/pictures/design.png
+  Project Exec     https://www.arialengineering.com/pictures/projectex.png
+  Services         https://www.arialengineering.com/pictures/servicehome.png
+  Support          https://www.arialengineering.com/pictures/support.png
+
+Logo:
+  https://www.arialengineering.com/pictures/logo-arial.png
+
+────────────────────────────────────────────────────────────────────────────────
+7. PROJECT PORTFOLIO  (50+ projects, used as social-proof carousel)
+────────────────────────────────────────────────────────────────────────────────
+Format:  Project Name — City — Category  — image URL
+
+ON-GOING (front page)
+  GVK Sky City                Hyderabad      Commercial   https://www.arialengineering.com/pictures/projectsky.jpg
+  DSR Classe Commercial       Hyderabad      Commercial   https://www.arialengineering.com/pictures/projectdsr_classe_com.jpg
+  DSR Classe Residential      Hyderabad      Residential  https://www.arialengineering.com/pictures/projectdsr_classe_res.jpg
+  Project APR                 Hyderabad      Residential  https://www.arialengineering.com/pictures/apr.jpg
+
+RESIDENTIAL
+  DSR The First               Hyderabad      https://www.arialengineering.com/pictures/projectdsr.jpg
+  Royal One                   Hyderabad      https://www.arialengineering.com/pictures/projectroyalone.jpg
+  Cyprus Palms                Hyderabad      https://www.arialengineering.com/pictures/projectcyprus.jpg
+  DSR Infrastructure          Hyderabad      https://www.arialengineering.com/pictures/projectdsrinfra.jpg
+  Skypx Lake View             Hyderabad      https://www.arialengineering.com/pictures/projectskypx.jpg
+  Prime Gardenia              Hyderabad      https://www.arialengineering.com/pictures/projectprimegardenia.jpg
+  DSR Waterscape              Bangalore      https://www.arialengineering.com/pictures/projectdsrwaterscape.jpg
+  Krinss Villas               Hyderabad      https://www.arialengineering.com/pictures/projectkrinss.jpg
+  Esmeralda Fortune           Hyderabad      https://www.arialengineering.com/pictures/projectesmeralda.jpg
+  DSR White Waters            Bangalore      https://www.arialengineering.com/pictures/projectdsrwhitewaters.jpg
+  Bungalow                    Hyderabad      https://www.arialengineering.com/pictures/projectbungalow.jpg
+  Lotus Roldana               Hyderabad      https://www.arialengineering.com/pictures/projectlotus.jpg
+
+COMMERCIAL / OFFICES
+  Cyber Gateway               Hyderabad      https://www.arialengineering.com/pictures/projectcyber.jpg
+  Eco Space                   Bangalore      https://www.arialengineering.com/pictures/projecteco.jpg
+  Signature Towers            Hyderabad      https://www.arialengineering.com/pictures/projectsign.jpg
+  Forum Sujana Mall           Hyderabad      https://www.arialengineering.com/pictures/projectforum.jpg
+  E Value Serve               Bangalore      https://www.arialengineering.com/pictures/projectevs.jpg
+  iSprout                     Hyderabad      https://www.arialengineering.com/pictures/projectisprout.jpg
+  The Platina                 Hyderabad      https://www.arialengineering.com/pictures/projectplatina.jpg
+  Max Shopping Mall           Vizag          https://www.arialengineering.com/pictures/projectmax.jpg
+  Halo Energie                Hyderabad      https://www.arialengineering.com/pictures/projecthalo.jpg
+  Akshara Office              Warangal       https://www.arialengineering.com/pictures/projectakshara.jpg
+  Greenko                     Bangalore      https://www.arialengineering.com/pictures/projectgreenko.jpg
+  Anutex Shopping Mall        Hyderabad      https://www.arialengineering.com/pictures/projectanutex.jpg
+  Amoda                       Hyderabad      https://www.arialengineering.com/pictures/projectamoda.jpg
+  Accenture                   Hyderabad      https://www.arialengineering.com/pictures/projectaccenture.jpg
+  Nexa Showroom               Karimnagar     https://www.arialengineering.com/pictures/projectnexa.jpg
+
+HOSPITALS / PHARMA / LABS
+  Nu Cosmetic Clinic          Hyderabad      https://www.arialengineering.com/pictures/projectnu.jpg
+  Santharam Hospital          Madanapalle    https://www.arialengineering.com/pictures/projectsantharam.jpg
+  Vimta Labs                  Bangalore      https://www.arialengineering.com/pictures/projectvimta.jpg
+  Adarsha Hospital            Karimnagar     https://www.arialengineering.com/pictures/projectadarsha.jpg
+  Shodhana Laboratories       Hyderabad      https://www.arialengineering.com/pictures/projectshodana.jpg
+  Sri Sri Holistic Hospital   Hyderabad      https://www.arialengineering.com/pictures/projectsri.jpg
+  Optimus Pharma              Hyderabad      https://www.arialengineering.com/pictures/projectoptimus.jpg
+  Suraksha Hospital           Hyderabad      https://www.arialengineering.com/pictures/projectsuraksha.jpg
+
+HOSPITALITY (hotels / restaurants / pubs)
+  Hotel Sarene                Tirupati       https://www.arialengineering.com/pictures/projectsarene.jpg
+  Tabla Restaurant            Bangalore      https://www.arialengineering.com/pictures/projecttabla.jpg
+  Tales Over Spirits          Hyderabad      https://www.arialengineering.com/pictures/projecttcs.jpg
+  Prost Brew Pub              Hyderabad      https://www.arialengineering.com/pictures/projectprost.jpg
+  Citrus Hotels               Bangalore      https://www.arialengineering.com/pictures/projectcitrus.jpg
+  Paradise Restaurant         Hyderabad      https://www.arialengineering.com/pictures/projectparadise.jpg
+  The Rig Pub                 Bangalore      https://www.arialengineering.com/pictures/projectrig.jpg
+  Iscon Club Resort           Gujarat        https://www.arialengineering.com/pictures/projectiscon.jpg
+  Blue Tree Restaurant        Hyderabad      https://www.arialengineering.com/pictures/projectbluetree.jpg
+  Hotel Sandy's Tower         Bhubaneswar    https://www.arialengineering.com/pictures/projectsandy.jpg
+  The PGS Vedanta             Kerala         https://www.arialengineering.com/pictures/projectpgs.jpg
+
+EDUCATIONAL INSTITUTIONS
+  Koenig                      Goa            https://www.arialengineering.com/pictures/projectkoenig.jpg
+  Delhi Public School         Karimnagar     https://www.arialengineering.com/pictures/projectdps.jpg
+  Alphores School             Karimnagar     https://www.arialengineering.com/pictures/projectalphores.jpg
+  CBIT & VBIT College         Proddatur      https://www.arialengineering.com/pictures/projectcbit.jpg
+  Open Minds School           Hyderabad      https://www.arialengineering.com/pictures/projectoms.jpg
+  Prachin Global School       Hyderabad      https://www.arialengineering.com/pictures/projectprachin.jpg
+
+────────────────────────────────────────────────────────────────────────────────
+8. CUSTOMER-PORTAL MAPPING SUMMARY  (how the app uses the above)
+────────────────────────────────────────────────────────────────────────────────
+  · Installation flow Step 1  →  "What kind of space?"
+        Residential | Commercial | Industrial | Hospital | Hotel | Institutional
+        (icons sourced from arialengineering.com/pictures/*.png)
+  · Installation flow Step 2 (AC type)  →  cards now show real product photos
+        Split        → split1.jpg
+        Cassette     → cassette1.jpg
+        Ductable     → duct1.jpg
+        VRF / VRV    → vrf-product.png
+        Window       → split2.jpg  (placeholder, AES doesn't sell window)
+        Portable     → split3.jpg  (placeholder)
+  · /services/products  →  full product gallery (this file's section 5)
+  · Brand picker        →  Mitsubishi · LG · Hitachi · O-General · Hisense
+  · Services hub        →  Brand strip + 4-tile project showcase
+  · Login / Dashboard   →  optional accent slide (slide1.jpg) on hero
+================================================================================

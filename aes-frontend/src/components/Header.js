@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Bell } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import styles from './Header.module.css';
 
 const navLinks = {
@@ -30,6 +32,7 @@ const navLinks = {
 
 export default function Header() {
   const { user } = useAuth();
+  const { unread } = useNotifications();
   const pathname = usePathname();
 
   if (!user) return null;
@@ -68,6 +71,12 @@ export default function Header() {
         </nav>
 
         <div className={styles.right}>
+          <Link href="/notifications" className={styles.bellBtn} aria-label="Notifications">
+            <Bell size={18} />
+            {unread > 0 && (
+              <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
+            )}
+          </Link>
           <span className={styles.greeting}>
             {user.role === 'CUSTOMER' ? '' : `Agent: ${user.name?.split(' ')[0] || 'User'}`}
           </span>
