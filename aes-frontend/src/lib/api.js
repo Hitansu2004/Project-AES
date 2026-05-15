@@ -1,11 +1,18 @@
 /**
  * AES Customer Portal — API Gateway
- * Centralized HTTP client for all backend communication.
+ *
+ * Centralized HTTP client for all backend communication. Handles:
+ *  - Bearer token injection from localStorage
+ *  - Automatic 401 → /auth/refresh retry (single attempt, then sign-out)
+ *  - Backend error envelope unwrapping
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
-class ApiError extends Error {
+const TOKEN_KEY = 'aes_token';
+const REFRESH_KEY = 'aes_refresh_token';
+
+export class ApiError extends Error {
   constructor(code, message, status) {
     super(message);
     this.code = code;
@@ -13,41 +20,113 @@ class ApiError extends Error {
   }
 }
 
-async function request(endpoint, options = {}) {
+let refreshInFlight = null;
+let onAuthFail = null;
+
+export function setAuthFailureHandler(fn) { onAuthFail = fn; }
+
+function readToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+function writeToken(token) {
+  if (typeof window === 'undefined') return;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+function readRefresh() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(REFRESH_KEY);
+}
+function writeRefresh(token) {
+  if (typeof window === 'undefined') return;
+  if (token) localStorage.setItem(REFRESH_KEY, token);
+  else localStorage.removeItem(REFRESH_KEY);
+}
+
+export function clearAuthTokens() {
+  writeToken(null);
+  writeRefresh(null);
+}
+
+async function refreshAccessToken() {
+  if (refreshInFlight) return refreshInFlight;
+  const refreshToken = readRefresh();
+  if (!refreshToken) return null;
+
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.success === false) return null;
+      const newAccess = json.data?.accessToken;
+      if (newAccess) writeToken(newAccess);
+      return newAccess || null;
+    } catch {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
+async function rawRequest(endpoint, options = {}, attempt = 0) {
   const url = `${API_BASE}${endpoint}`;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('aes_token') : null;
+  const token = readToken();
 
   const headers = {
-    'Content-Type': 'application/json',
+    Accept: 'application/json',
     ...options.headers,
   };
+  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token && !options.skipAuth) headers.Authorization = `Bearer ${token}`;
 
-  if (token && !options.skipAuth) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const config = { ...options, headers };
+  if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
+    config.body = JSON.stringify(config.body);
   }
 
-  const config = {
-    ...options,
-    headers,
-  };
-
-  if (options.body && typeof options.body === 'object') {
-    config.body = JSON.stringify(options.body);
+  let res;
+  try {
+    res = await fetch(url, config);
+  } catch (networkErr) {
+    throw new ApiError('NETWORK_ERROR', 'Cannot reach the server. Check your connection.', 0);
   }
 
-  const res = await fetch(url, config);
-  const data = await res.json();
+  // Try refresh on 401 once
+  if (res.status === 401 && !options.skipAuth && attempt === 0) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return rawRequest(endpoint, options, attempt + 1);
+    }
+    clearAuthTokens();
+    if (onAuthFail) onAuthFail();
+    throw new ApiError('UNAUTHORIZED', 'Your session has expired. Please sign in again.', 401);
+  }
 
-  if (!res.ok || data.success === false) {
+  let json;
+  try { json = await res.json(); } catch { json = {}; }
+
+  if (!res.ok || json?.success === false) {
     throw new ApiError(
-      data.error?.code || 'UNKNOWN_ERROR',
-      data.error?.message || 'An unexpected error occurred',
+      json?.error?.code || 'UNKNOWN_ERROR',
+      json?.error?.message || `Request failed with status ${res.status}`,
       res.status
     );
   }
 
-  return data.data !== undefined ? data.data : data;
+  return json?.data !== undefined ? json.data : json;
 }
+
+const request = (endpoint, options) => rawRequest(endpoint, options);
 
 // ─── Auth ───────────────────────────────────────────────────
 export const auth = {
@@ -67,7 +146,7 @@ export const auth = {
     request('/auth/logout', { method: 'POST', body: { refreshToken } }),
 };
 
-// ─── User ───────────────────────────────────────────────────
+// ─── User / Profile ─────────────────────────────────────────
 export const user = {
   getMe: () => request('/users/me'),
   updateMe: (data) => request('/users/me', { method: 'PUT', body: data }),
@@ -93,7 +172,10 @@ export const acUnits = {
 // ─── Installation Requests ──────────────────────────────────
 export const installations = {
   create: (data) => request('/installation-requests', { method: 'POST', body: data }),
-  list: () => request('/installation-requests'),
+  list: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/installation-requests${query ? `?${query}` : ''}`);
+  },
   get: (id) => request(`/installation-requests/${id}`),
 };
 

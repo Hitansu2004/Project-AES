@@ -6,7 +6,6 @@ import com.aes.dto.response.AcUnitResponse;
 import com.aes.entity.AcUnit;
 import com.aes.entity.Property;
 import com.aes.entity.User;
-import com.aes.enums.AcType;
 import com.aes.enums.ServiceStatus;
 import com.aes.enums.WarrantyStatus;
 import com.aes.exception.BusinessException;
@@ -20,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -80,7 +80,7 @@ public class AcUnitService {
                 .property(property)
                 .customer(customer)
                 .roomLabel(request.getRoomLabel())
-                .acType(AcType.valueOf(request.getAcType()))
+                .acType(request.getAcType())
                 .brand(request.getBrand())
                 .modelNumber(request.getModelNumber())
                 .tonnage(request.getTonnage())
@@ -92,9 +92,9 @@ public class AcUnitService {
                 .isActive(true)
                 .build();
 
-        // Auto-determine warranty status based on expiry date
+        // Auto-derive warranty + service status from expiry date when provided.
         if (request.getWarrantyExpiry() != null) {
-            if (request.getWarrantyExpiry().isAfter(java.time.LocalDate.now())) {
+            if (request.getWarrantyExpiry().isAfter(LocalDate.now())) {
                 acUnit.setWarrantyStatus(WarrantyStatus.IN_WARRANTY);
                 acUnit.setServiceStatus(ServiceStatus.P2_WARRANTY);
             } else {
@@ -124,15 +124,15 @@ public class AcUnitService {
         }
 
         if (request.getRoomLabel() != null) acUnit.setRoomLabel(request.getRoomLabel());
-        if (request.getAcType() != null) acUnit.setAcType(AcType.valueOf(request.getAcType()));
+        if (request.getAcType() != null) acUnit.setAcType(request.getAcType());
         if (request.getBrand() != null) acUnit.setBrand(request.getBrand());
         if (request.getModelNumber() != null) acUnit.setModelNumber(request.getModelNumber());
         if (request.getTonnage() != null) acUnit.setTonnage(request.getTonnage());
         if (request.getEnergyStarRating() != null) acUnit.setEnergyStarRating(request.getEnergyStarRating());
         if (request.getInstallationDate() != null) acUnit.setInstallationDate(request.getInstallationDate());
         if (request.getWarrantyExpiry() != null) acUnit.setWarrantyExpiry(request.getWarrantyExpiry());
-        if (request.getWarrantyStatus() != null) acUnit.setWarrantyStatus(WarrantyStatus.valueOf(request.getWarrantyStatus()));
-        if (request.getServiceStatus() != null) acUnit.setServiceStatus(ServiceStatus.valueOf(request.getServiceStatus()));
+        if (request.getWarrantyStatus() != null) acUnit.setWarrantyStatus(request.getWarrantyStatus());
+        if (request.getServiceStatus() != null) acUnit.setServiceStatus(request.getServiceStatus());
 
         acUnitRepository.save(acUnit);
         return toResponse(acUnit);

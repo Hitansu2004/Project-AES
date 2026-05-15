@@ -1,5 +1,6 @@
 package com.aes.service;
 
+import com.aes.config.AppProperties;
 import com.aes.dto.request.CreateTicketRequest;
 import com.aes.dto.response.SlaStatusResponse;
 import com.aes.dto.response.TicketResponse;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.Year;
 import java.time.temporal.ChronoUnit;
@@ -39,15 +41,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ServiceTicketService {
 
+    private static final int MAX_PHOTO_URLS = 4;
+
     private final ServiceTicketRepository ticketRepository;
     private final AcUnitRepository acUnitRepository;
     private final TicketActivityRepository activityRepository;
     private final TicketEscalationLogRepository escalationLogRepository;
-    private final UserRepository userRepository;
     private final AssignmentService assignmentService;
     private final NotificationService notificationService;
     private final WebSocketService webSocketService;
     private final ObjectMapper objectMapper;
+    private final AppProperties appProperties;
 
     /**
      * Create a new service ticket.
@@ -55,7 +59,6 @@ public class ServiceTicketService {
      */
     @Transactional
     public TicketResponse createTicket(UUID customerId, CreateTicketRequest request) {
-        // Validate ac_unit_id belongs to customer (line 1687)
         AcUnit acUnit = acUnitRepository.findById(request.getAcUnitId())
                 .orElseThrow(() -> new NotFoundException("AcUnit", request.getAcUnitId().toString()));
 
@@ -64,38 +67,26 @@ public class ServiceTicketService {
                     HttpStatus.FORBIDDEN);
         }
 
-        User customer = acUnit.getCustomer();
-
-        // 1. Determine priority + service_type from service_status (line 640)
-        Priority priority = determinePriority(acUnit.getServiceStatus());
-        ServiceType serviceType = determineServiceType(acUnit.getServiceStatus());
-
-        // 2. Generate ticket_number: TKT-{YYYY}-{4-digit-seq} (line 641)
-        String ticketNumber = generateTicketNumber();
-
-        // Convert photo URLs to JSON
-        String photosJson = null;
-        if (request.getPhotoUrls() != null && !request.getPhotoUrls().isEmpty()) {
-            // Validate max 4 photos (line 1690)
-            if (request.getPhotoUrls().size() > 4) {
-                throw new BusinessException("VALIDATION_ERROR", "Maximum 4 photos allowed",
-                        HttpStatus.BAD_REQUEST);
-            }
-            try {
-                photosJson = objectMapper.writeValueAsString(request.getPhotoUrls());
-            } catch (JsonProcessingException e) {
-                photosJson = "[]";
-            }
+        // Per Section 7 line 1688 — scheduled date must be tomorrow or later.
+        if (request.getScheduledDate() != null
+                && !request.getScheduledDate().isAfter(LocalDate.now())) {
+            throw new BusinessException("INVALID_DATE",
+                    "Scheduled date must be tomorrow or later.",
+                    HttpStatus.BAD_REQUEST);
         }
 
+        User customer = acUnit.getCustomer();
+
+        Priority priority = determinePriority(acUnit.getServiceStatus());
+        ServiceType serviceType = determineServiceType(acUnit.getServiceStatus());
+        String ticketNumber = generateTicketNumber();
+
+        String photosJson = serializePhotos(request.getPhotoUrls());
+
         OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime slaDeadlineL1 = now.plusMinutes(appProperties.getEscalation().getL1TimeoutMinutes());
+        OffsetDateTime slaDeadlineFinal = calculateFinalSla(now, priority);
 
-        // 3. Calculate SLA deadlines (lines 642-645)
-        OffsetDateTime slaDeadlineL1 = now.plusMinutes(30);      // L1 = 30 min
-        OffsetDateTime slaDeadlineFinal = calculateFinalSla(now, priority);  // P1:4h P2:8h P3:24h
-
-        // 4. Set status = OPEN, current_level = 1 (line 646)
-        // 5. Auto-assign to CRM agent (round-robin) (line 647)
         User assignedAgent = assignmentService.getNextAvailableCrmAgent();
 
         ServiceTicket ticket = ServiceTicket.builder()
@@ -105,12 +96,12 @@ public class ServiceTicketService {
                 .acUnit(acUnit)
                 .priority(priority)
                 .serviceType(serviceType)
-                .problemCategory(ProblemCategory.valueOf(request.getProblemCategory()))
+                .problemCategory(request.getProblemCategory())
                 .errorCode(request.getErrorCode())
                 .problemDescription(request.getProblemDescription())
                 .photosJson(photosJson)
                 .scheduledDate(request.getScheduledDate())
-                .scheduledSlot(request.getScheduledSlot())
+                .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
                 .currentLevel(1)
                 .currentAssignee(assignedAgent)
                 .assignedAt(now)
@@ -121,32 +112,46 @@ public class ServiceTicketService {
 
         ticket = ticketRepository.save(ticket);
 
-        // 6. Create activity: "Ticket raised by customer" (line 649)
         createActivity(ticket, customer, ActivityType.TICKET_RAISED,
                 "Ticket raised by customer");
-
-        // 7. Create activity: "Assigned to CRM Level 1" (line 650)
         createActivity(ticket, null, ActivityType.ASSIGNED,
                 "Assigned to CRM Level 1: " + assignedAgent.getName());
 
-        // 8. Notify customer (line 651)
+        int l1Minutes = appProperties.getEscalation().getL1TimeoutMinutes();
         notificationService.notifyUser(customerId,
-                "Ticket " + ticketNumber + " Raised",
-                "Your service ticket " + ticketNumber + " has been raised. CRM team responding in 30 minutes.",
+                "Ticket " + ticketNumber + " raised",
+                "Your service ticket " + ticketNumber + " has been raised. "
+                        + "Our CRM team will respond within " + l1Minutes + " minutes.",
                 NotificationType.TICKET_RAISED, ticket.getId());
 
-        // 9. Notify assigned CRM agent (line 652)
         notificationService.notifyUser(assignedAgent.getId(),
-                "New Ticket Assigned",
+                "New ticket assigned",
                 "Ticket " + ticketNumber + " has been assigned to you. Priority: " + priority.name(),
                 NotificationType.TICKET_ASSIGNED, ticket.getId());
 
-        // 10. WebSocket broadcast to CRM inbox
         webSocketService.broadcastNewTicketToCrm(ticketNumber, priority.name(), customer.getName());
 
-        log.info("Service ticket created: {} priority={} assigned={}", ticketNumber, priority, assignedAgent.getName());
+        log.info("Service ticket created: {} priority={} assignedTo={}",
+                ticketNumber, priority, assignedAgent.getName());
 
         return toFullResponse(ticket);
+    }
+
+    private String serializePhotos(List<String> photoUrls) {
+        if (photoUrls == null || photoUrls.isEmpty()) {
+            return null;
+        }
+        if (photoUrls.size() > MAX_PHOTO_URLS) {
+            throw new BusinessException("VALIDATION_ERROR",
+                    "A maximum of " + MAX_PHOTO_URLS + " photos is allowed.",
+                    HttpStatus.BAD_REQUEST);
+        }
+        try {
+            return objectMapper.writeValueAsString(photoUrls);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize photo URLs; persisting empty array instead", e);
+            return "[]";
+        }
     }
 
     /**
@@ -159,32 +164,35 @@ public class ServiceTicketService {
         Page<ServiceTicket> page;
 
         switch (role) {
-            case CUSTOMER:
-                // Own tickets only
+            case CUSTOMER -> {
                 if (statusFilter != null && !statusFilter.isBlank()) {
+                    TicketStatus status = parseTicketStatus(statusFilter);
                     page = ticketRepository.findByCustomerIdAndStatusOrderByCreatedAtDesc(
-                            requesterId, TicketStatus.valueOf(statusFilter), pageable);
+                            requesterId, status, pageable);
                 } else {
                     page = ticketRepository.findByCustomerIdOrderByCreatedAtDesc(requesterId, pageable);
                 }
-                break;
-            case CRM_AGENT:
-                // Assigned tickets at level 1 (line 659)
-                page = ticketRepository.findByCurrentLevelAndCurrentAssigneeIdOrderByCreatedAtDesc(
-                        1, requesterId, pageable);
-                break;
-            case SERVICE_MANAGER:
-                // Tickets at level 2 (line 660)
-                page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(2, pageable);
-                break;
-            case ADMIN:
-            default:
-                // All tickets
-                page = ticketRepository.findAllByOrderByCreatedAtDesc(pageable);
-                break;
+            }
+            case CRM_AGENT -> page = ticketRepository
+                    .findByCurrentLevelAndCurrentAssigneeIdOrderByCreatedAtDesc(1, requesterId, pageable);
+            case SERVICE_MANAGER -> page = ticketRepository
+                    .findByCurrentLevelOrderByCreatedAtDesc(2, pageable);
+            case ADMIN -> page = ticketRepository.findAllByOrderByCreatedAtDesc(pageable);
+            default -> page = ticketRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
 
         return page.map(this::toSummaryResponse);
+    }
+
+    private TicketStatus parseTicketStatus(String value) {
+        try {
+            return TicketStatus.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("INVALID_STATUS",
+                    "Unknown ticket status '" + value + "'. Valid values: OPEN, ACKNOWLEDGED, "
+                            + "ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED.",
+                    HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**

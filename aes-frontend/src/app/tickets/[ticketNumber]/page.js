@@ -1,212 +1,429 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useEffect, useState, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { tickets } from '@/lib/api';
+import { motion } from 'framer-motion';
+import {
+  AlertCircle, Camera, Phone, Clock, History, Snowflake, MapPin,
+  Star, CalendarDays, MoreHorizontal, X, CheckCircle2, Send,
+} from 'lucide-react';
+import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { tickets as ticketsApi, ticketActions } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import AppTopBar from '@/components/ui/AppTopBar';
+import PriorityBadge from '@/components/ui/PriorityBadge';
+import SlaCountdown from '@/components/ui/SlaCountdown';
+import EscalationLadder from '@/components/ui/EscalationLadder';
+import { slotLabel } from '@/lib/constants';
 import styles from './ticketDetail.module.css';
 
+const PROBLEM_LABEL = {
+  NOT_COOLING: 'Not Cooling',
+  NOISE: 'Noise',
+  LEAKING: 'Water Leak',
+  NOT_TURNING_ON: 'Not Turning On',
+  NO_AIRFLOW: 'No Airflow',
+  REMOTE_WIFI: 'Remote / Wi-Fi',
+  OTHER: 'Other Issue',
+};
+
+function activityIcon(type) {
+  switch (type) {
+    case 'TICKET_RAISED':       return <CheckCircle2 size={14} />;
+    case 'ACKNOWLEDGED':        return <CheckCircle2 size={14} />;
+    case 'ASSIGNED':            return <Phone size={14} />;
+    case 'ESCALATED':           return <AlertCircle size={14} />;
+    case 'NOTE_ADDED':
+    case 'CUSTOMER_NOTE':       return <Send size={14} />;
+    case 'PHOTO_ADDED':         return <Camera size={14} />;
+    case 'RESOLVED':            return <CheckCircle2 size={14} />;
+    default:                    return <Clock size={14} />;
+  }
+}
+
+function formatStamp(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+}
+
 export default function TicketDetailPage({ params }) {
-  const { ticketNumber } = params;
-  const { user, loading: authLoading } = useAuth();
+  const { ticketNumber } = use(params);
   const router = useRouter();
-  
+  const { user, loading: authLoading } = useAuth();
+  const toast = useToast();
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState('');
-  const [timerColor, setTimerColor] = useState('green');
+  const [showRate, setShowRate] = useState(false);
 
+  // Auth guard
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.replace('/login'); return; }
-    
-    async function load() {
+    if (!user) { router.replace(`/login?next=/tickets/${ticketNumber}`); return; }
+    if (user.role !== 'CUSTOMER') router.replace(defaultRouteForRole(user.role));
+  }, [user, authLoading, router, ticketNumber]);
+
+  // Fetch + 30s soft refresh while open
+  useEffect(() => {
+    if (!user || user.role !== 'CUSTOMER') return;
+    let cancelled = false;
+    const fetchTicket = async () => {
       try {
-        const data = await tickets.get(ticketNumber);
+        const data = await ticketsApi.get(ticketNumber);
+        if (cancelled) return;
         setTicket(data);
       } catch {
-        // Mock fallback if api not implemented fully
-        setTicket({
-          ticketNumber,
-          priority: 'P2',
-          status: 'OPEN',
-          currentLevel: 1,
-          problemCategory: 'NOT_COOLING',
-          errorCode: 'E4',
-          acBrand: 'Daikin',
-          acModel: 'FTX',
-          acUnitRoom: 'Master Bedroom',
-          scheduledDate: '2024-10-25',
-          scheduledSlot: '14:00-16:00',
-          slaDeadlineFinal: new Date(Date.now() + 15 * 60000).toISOString(),
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        });
+        if (!cancelled) toast.error('Could not load ticket.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
+    };
+    fetchTicket();
+    const id = setInterval(fetchTicket, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketNumber, user]);
+
+  const escalated = ticket && (ticket.currentLevel || 1) > 1;
+  const resolved = ticket && (ticket.status === 'RESOLVED' || ticket.status === 'CLOSED');
+  const closed = ticket?.status === 'CLOSED';
+
+  const activeSla = useMemo(() => {
+    if (!ticket || resolved) return null;
+    const lvl = ticket.currentLevel || 1;
+    if (ticket.acknowledgedAt && lvl === 1) {
+      return { deadline: ticket.slaDeadlineFinal, total: 24 * 60 * 60, label: 'Resolution SLA' };
     }
-    load();
-  }, [ticketNumber, user, authLoading, router]);
+    if (lvl === 1)  return { deadline: ticket.slaDeadlineL1,    total: 30 * 60,    label: 'CRM Response Deadline' };
+    if (lvl === 2)  return { deadline: ticket.slaDeadlineL2,    total: 30 * 60,    label: 'L2 Response Deadline' };
+    if (lvl === 3)  return { deadline: ticket.slaDeadlineFinal, total: 24 * 60 * 60, label: 'Final Resolution Deadline' };
+    return null;
+  }, [ticket, resolved]);
 
-  useEffect(() => {
-    if (!ticket?.slaDeadlineFinal) return;
-    
-    const interval = setInterval(() => {
-      const diff = new Date(ticket.slaDeadlineFinal) - new Date();
-      if (diff <= 0) {
-        setTimeLeft('BREACHED');
-        setTimerColor('red');
-      } else {
-        const mins = Math.floor(diff / 60000);
-        const secs = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
-        
-        if (mins < 10) setTimerColor('red');
-        else if (mins < 20) setTimerColor('orange');
-        else setTimerColor('green');
-      }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [ticket]);
+  if (authLoading || loading || !user) {
+    return <div className="loading-page"><div className="spinner" /></div>;
+  }
+  if (!ticket) {
+    return (
+      <div className={styles.shell}>
+        <AppTopBar title="Ticket not found" />
+        <div className={styles.empty}>
+          <h2>We couldn&apos;t find that ticket.</h2>
+          <p>It may have been removed, or you might not have access.</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (authLoading || loading) return <div className="loading-page"><div className="spinner"></div></div>;
-  if (!ticket) return <div>Ticket not found</div>;
+  const handleRate = async (rating, feedback) => {
+    try {
+      await ticketActions.rate(ticket.ticketNumber, { rating, feedback });
+      toast.success('Thanks for the feedback!');
+      setShowRate(false);
+      const fresh = await ticketsApi.get(ticket.ticketNumber);
+      setTicket(fresh);
+    } catch (err) {
+      toast.error(err.message || 'Could not submit rating.');
+    }
+  };
 
   return (
-    <div className={`page-enter ${styles.page}`}>
-      <div className={styles.topBar}>
-        <button className={styles.iconBtn} onClick={() => router.back()}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <h1 className={styles.pageTitle}>Ticket #{ticket.ticketNumber}</h1>
-        <div style={{display:'flex', gap:'8px'}}>
-          <button className={styles.iconBtn}>🖨️</button>
-          <button className={styles.iconBtn}>📥</button>
-        </div>
-      </div>
+    <div className={styles.shell}>
+      <AppTopBar
+        title={`Ticket ${ticket.ticketNumber}`}
+        right={
+          <button className={styles.iconBtn} aria-label="More" type="button">
+            <MoreHorizontal size={20} />
+          </button>
+        }
+      />
 
-      <div className={styles.header}>
-        <div className={styles.priorityGroup}>
-          <span className={`badge ${ticket.priority === 'P1' ? 'badge-amc' : ticket.priority === 'P2' ? 'badge-warranty' : 'badge-paid'}`}>{ticket.priority}</span>
-          <span className={styles.handlingTeam}>{ticket.currentLevel === 1 ? 'CRM Team Handling' : ticket.currentLevel === 2 ? 'Service Managers Handling' : 'Management Handling'}</span>
-        </div>
-        <h2 className={styles.ticketId}>{ticket.ticketNumber}</h2>
-      </div>
+      <div className={styles.body}>
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className={`${styles.statusCard} ${styles[`status_${escalated ? 'esc' : resolved ? 'resolved' : 'open'}`]}`}
+        >
+          <div className={styles.statusBar} />
+          <div className={styles.statusHead}>
+            <PriorityBadge priority={ticket.priority} />
+            <span className={styles.statusBadge}>
+              <span className={styles.statusDot} />
+              {resolved
+                ? 'Resolved'
+                : escalated
+                  ? `Escalated to L${ticket.currentLevel}`
+                  : ticket.acknowledgedAt
+                    ? 'CRM Acknowledged'
+                    : 'CRM Team Handling'}
+            </span>
+          </div>
+          <h2 className={styles.ticketNumber}>{ticket.ticketNumber}</h2>
+        </motion.section>
 
-      {(ticket.status === 'OPEN' || ticket.status === 'ESCALATED') && (
-        <div className={`${styles.slaBanner} ${styles[`slaBanner-${timerColor}`]}`}>
-          <div className={styles.slaIcon}>⏱</div>
-          <div className={styles.slaContent}>
-            <strong>CRM Response Deadline</strong>
-            <span>{timeLeft} min remaining</span>
-          </div>
-        </div>
-      )}
-      {ticket.status === 'ACKNOWLEDGED' && (
-        <div className={`${styles.slaBanner} ${styles.slaBannerGreen}`}>
-          <div className={styles.slaIcon}>✓</div>
-          <div className={styles.slaContent}>
-            <strong>Acknowledged by CRM team</strong>
-          </div>
-        </div>
-      )}
+        {!resolved && activeSla?.deadline && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+          >
+            <SlaCountdown
+              variant="banner"
+              deadlineISO={activeSla.deadline}
+              totalSeconds={activeSla.total}
+              label={activeSla.label}
+            />
+          </motion.div>
+        )}
 
-      <div className={styles.content}>
-        <div className={styles.escalationLadder}>
-          <div className={`${styles.step} ${ticket.currentLevel === 1 ? styles.stepActive : ticket.currentLevel > 1 ? styles.stepPast : ''}`}>
-            <div className={styles.stepDot}>{ticket.currentLevel > 1 ? '✗' : '1'}</div>
-            <div className={styles.stepInfo}>
-              <h4>Level 1 — CRM Team</h4>
-              {ticket.currentLevel === 1 ? (
-                <>
-                  <p className={styles.stepStatus}>Currently handling your ticket</p>
-                  <p className={styles.stepSub}>Response expected in: {timeLeft}</p>
-                </>
-              ) : (
-                <p className={styles.stepStatus}>Escalated — no response</p>
-              )}
-            </div>
-          </div>
-          <div className={styles.stepLine}></div>
-          
-          <div className={`${styles.step} ${ticket.currentLevel === 2 ? styles.stepActive : ticket.currentLevel > 2 ? styles.stepPast : styles.stepFuture}`}>
-            <div className={styles.stepDot}>{ticket.currentLevel > 2 ? '✗' : '2'}</div>
-            <div className={styles.stepInfo}>
-              <h4>Level 2 — Service Managers</h4>
-              {ticket.currentLevel === 2 ? (
-                <p className={styles.stepStatus}>Currently handling</p>
-              ) : ticket.currentLevel > 2 ? (
-                <p className={styles.stepStatus}>Escalated</p>
-              ) : (
-                <p className={styles.stepStatus}>Auto-escalates if no CRM response in 30 min</p>
-              )}
-            </div>
-          </div>
-          <div className={styles.stepLine}></div>
+        <motion.section
+          className={styles.card}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.1 }}
+        >
+          <h3 className={styles.cardTitle}>Support Team</h3>
+          <EscalationLadder
+            currentLevel={ticket.currentLevel || 1}
+            slaRemainingSeconds={activeSla?.deadline ? Math.max(0, Math.floor((new Date(activeSla.deadline).getTime() - Date.now()) / 1000)) : null}
+            acknowledgedAtCurrentLevel={!!ticket.acknowledgedAt && (ticket.currentLevel || 1) === 1}
+          />
+        </motion.section>
 
-          <div className={`${styles.step} ${ticket.currentLevel === 3 ? styles.stepUrgent : styles.stepFuture}`}>
-            <div className={styles.stepDot}>3</div>
-            <div className={styles.stepInfo}>
-              <h4>Level 3 — Management</h4>
-              {ticket.currentLevel === 3 ? (
-                <p className={styles.stepStatus}>Management handling</p>
-              ) : (
-                <p className={styles.stepStatus}>Escalates if unresolved after Level 2</p>
-              )}
-            </div>
-          </div>
-          <p className={styles.escalationNote}>ℹ Escalation is automatic. You&apos;ll be notified at each step.</p>
-        </div>
-
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}>❄️</span>
-            <h3>Asset Details</h3>
-          </div>
-          <div className={styles.cardBody}>
+        <div className={styles.twoCol}>
+          <motion.section
+            className={styles.card}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.15 }}
+          >
+            <h3 className={styles.cardTitle}>
+              <Snowflake size={16} /> Ticket Details
+            </h3>
             <div className={styles.detailRow}>
-              <span>Asset:</span>
-              <strong>{ticket.acBrand} {ticket.acModel} — {ticket.acUnitRoom}</strong>
+              <span className={styles.detailLabel}>Asset</span>
+              <span className={styles.detailValue}>
+                {ticket.acBrand} {ticket.acModel || ''} — {ticket.acUnitRoom}
+              </span>
             </div>
             <div className={styles.detailRow}>
-              <span>Reported Issue:</span>
-              <strong>{ticket.problemCategory?.replace(/_/g, ' ')} {ticket.errorCode ? `+ ${ticket.errorCode}` : ''}</strong>
+              <span className={styles.detailLabel}>Reported Issue</span>
+              <span className={`${styles.detailValue} ${styles.issueText}`}>
+                {[
+                  PROBLEM_LABEL[ticket.problemCategory] || ticket.problemCategory,
+                  ticket.errorCode ? `Code ${ticket.errorCode}` : null,
+                ].filter(Boolean).join(' + ')}
+              </span>
             </div>
-            <div className={styles.detailRow}>
-              <span>Scheduled Visit:</span>
-              <strong>📅 {ticket.scheduledDate} — {ticket.scheduledSlot}</strong>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.timelineCard}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardIcon}>🕒</span>
-            <h3>Activity Timeline</h3>
-          </div>
-          <div className={styles.timeline}>
-            {ticket.activities && ticket.activities.length > 0 ? (
-              [...ticket.activities].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((activity) => (
-                <div key={activity.id} className={styles.timelineEvent}>
-                  <div className={styles.tlDot}></div>
-                  <div className={styles.tlContent}>
-                    <span className={styles.tlTime}>
-                      {new Date(activity.createdAt).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                    </span>
-                    <p>{activity.description}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>No activity recorded yet.</p>
+            {ticket.problemDescription && (
+              <div className={styles.descBlock}>
+                <span className={styles.detailLabel}>Description</span>
+                <p>{ticket.problemDescription}</p>
+              </div>
             )}
-          </div>
+            {ticket.scheduledDate && (
+              <div className={styles.scheduleBlock}>
+                <CalendarDays size={18} color="#0099CC" />
+                <div>
+                  <span className={styles.detailLabel}>Scheduled Visit</span>
+                  <p>
+                    {new Date(ticket.scheduledDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {ticket.scheduledSlot ? ` · ${slotLabel(ticket.scheduledSlot)}` : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+            {(ticket.propertyLabel || ticket.propertyId) && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Property</span>
+                <span className={styles.detailValue}>
+                  <MapPin size={14} /> {ticket.propertyLabel || '—'}
+                </span>
+              </div>
+            )}
+          </motion.section>
+
+          <motion.section
+            className={styles.card}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.2 }}
+          >
+            <h3 className={styles.cardTitle}>
+              <History size={16} /> Timeline
+            </h3>
+            <ActivityTimeline activities={ticket.activities || []} createdAt={ticket.createdAt} />
+          </motion.section>
         </div>
+
+        {/* ─── Action buttons ─── */}
+        {!resolved && (
+          <div className={styles.actionRow}>
+            <button type="button" className="btn btn-outline btn-full">
+              <Camera size={16} /> Add Note / Photo
+            </button>
+            <a href="tel:+914023540000" className="btn btn-danger btn-full">
+              <Phone size={16} /> Emergency? Call us
+            </a>
+          </div>
+        )}
+
+        {/* ─── Rating CTA ─── */}
+        {ticket.status === 'RESOLVED' && !ticket.customerRating && (
+          <motion.section
+            className={`${styles.card} ${styles.rateCard}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Star size={22} color="#f59e0b" fill="#f59e0b" />
+            <div>
+              <h4>How did we do?</h4>
+              <p>Tap to rate your service experience.</p>
+            </div>
+            <button type="button" className="btn btn-primary" onClick={() => setShowRate(true)}>
+              Rate Service
+            </button>
+          </motion.section>
+        )}
+
+        {ticket.customerRating && (
+          <section className={`${styles.card} ${styles.rateCard}`}>
+            <div className={styles.ratedStars}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star key={n} size={18}
+                  fill={n <= ticket.customerRating ? '#f59e0b' : 'transparent'}
+                  color="#f59e0b"
+                />
+              ))}
+            </div>
+            <p style={{ flex: 1 }}>
+              You rated this service <strong>{ticket.customerRating}/5</strong>{ticket.customerFeedback ? ` — "${ticket.customerFeedback}"` : ''}
+            </p>
+          </section>
+        )}
       </div>
 
-      <div className={styles.bottomActions}>
-        <button className="btn btn-outline" style={{flex: 1}}>＋ Add Note / Photo</button>
-        <a href="tel:+914023540000" className="btn btn-primary" style={{flex: 1, backgroundColor: '#dc2626', borderColor: '#dc2626'}}>Emergency? Call us</a>
-      </div>
+      {showRate && (
+        <RatingSheet ticket={ticket} onClose={() => setShowRate(false)} onSubmit={handleRate} />
+      )}
     </div>
+  );
+}
+
+function ActivityTimeline({ activities, createdAt }) {
+  // Always show "Ticket raised" as the first item
+  const items = [
+    ...(activities || []).map((a) => ({
+      type: a.activityType,
+      desc: a.description,
+      stamp: a.createdAt,
+    })),
+  ];
+  if (!items.find((i) => i.type === 'TICKET_RAISED')) {
+    items.push({ type: 'TICKET_RAISED', desc: 'Ticket raised', stamp: createdAt });
+  }
+  // sort newest first
+  items.sort((a, b) => new Date(b.stamp || 0) - new Date(a.stamp || 0));
+
+  if (items.length === 0) {
+    return <p className={styles.timelineEmpty}>No activity yet.</p>;
+  }
+
+  return (
+    <ul className={styles.timeline}>
+      {items.map((it, i) => (
+        <li key={i} className={styles.timelineRow}>
+          <span className={styles.timelineDot}>
+            {activityIcon(it.type)}
+          </span>
+          <div className={styles.timelineMain}>
+            <span className={styles.timelineStamp}>{formatStamp(it.stamp)}</span>
+            <p>{it.desc || it.type.replace(/_/g, ' ').toLowerCase()}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RatingSheet({ ticket, onClose, onSubmit }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handle = async () => {
+    if (rating < 1) return;
+    setSaving(true);
+    await onSubmit(rating, feedback?.trim() || null);
+    setSaving(false);
+  };
+
+  return (
+    <motion.div
+      className={styles.sheetBackdrop}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className={styles.sheet}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.sheetHandle} />
+        <div className={styles.sheetHeader}>
+          <h3>Rate your service</h3>
+          <button type="button" onClick={onClose} className={styles.iconBtn} aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+        <p className={styles.sheetSub}>How was your experience with ticket {ticket.ticketNumber}?</p>
+        <div className={styles.starsRow}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+              onClick={() => setRating(n)}
+              className={styles.starBtn}
+            >
+              <Star
+                size={36}
+                fill={(hover || rating) >= n ? '#f59e0b' : 'transparent'}
+                color="#f59e0b"
+                strokeWidth={1.5}
+              />
+            </button>
+          ))}
+        </div>
+        <textarea
+          className="input textarea"
+          rows={3}
+          maxLength={500}
+          placeholder="Tell us what went well or what we can improve (optional)"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn btn-primary btn-full btn-lg"
+          disabled={rating < 1 || saving}
+          onClick={handle}
+        >
+          {saving ? <span className="spinner spinner-sm" /> : 'Submit Rating'}
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }

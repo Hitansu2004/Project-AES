@@ -5,7 +5,6 @@ import com.aes.dto.response.InstallationRequestResponse;
 import com.aes.entity.InstallationRequest;
 import com.aes.entity.Property;
 import com.aes.entity.User;
-import com.aes.enums.AcType;
 import com.aes.enums.InstallationStatus;
 import com.aes.enums.NotificationType;
 import com.aes.enums.UserRole;
@@ -94,20 +93,19 @@ public class InstallationRequestService {
             }
         }
 
-        // 2. Save installation request (line 610)
         InstallationRequest installReq = InstallationRequest.builder()
                 .requestNumber(requestNumber)
                 .customer(customer)
                 .property(property)
                 .propertyAddress(request.getPropertyAddress())
-                .acType(AcType.valueOf(request.getAcType()))
+                .acType(request.getAcType())
                 .brand(request.getBrand())
                 .modelNumber(request.getModelNumber())
                 .tonnage(request.getTonnage())
                 .energyRating(request.getEnergyRating())
                 .roomsJson(roomsJson)
                 .scheduledDate(request.getScheduledDate())
-                .scheduledSlot(request.getScheduledSlot())
+                .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
                 .status(InstallationStatus.PENDING)
                 .notes(request.getNotes())
                 .build();
@@ -149,18 +147,27 @@ public class InstallationRequestService {
         Page<InstallationRequest> page;
 
         if (role == UserRole.CUSTOMER) {
-            // CUSTOMER: own requests only
             page = installationRequestRepository.findByCustomerIdOrderByCreatedAtDesc(requesterId, pageable);
         } else if (statusFilter != null && !statusFilter.isBlank()) {
-            // CRM/ADMIN with status filter
             page = installationRequestRepository.findByStatusOrderByCreatedAtDesc(
-                    InstallationStatus.valueOf(statusFilter), pageable);
+                    parseInstallationStatus(statusFilter), pageable);
         } else {
-            // CRM/ADMIN: all
             page = installationRequestRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
 
         return page.map(this::toResponse);
+    }
+
+    private InstallationStatus parseInstallationStatus(String value) {
+        try {
+            return InstallationStatus.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("INVALID_STATUS",
+                    "Unknown installation status '" + value + "'. Valid values: PENDING, "
+                            + "CONFIRMED, SITE_VISIT_DONE, QUOTE_SENT, QUOTE_ACCEPTED, "
+                            + "INSTALLATION_SCHEDULED, COMPLETED, CANCELLED.",
+                    HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**

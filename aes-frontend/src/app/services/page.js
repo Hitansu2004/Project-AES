@@ -1,65 +1,125 @@
 'use client';
-import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+
 import { useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import {
+  Snowflake, Wrench, ShieldCheck, ChevronRight, Phone,
+} from 'lucide-react';
+import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import AppTopBar from '@/components/ui/AppTopBar';
 import styles from './services.module.css';
 
-export default function ServicesPage() {
+const OPTIONS = [
+  {
+    id: 'install',
+    href: '/services/installation',
+    title: 'New AC Installation',
+    desc: 'Install a Split, Central, VRF/VRV or Cassette unit at your home or office.',
+    chips: ['Split AC', 'Central AC', 'VRF/VRV'],
+    eyebrow: 'Project',
+    Icon: Snowflake,
+    accent: 'install',
+  },
+  {
+    id: 'service',
+    href: '/services/ticket',
+    title: 'Service / Repair Request',
+    desc: 'Your existing AC needs attention — we will diagnose and fix it.',
+    chips: ['Not Cooling', 'Noise', 'Water Leak'],
+    eyebrow: 'Support',
+    Icon: Wrench,
+    accent: 'service',
+  },
+  {
+    id: 'amc',
+    href: '/services/amc',
+    title: 'Schedule AMC Visit',
+    desc: 'Book your routine AMC service or check upcoming visits.',
+    chips: ['4 visits / year', 'Priority response'],
+    eyebrow: 'Maintenance',
+    Icon: ShieldCheck,
+    accent: 'amc',
+  },
+];
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.32 } },
+};
+
+export default function ServicesChooserPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) router.replace('/login');
+    if (loading) return;
+    if (!user) { router.replace('/login?next=/services'); return; }
+    if (user.role !== 'CUSTOMER') router.replace(defaultRouteForRole(user.role));
   }, [user, loading, router]);
 
-  if (loading || !user) return <div className="loading-page"><div className="spinner"></div></div>;
+  if (loading || !user) {
+    return <div className="loading-page"><div className="spinner" /></div>;
+  }
 
   return (
-    <div className={`page-enter ${styles.page}`}>
-      <div className="container page-content">
-        <div className={styles.header}>
-          <h1 className="headline-lg">How can we help you?</h1>
-          <p className={styles.subtitle}>Select the type of service you need</p>
-        </div>
+    <div className={styles.shell}>
+      <AppTopBar title="What do you need?" showBack />
 
-        <div className={styles.cards}>
-          <Link href="/services/installation" className={`${styles.card} ${styles.installCard}`}>
-            <div className={styles.cardBadge}>P — NEW</div>
-            <div className={styles.cardIcon}>🔧</div>
-            <h2 className={styles.cardTitle}>New AC Installation</h2>
-            <p className={styles.cardDesc}>Install Split, Central, VRF/VRV, or Cassette AC...</p>
-            <div className={styles.cardTags}>
-              <span>Split AC</span><span>Central AC</span><span>VRF/VRV</span>
-            </div>
-            <div className={styles.cardArrow}>→</div>
-          </Link>
-
-          <Link href="/services/ticket" className={`${styles.card} ${styles.serviceCard}`}>
-            <div className={styles.cardIcon}>🔧</div>
-            <h2 className={styles.cardTitle}>Service / Repair Request</h2>
-            <p className={styles.cardDesc}>Your existing AC needs attention...</p>
-            <div className={styles.cardTags}>
-              <span>Not Cooling</span><span>Noise</span><span>Water Leak</span>
-            </div>
-            <div className={styles.cardArrow}>→</div>
-          </Link>
-
-          <Link href="/services/amc" className={`${styles.card} ${styles.amcCard}`}>
-            <div className={styles.cardIcon}>📅</div>
-            <h2 className={styles.cardTitle}>Schedule AMC Visit</h2>
-            <p className={styles.cardDesc}>Book your routine AMC service...</p>
-            <div className={styles.cardTags}>
-              <span>AMC Active — 4 visits/year</span>
-            </div>
-            <div className={styles.cardArrow}>→</div>
-          </Link>
-        </div>
-
-        <p className={styles.help}>
-          Not sure? Call us: <a href="tel:+914023540000" className={styles.helpLink}>+91 40-2354-XXXX</a>
-        </p>
+      <div className={styles.intro}>
+        <motion.h1
+          className={styles.heading}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          How can we help you?
+        </motion.h1>
+        <motion.p
+          className={styles.sub}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+        >
+          Choose the type of service you need — we will route you to the right team.
+        </motion.p>
       </div>
+
+      <motion.div
+        className={styles.cards}
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+      >
+        {OPTIONS.map(({ id, href, title, desc, chips, eyebrow, Icon, accent }) => (
+          <motion.div key={id} variants={item}>
+            <Link href={href} className={`${styles.card} ${styles[accent]}`}>
+              <span className={styles.eyebrow}>{eyebrow}</span>
+              <div className={styles.iconWrap}><Icon size={26} /></div>
+              <h3 className={styles.cardTitle}>{title}</h3>
+              <p className={styles.cardDesc}>{desc}</p>
+              <div className={styles.chipRow}>
+                {chips.map((c) => <span key={c} className={styles.chip}>{c}</span>)}
+              </div>
+              <span className={styles.cardArrow}>
+                <ChevronRight size={20} />
+              </span>
+              <div className={styles.cardDeco} aria-hidden="true">
+                <Icon size={140} />
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      <a href="tel:+914023540000" className={styles.helpLine}>
+        <Phone size={14} /> Not sure? Call us at <strong>+91 40-2354-XXXX</strong>
+      </a>
     </div>
   );
 }

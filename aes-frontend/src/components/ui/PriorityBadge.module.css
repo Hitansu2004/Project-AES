@@ -1,0 +1,33 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+}
+.dense {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
+.amc      { background: #f3e8ff; color: #7B2FBE; }
+.warranty { background: #e0f7ff; color: #0099CC; }
+.paid     { background: #ffe4e6; color: #E63946; }
+.neutral  { background: var(--surface-container-high); color: var(--on-surface-variant); }
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot.amc      { background: #7B2FBE; }
+.dot.warranty { background: #0099CC; }
+.dot.paid     { background: #E63946; }
+.dot.neutral  { background: var(--outline-variant); }

@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,7 +31,6 @@ public class DashboardService {
 
     private final ServiceTicketRepository ticketRepository;
     private final PropertyRepository propertyRepository;
-    private final AcUnitRepository acUnitRepository;
     private final AmcContractRepository contractRepository;
     private final AmcVisitRepository visitRepository;
     private final TicketEscalationLogRepository escalationLogRepository;
@@ -112,13 +110,13 @@ public class DashboardService {
                 .filter(t -> t.getSlaDeadlineL1() != null && now.isAfter(t.getSlaDeadlineL1()))
                 .count();
 
-        // Resolved today
-        OffsetDateTime startOfDay = LocalDate.now().atStartOfDay()
-                .atOffset(now.getOffset());
+        OffsetDateTime startOfDay = LocalDate.now().atStartOfDay().atOffset(now.getOffset());
         long resolvedToday = ticketRepository.countResolvedSince(startOfDay);
 
-        // Avg response: simplified — just return 0 for now as we'd need more query infra
-        double avgResponseMinutes = 0;
+        Double avgFromDb = ticketRepository.avgAcknowledgmentMinutesSince(startOfDay);
+        double avgResponseMinutes = avgFromDb != null
+                ? Math.round(avgFromDb * 10.0) / 10.0
+                : 0.0;
 
         List<TicketResponse> tickets = inboxPage.getContent().stream()
                 .map(ticketService::toFullResponse)
@@ -140,34 +138,28 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public EscalationDashboardResponse getEscalationDashboard() {
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime startOfDay = LocalDate.now().atStartOfDay()
-                .atOffset(now.getOffset());
+        OffsetDateTime startOfDay = LocalDate.now().atStartOfDay().atOffset(now.getOffset());
 
         long escalatedNow = ticketRepository.countCurrentlyEscalated();
         long resolvedToday = ticketRepository.countResolvedSince(startOfDay);
+        long slaBreachToday = ticketRepository.countFinalSlaBreached(now);
 
-        // L1 tickets
+        Double avgFromDb = ticketRepository.avgAcknowledgmentMinutesSince(startOfDay);
+        double avgResponseMinutes = avgFromDb != null
+                ? Math.round(avgFromDb * 10.0) / 10.0
+                : 0.0;
+
         var l1Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(1, PageRequest.of(0, 20));
+        var l2Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(2, PageRequest.of(0, 20));
+        var l3Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(3, PageRequest.of(0, 20));
+
         List<TicketResponse> l1Tickets = l1Page.getContent().stream()
                 .map(ticketService::toFullResponse).collect(Collectors.toList());
-
-        // L2 tickets
-        var l2Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(2, PageRequest.of(0, 20));
         List<TicketResponse> l2Tickets = l2Page.getContent().stream()
                 .map(ticketService::toFullResponse).collect(Collectors.toList());
-
-        // L3 tickets
-        var l3Page = ticketRepository.findByCurrentLevelOrderByCreatedAtDesc(3, PageRequest.of(0, 20));
         List<TicketResponse> l3Tickets = l3Page.getContent().stream()
                 .map(ticketService::toFullResponse).collect(Collectors.toList());
 
-        // SLA breach today
-        long slaBreachToday = l1Tickets.stream()
-                .filter(t -> Boolean.TRUE.equals(t.getIsL1Breached())).count()
-                + l2Tickets.stream()
-                .filter(t -> Boolean.TRUE.equals(t.getIsL2Breached())).count();
-
-        // Escalation log
         List<TicketEscalationLog> logEntities = escalationLogRepository.findAllByOrderByEscalatedAtDesc();
         List<TicketResponse.EscalationLogResponse> escalationLog = logEntities.stream()
                 .limit(50)
@@ -184,7 +176,7 @@ public class DashboardService {
 
         return EscalationDashboardResponse.builder()
                 .escalatedNow(escalatedNow)
-                .avgResponseMinutes(0)
+                .avgResponseMinutes(avgResponseMinutes)
                 .slaBreachToday(slaBreachToday)
                 .resolvedToday(resolvedToday)
                 .l1Tickets(l1Tickets)

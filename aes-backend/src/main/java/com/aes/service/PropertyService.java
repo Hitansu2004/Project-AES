@@ -73,8 +73,9 @@ public class PropertyService {
                 .addressLine2(request.getAddressLine2())
                 .city(request.getCity() != null ? request.getCity() : "Hyderabad")
                 .pincode(request.getPincode())
-                .propertyType(PropertyType.valueOf(request.getPropertyType()))
-                .isPrimary(request.getIsPrimary() != null ? request.getIsPrimary() : false)
+                .propertyType(request.getPropertyType() != null
+                        ? request.getPropertyType() : PropertyType.RESIDENTIAL)
+                .isPrimary(Boolean.TRUE.equals(request.getIsPrimary()))
                 .build();
 
         property = propertyRepository.save(property);
@@ -118,7 +119,7 @@ public class PropertyService {
         if (request.getAddressLine2() != null) property.setAddressLine2(request.getAddressLine2());
         if (request.getCity() != null) property.setCity(request.getCity());
         if (request.getPincode() != null) property.setPincode(request.getPincode());
-        if (request.getPropertyType() != null) property.setPropertyType(PropertyType.valueOf(request.getPropertyType()));
+        if (request.getPropertyType() != null) property.setPropertyType(request.getPropertyType());
         if (request.getIsPrimary() != null) {
             if (Boolean.TRUE.equals(request.getIsPrimary())) {
                 unsetOtherPrimaries(customerId);

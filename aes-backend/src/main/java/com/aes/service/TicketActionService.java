@@ -1,5 +1,6 @@
 package com.aes.service;
 
+import com.aes.config.AppProperties;
 import com.aes.dto.request.*;
 import com.aes.dto.response.TicketResponse;
 import com.aes.entity.*;
@@ -28,13 +29,13 @@ import java.util.UUID;
 public class TicketActionService {
 
     private final ServiceTicketRepository ticketRepository;
-    private final TicketActivityRepository activityRepository;
     private final TicketEscalationLogRepository escalationLogRepository;
     private final UserRepository userRepository;
     private final ServiceTicketService ticketService;
     private final NotificationService notificationService;
     private final WebSocketService webSocketService;
     private final AssignmentService assignmentService;
+    private final AppProperties appProperties;
 
     /**
      * Acknowledge ticket.
@@ -144,62 +145,62 @@ public class TicketActionService {
     /**
      * Core escalation logic — shared by manual and auto escalation.
      * Per lines 749-789 (L2) and 791-797 (L3).
+     *
+     * <p>{@code REQUIRED} propagation joins the manual-escalation transaction
+     * and starts a fresh one when invoked by the {@link EscalationEngineService}
+     * scheduler (which has no enclosing transaction). Every per-ticket
+     * escalation therefore commits or rolls back atomically — escalation log,
+     * ticket update and activity row stay consistent.</p>
      */
     @Transactional
     public void escalateToLevel(ServiceTicket ticket, int fromLevel, int toLevel,
                                  String reason, EscalationType type) {
-        // Log escalation (lines 752-761)
+        OffsetDateTime now = OffsetDateTime.now();
+
         TicketEscalationLog escLog = TicketEscalationLog.builder()
                 .ticket(ticket)
                 .fromLevel(fromLevel)
                 .toLevel(toLevel)
-                .fromUserId(ticket.getCurrentAssignee() != null ?
-                        ticket.getCurrentAssignee().getId() : null)
+                .fromUserId(ticket.getCurrentAssignee() != null
+                        ? ticket.getCurrentAssignee().getId() : null)
                 .reason(reason)
                 .escalationType(type)
-                .escalatedAt(OffsetDateTime.now())
+                .escalatedAt(now)
                 .build();
         escalationLogRepository.save(escLog);
 
-        // Update ticket level (line 764)
         ticket.setCurrentLevel(toLevel);
 
-        // Assign to next level user
         User newAssignee;
         String assignedTeam;
         if (toLevel == 2) {
-            // L2: assign to SERVICE_MANAGER (line 768)
-            ticket.setSlaDeadlineL2(OffsetDateTime.now().plusMinutes(60)); // line 765
+            ticket.setSlaDeadlineL2(now.plusMinutes(appProperties.getEscalation().getL2TimeoutMinutes()));
             newAssignee = assignmentService.getNextAvailableManager();
             assignedTeam = "Service Manager Team";
         } else {
-            // L3: assign to ADMIN (line 794)
+            // Per spec lines 791-797 — Level 3 is "Management takes over" with no further SLA.
             newAssignee = assignmentService.getNextAvailableAdmin();
             assignedTeam = "Management Team";
         }
 
         ticket.setCurrentAssignee(newAssignee);
-        ticket.setAssignedAt(OffsetDateTime.now());
+        ticket.setAssignedAt(now);
         ticketRepository.save(ticket);
 
-        // Create activity (lines 774-776)
         ticketService.createActivity(ticket, null, ActivityType.ESCALATED,
-                (type == EscalationType.AUTO ? "Auto-escalated" : "Manually escalated") +
-                        " to Level " + toLevel + ". Reason: " + reason);
+                (type == EscalationType.AUTO ? "Auto-escalated" : "Manually escalated")
+                        + " to Level " + toLevel + ". Reason: " + reason);
 
-        // Notify customer (lines 779-781)
         notificationService.notifyUser(ticket.getCustomer().getId(),
                 "Update on ticket " + ticket.getTicketNumber(),
                 "Your request has been escalated to our " + assignedTeam + " for faster resolution.",
                 NotificationType.TICKET_ESCALATED, ticket.getId());
 
-        // Notify new assignee (lines 782-784)
         notificationService.notifyUser(newAssignee.getId(),
-                "New Escalated Ticket",
+                "New escalated ticket",
                 "Ticket " + ticket.getTicketNumber() + " has been escalated to you. Reason: " + reason,
                 NotificationType.TICKET_ESCALATED, ticket.getId());
 
-        // WebSocket broadcasts (lines 786-788)
         webSocketService.broadcastTicketUpdate(ticket.getTicketNumber(),
                 "ESCALATED_TO_L" + toLevel, toLevel, 0, assignedTeam);
         webSocketService.broadcastEscalationUpdate(ticket.getTicketNumber(), fromLevel, toLevel);

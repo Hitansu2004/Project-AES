@@ -1,5 +1,7 @@
 package com.aes.service;
 
+import com.aes.config.AppProperties;
+import com.aes.config.JwtConfig;
 import com.aes.dto.request.StaffLoginRequest;
 import com.aes.dto.response.AuthResponse;
 import com.aes.dto.response.OtpResponse;
@@ -13,7 +15,6 @@ import com.aes.repository.RefreshTokenRepository;
 import com.aes.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,71 +24,66 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Auth Service — orchestrates OTP flow, staff login, token refresh, logout.
+ * Auth Service — orchestrates the OTP flow, staff password login,
+ * token refresh and logout.
  *
- * Per Section 4.1 (lines 493-537):
- *   - send-otp: validate phone, rate limit, generate OTP
- *   - verify-otp: verify OTP, find/create user, generate tokens
- *   - staff-login: BCrypt password verification
- *   - refresh: new access token from refresh token
- *   - logout: delete refresh token
+ * <p>Per Section 4.1 (lines 493-537):</p>
+ * <ul>
+ *   <li>{@link #sendOtp(String)} — generate OTP, dispatch SMS, return demo echo when applicable.</li>
+ *   <li>{@link #verifyOtp(String, String)} — validate OTP, find/create user, mint tokens.</li>
+ *   <li>{@link #staffLogin(StaffLoginRequest)} — BCrypt password verification.</li>
+ *   <li>{@link #refreshAccessToken(String)} — exchange refresh token for a new access token.</li>
+ *   <li>{@link #logout(String)} — invalidate refresh token.</li>
+ * </ul>
  */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int OTP_VALIDITY_SECONDS = 600;
+
     private final OtpService otpService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-
-
-
-    @Value("${jwt.refresh-token-expiry}")
-    private long refreshTokenExpirySeconds;
+    private final AppProperties appProperties;
+    private final JwtConfig jwtConfig;
 
     /**
-     * Send OTP to customer phone number.
-     * Per lines 493-504.
+     * Send an OTP to the customer's phone number.
+     *
+     * <p>The generated OTP is echoed back in the response only when
+     * {@code app.demo-mode=true} (Section 4.1 line 504). In production the
+     * {@code otpForDemo} field is omitted entirely.</p>
      */
     public OtpResponse sendOtp(String phoneNumber) {
         String otpCode = otpService.generateOtp(phoneNumber);
 
-        OtpResponse response = OtpResponse.builder()
-                .expiresInSeconds(600) // 10 minutes
-
+        return OtpResponse.builder()
+                .expiresInSeconds(OTP_VALIDITY_SECONDS)
+                .otpForDemo(appProperties.isDemoMode() ? otpCode : null)
                 .build();
-
-
-        return response;
     }
 
     /**
-     * Verify OTP and return JWT tokens.
-     * Per lines 506-518:
-     *   5. Find or create user record with role=CUSTOMER
-     *   6. Generate JWT access token (15 min) + refresh token (7 days)
-     *   7. Save refresh token to refresh_tokens table
+     * Verify the submitted OTP, find or create the customer record, and mint tokens.
      */
     @Transactional
     public AuthResponse verifyOtp(String phoneNumber, String otp) {
         otpService.verifyOtp(phoneNumber, otp);
 
-        // Find or create user with role=CUSTOMER (line 515)
         User user = userRepository.findByPhoneNumber(phoneNumber)
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .phoneNumber(phoneNumber)
-                            .role(UserRole.CUSTOMER)
-                            .isActive(true)
-                            .build();
-                    return userRepository.save(newUser);
-                });
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .phoneNumber(phoneNumber)
+                        .role(UserRole.CUSTOMER)
+                        .isActive(true)
+                        .build()));
 
-        if (!user.getIsActive()) {
-            throw new BusinessException("USER_INACTIVE", "Account is deactivated. Contact support.",
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new BusinessException("USER_INACTIVE",
+                    "Account is deactivated. Please contact support.",
                     HttpStatus.FORBIDDEN);
         }
 
@@ -95,26 +91,25 @@ public class AuthService {
     }
 
     /**
-     * Staff login with phone + password (BCrypt).
-     * Per lines 520-525.
+     * Staff password login (CRM agents, service managers, admins).
      */
     @Transactional
     public AuthResponse staffLogin(StaffLoginRequest request) {
         User user = userRepository.findByPhoneNumber(request.getPhoneNumber())
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
-        // Verify staff role
         if (user.getRole() == UserRole.CUSTOMER) {
-            throw new UnauthorizedException("This login is for staff only. Customers use OTP login.");
+            throw new UnauthorizedException("This login is for staff only. Customers must use OTP login.");
         }
 
-        // Verify password (BCrypt, strength 12 — Section 12, line 2002)
-        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (user.getPasswordHash() == null
+                || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("Invalid credentials");
         }
 
-        if (!user.getIsActive()) {
-            throw new BusinessException("USER_INACTIVE", "Account is deactivated. Contact admin.",
+        if (Boolean.FALSE.equals(user.getIsActive())) {
+            throw new BusinessException("USER_INACTIVE",
+                    "Account is deactivated. Please contact admin.",
                     HttpStatus.FORBIDDEN);
         }
 
@@ -122,31 +117,24 @@ public class AuthService {
     }
 
     /**
-     * Refresh access token using refresh token.
-     * Per lines 527-531.
+     * Mint a new access token from a still-valid refresh token.
      */
     @Transactional
     public AuthResponse refreshAccessToken(String refreshTokenStr) {
-        // Validate the refresh JWT itself
         UUID userId = jwtService.extractUserId(refreshTokenStr);
         if (userId == null) {
             throw new UnauthorizedException("Invalid or expired refresh token");
         }
 
-        // Find refresh token in DB
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshTokenStr)
-                .orElseThrow(() -> new UnauthorizedException("Refresh token not found. Please login again."));
+                .orElseThrow(() -> new UnauthorizedException("Refresh token not found. Please log in again."));
 
-        // Check expiry
         if (storedToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
             refreshTokenRepository.delete(storedToken);
-            throw new UnauthorizedException("Refresh token expired. Please login again.");
+            throw new UnauthorizedException("Refresh token expired. Please log in again.");
         }
 
-        // Get user
         User user = storedToken.getUser();
-
-        // Generate new access token only
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
 
         return AuthResponse.builder()
@@ -155,8 +143,7 @@ public class AuthService {
     }
 
     /**
-     * Logout — delete refresh token.
-     * Per lines 533-537.
+     * Invalidate the refresh token (best effort — silent on unknown token).
      */
     @Transactional
     public void logout(String refreshTokenStr) {
@@ -164,23 +151,17 @@ public class AuthService {
                 .ifPresent(refreshTokenRepository::delete);
     }
 
-    /**
-     * Generate full auth response with access + refresh tokens + user info.
-     */
     private AuthResponse generateAuthResponse(User user) {
-        // Generate JWT tokens (lines 516-517)
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
 
-        // Save refresh token to DB (line 517)
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .user(user)
                 .token(refreshToken)
-                .expiresAt(OffsetDateTime.now().plusSeconds(refreshTokenExpirySeconds))
+                .expiresAt(OffsetDateTime.now().plusSeconds(jwtConfig.getRefreshTokenExpiry()))
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
-        // Build user response (line 518)
         UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())

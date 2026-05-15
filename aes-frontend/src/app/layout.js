@@ -1,11 +1,20 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
-import Header from '@/components/Header';
-import BottomNav from '@/components/BottomNav';
+import { ToastProvider } from '@/components/ui/Toast';
+import Shell from '@/components/Shell';
 
 export const metadata = {
   title: 'Arial Engineering Services — HVAC Customer Portal',
-  description: 'Book AC installations, raise service tickets, and manage your HVAC equipment with Arial Engineering Services.',
+  description:
+    'Book AC installations, raise service tickets, and manage your HVAC equipment with Arial Engineering Services.',
+  applicationName: 'AES Portal',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#003366',
 };
 
 export default function RootLayout({ children }) {
@@ -13,9 +22,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <Header />
-          <main>{children}</main>
-          <BottomNav />
+          <ToastProvider>
+            <Shell>{children}</Shell>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

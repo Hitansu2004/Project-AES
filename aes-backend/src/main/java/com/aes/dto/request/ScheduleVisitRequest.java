@@ -1,6 +1,6 @@
 package com.aes.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.aes.enums.TimeSlot;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * Schedule AMC visit request DTO.
+ * Request body for {@code POST /api/v1/amc/visits/{visitId}/schedule}.
  * Per Section 4.10, line 850.
  */
 @Data
@@ -22,6 +22,6 @@ public class ScheduleVisitRequest {
     @NotNull(message = "Scheduled date is required")
     private LocalDate scheduledDate;
 
-    @NotBlank(message = "Scheduled slot is required")
-    private String scheduledSlot;
+    @NotNull(message = "Scheduled slot is required (MORNING, AFTERNOON, or EVENING)")
+    private TimeSlot scheduledSlot;
 }

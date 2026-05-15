@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class AmcService {
+
+    /** Visits in these states may still be re-scheduled by the customer or admin. */
+    private static final Set<String> RESCHEDULABLE_STATES = Set.of("PENDING", "SCHEDULED", "MISSED");
 
     private final AmcContractRepository contractRepository;
     private final AmcVisitRepository visitRepository;
@@ -73,18 +78,42 @@ public class AmcService {
         AmcVisit visit = visitRepository.findById(visitId)
                 .orElseThrow(() -> new NotFoundException("AmcVisit", visitId.toString()));
 
-        // Verify ownership
         if (!isAdmin && !visit.getContract().getCustomer().getId().equals(requesterId)) {
             throw new BusinessException("FORBIDDEN", "You do not have access to this visit",
                     HttpStatus.FORBIDDEN);
         }
 
+        // Per Section 7 line 1688 — scheduled date must be tomorrow or later.
+        if (request.getScheduledDate() == null
+                || !request.getScheduledDate().isAfter(LocalDate.now())) {
+            throw new BusinessException("INVALID_DATE",
+                    "Scheduled date must be tomorrow or later.",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        String currentState = visit.getStatus() == null ? "PENDING" : visit.getStatus();
+        if (!RESCHEDULABLE_STATES.contains(currentState)) {
+            throw new BusinessException("INVALID_STATE",
+                    "Visit cannot be scheduled in its current state: " + currentState,
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        // Per Section 8.5 (line 1822) — visits cannot be scheduled past the
+        // contract end date.
+        LocalDate contractEnd = visit.getContract().getEndDate();
+        if (contractEnd != null && request.getScheduledDate().isAfter(contractEnd)) {
+            throw new BusinessException("INVALID_DATE",
+                    "Scheduled date is after the contract end date (" + contractEnd + ").",
+                    HttpStatus.BAD_REQUEST);
+        }
+
         visit.setScheduledDate(request.getScheduledDate());
-        visit.setScheduledTimeSlot(request.getScheduledSlot());
+        visit.setScheduledTimeSlot(request.getScheduledSlot().name());
         visit.setStatus("SCHEDULED");
         visitRepository.save(visit);
 
-        log.info("AMC visit {} scheduled for {}", visitId, request.getScheduledDate());
+        log.info("AMC visit {} scheduled for {} ({})", visitId,
+                request.getScheduledDate(), request.getScheduledSlot());
 
         return toVisitResponse(visit);
     }

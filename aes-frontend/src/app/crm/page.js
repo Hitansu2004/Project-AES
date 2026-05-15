@@ -1,209 +1,713 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { tickets, ticketActions, dashboard as dashboardApi } from '@/lib/api';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Inbox, ListChecks, AlertTriangle, CheckCircle2, Settings, LogOut,
+  Bell, Phone, Check, ArrowUp, Wrench, Filter, Search,
+  X, MapPin, User,
+} from 'lucide-react';
+import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import {
+  tickets as ticketsApi,
+  ticketActions,
+  dashboard as dashboardApi,
+} from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
+import SlaCountdown from '@/components/ui/SlaCountdown';
+import useSlaCountdown, { formatRemaining } from '@/hooks/useSlaCountdown';
+import Logo from '@/components/ui/Logo';
 import styles from './crm.module.css';
 
-const FILTER_TYPES = ['All', 'P1 AMC', 'P2 Warranty', 'P3 Paid'];
+const VIEWS = [
+  { key: 'inbox',     label: 'My Inbox',       icon: Inbox },
+  { key: 'all',       label: 'All Tickets',    icon: ListChecks },
+  { key: 'escalated', label: 'Escalated',      icon: AlertTriangle },
+  { key: 'resolved',  label: 'Resolved Today', icon: CheckCircle2 },
+];
+
+const PRIORITY_FILTERS = ['All', 'P1', 'P2', 'P3'];
+const SORT_OPTIONS = [
+  { key: 'sla',     label: 'SLA Critical' },
+  { key: 'newest',  label: 'Newest First' },
+  { key: 'oldest',  label: 'Oldest First' },
+];
+
+const PROBLEM_LABEL = {
+  NOT_COOLING: 'AC Not Cooling',
+  NOISE: 'Loud Noise',
+  LEAKING: 'Water Leak',
+  NOT_TURNING_ON: 'Not Turning On',
+  NO_AIRFLOW: 'No Airflow',
+  REMOTE_WIFI: 'Remote / Wi-Fi Issue',
+  OTHER: 'Other Issue',
+};
+
+function ticketTitle(t) {
+  const issue = PROBLEM_LABEL[t.problemCategory] || t.problemCategory || 'Service';
+  return `${issue} — ${t.acUnitRoom || ''}`;
+}
+
+function relMin(stamp) {
+  if (!stamp) return '';
+  const ms = Date.now() - new Date(stamp).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 export default function CrmDashboard() {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [ticketList, setTicketList] = useState([]);
-  const [filter, setFilter] = useState('All');
-  const [sortBy, setSortBy] = useState('sla');
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState('');
+  const { user, loading: authLoading, logout } = useAuth();
+  const toast = useToast();
 
+  const [view, setView] = useState('inbox');
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('sla');
+  const [tickets, setTickets] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState({});       // ticketNumber → action label
+  const [showResolve, setShowResolve] = useState(null); // ticket
+  const [showAssign, setShowAssign] = useState(null);   // ticket
+  const [search, setSearch] = useState('');
+
+  // Auth guard
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.replace('/login'); return; }
-    if (user.role !== 'CRM_AGENT' && user.role !== 'ADMIN' && user.role !== 'SERVICE_MANAGER') {
-      router.replace('/dashboard');
-      return;
-    }
-    loadTickets();
+    if (!user) { router.replace('/login?next=/crm'); return; }
+    const allowed = ['CRM_AGENT', 'ADMIN', 'SERVICE_MANAGER'];
+    if (!allowed.includes(user.role)) router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router]);
 
-  async function loadTickets() {
+  // Fetch tickets + stats
+  const fetchAll = async () => {
     try {
-      const data = await tickets.list();
-      setTicketList(Array.isArray(data) ? data : []);
-    } catch { /* ignore */ }
-    setLoading(false);
+      const [list, dash] = await Promise.allSettled([
+        ticketsApi.list(),
+        dashboardApi.crm(),
+      ]);
+      if (list.status === 'fulfilled') {
+        const arr = Array.isArray(list.value) ? list.value : list.value?.content || [];
+        setTickets(arr);
+      }
+      if (dash.status === 'fulfilled') {
+        setStats(dash.value || null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchAll();
+    const id = setInterval(fetchAll, 20000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Filtered list
+  const visibleTickets = useMemo(() => {
+    let list = tickets.slice();
+    // View filter
+    if (view === 'inbox') {
+      list = list.filter((t) => (t.currentLevel || 1) === 1
+        && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status));
+    } else if (view === 'escalated') {
+      list = list.filter((t) => (t.currentLevel || 1) > 1
+        && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status));
+    } else if (view === 'resolved') {
+      list = list.filter((t) => {
+        if (!['RESOLVED', 'CLOSED'].includes(t.status)) return false;
+        const stamp = t.resolvedAt || t.updatedAt;
+        if (!stamp) return false;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        return new Date(stamp) >= today;
+      });
+    }
+    // Priority filter
+    if (priorityFilter !== 'All') {
+      list = list.filter((t) => t.priority === priorityFilter);
+    }
+    // Search
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase();
+      list = list.filter((t) =>
+        (t.ticketNumber || '').toLowerCase().includes(needle)
+        || (t.customerName || '').toLowerCase().includes(needle)
+        || (t.acUnitRoom   || '').toLowerCase().includes(needle)
+        || (PROBLEM_LABEL[t.problemCategory] || '').toLowerCase().includes(needle)
+      );
+    }
+    // Sort
+    if (sortBy === 'sla') {
+      list.sort((a, b) => {
+        const aRem = a.slaRemainingSecondsL1 ?? a.slaRemainingSecondsL2 ?? a.slaRemainingSecondsFinal ?? Infinity;
+        const bRem = b.slaRemainingSecondsL1 ?? b.slaRemainingSecondsL2 ?? b.slaRemainingSecondsFinal ?? Infinity;
+        return aRem - bRem;
+      });
+    } else if (sortBy === 'newest') {
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else {
+      list.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    }
+    return list;
+  }, [tickets, view, priorityFilter, sortBy, search]);
+
+  // Most urgent ticket near breach (used for alert banner)
+  const breachAlert = useMemo(() => {
+    return tickets
+      .filter((t) =>
+        ['OPEN', 'ACKNOWLEDGED', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)
+        && t.slaRemainingSecondsL1 != null
+        && t.slaRemainingSecondsL1 < 900    // <15 min
+        && t.slaRemainingSecondsL1 > 0
+        && (t.currentLevel || 1) === 1
+        && !t.acknowledgedAt
+      )
+      .sort((a, b) => a.slaRemainingSecondsL1 - b.slaRemainingSecondsL1)[0];
+  }, [tickets]);
+
+  // Counts for sidebar
+  const counts = useMemo(() => {
+    const inbox = tickets.filter((t) => (t.currentLevel || 1) === 1
+      && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status)).length;
+    const escalated = tickets.filter((t) => (t.currentLevel || 1) > 1
+      && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status)).length;
+    const resolvedToday = tickets.filter((t) => {
+      if (!['RESOLVED', 'CLOSED'].includes(t.status)) return false;
+      const stamp = t.resolvedAt || t.updatedAt;
+      if (!stamp) return false;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return new Date(stamp) >= today;
+    }).length;
+    return { inbox, escalated, resolvedToday };
+  }, [tickets]);
+
+  // Actions
+  const setBusyFor = (number, label) => setBusy((b) => ({ ...b, [number]: label }));
+  const clearBusy = (number) => setBusy((b) => { const { [number]: _, ...rest } = b; return rest; });
+
+  const handleAcknowledge = async (t) => {
+    setBusyFor(t.ticketNumber, 'ack');
+    try {
+      await ticketActions.acknowledge(t.ticketNumber);
+      toast.success(`${t.ticketNumber} acknowledged.`);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err.message || 'Could not acknowledge ticket.');
+    } finally {
+      clearBusy(t.ticketNumber);
+    }
+  };
+
+  const handleEscalate = async (t) => {
+    if (!confirm(`Escalate ${t.ticketNumber} to Level 2 — Service Managers?`)) return;
+    setBusyFor(t.ticketNumber, 'escalate');
+    try {
+      await ticketActions.escalate(t.ticketNumber, { reason: 'Manual escalation by CRM' });
+      toast.success(`${t.ticketNumber} escalated to L2.`);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err.message || 'Could not escalate ticket.');
+    } finally {
+      clearBusy(t.ticketNumber);
+    }
+  };
+
+  const submitResolve = async ({ resolutionNotes, finalCharge }) => {
+    if (!showResolve) return;
+    const number = showResolve.ticketNumber;
+    setBusyFor(number, 'resolve');
+    try {
+      await ticketActions.resolve(number, { resolutionNotes, finalCharge });
+      toast.success(`${number} marked resolved.`);
+      setShowResolve(null);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err.message || 'Could not resolve ticket.');
+    } finally {
+      clearBusy(number);
+    }
+  };
+
+  const submitAssign = async ({ engineerId, notes }) => {
+    if (!showAssign) return;
+    const number = showAssign.ticketNumber;
+    setBusyFor(number, 'assign');
+    try {
+      await ticketActions.assignEngineer(number, { engineerId, notes });
+      toast.success(`Engineer assigned to ${number}.`);
+      setShowAssign(null);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err.message || 'Could not assign engineer.');
+    } finally {
+      clearBusy(number);
+    }
+  };
+
+  if (authLoading || !user) {
+    return <div className="loading-page"><div className="spinner" /></div>;
   }
 
-  const handleAcknowledge = async (ticketNumber) => {
-    setActionLoading(ticketNumber);
-    try {
-      await ticketActions.acknowledge(ticketNumber);
-      await loadTickets();
-    } catch { /* ignore */ }
-    setActionLoading('');
-  };
-
-  const handleEscalate = async (ticketNumber) => {
-    setActionLoading(ticketNumber);
-    try {
-      await ticketActions.escalate(ticketNumber, { reason: 'Manual escalation by CRM agent' });
-      await loadTickets();
-    } catch { /* ignore */ }
-    setActionLoading('');
-  };
-
-  const handleResolve = async (ticketNumber) => {
-    setActionLoading(ticketNumber);
-    try {
-      await ticketActions.resolve(ticketNumber, { resolutionNotes: 'Resolved by CRM agent' });
-      await loadTickets();
-    } catch { /* ignore */ }
-    setActionLoading('');
-  };
-
-  const filtered = ticketList.filter(t => {
-    if (filter === 'All') return true;
-    if (filter === 'P1 AMC') return t.priority === 'P1';
-    if (filter === 'P2 Warranty') return t.priority === 'P2';
-    if (filter === 'P3 Paid') return t.priority === 'P3';
-    return true;
-  });
-
-  const activeTickets = filtered.filter(t => !['RESOLVED', 'CLOSED'].includes(t.status));
-  const slaUrgent = activeTickets.find(t => t.slaDeadlineL1 && (new Date(t.slaDeadlineL1) - new Date()) < 15 * 60000);
-
-  if (authLoading || loading) return <div className="loading-page"><div className="spinner"></div></div>;
+  const sidebarLabel = user.role === 'CRM_AGENT'
+    ? 'CRM Dashboard — Level 1'
+    : user.role === 'SERVICE_MANAGER'
+      ? 'Service Managers — L2'
+      : 'Admin — All Tickets';
 
   return (
-    <div className={`page-enter ${styles.page}`}>
-      {/* SLA Alert Banner */}
-      {slaUrgent && (
-        <div className={styles.alertBanner}>
-          ⚠️ {slaUrgent.ticketNumber} — {getSlaRemaining(slaUrgent.slaDeadlineL1)} to SLA breach! Respond immediately.
+    <div className={styles.shell}>
+      {/* ─── Top bar ─── */}
+      <header className={styles.topBar}>
+        <div className={styles.topBarLeft}>
+          <Logo />
+          <span className={styles.topBarRole}>{sidebarLabel}</span>
         </div>
-      )}
-
-      <div className={`container ${styles.container}`}>
-        <div className={styles.header}>
-          <h1 className="headline-lg">CRM Inbox</h1>
-          <span className={styles.ticketCount}>{activeTickets.length} active ticket{activeTickets.length !== 1 ? 's' : ''}</span>
+        <div className={styles.topBarRight}>
+          <div className={styles.searchBox}>
+            <Search size={16} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search ticket, customer, room..."
+            />
+          </div>
+          <span className={styles.agentBadge}>Agent: {user.name?.split(' ')[0] || 'Agent'}</span>
+          <button type="button" className={styles.iconBtn} aria-label="Notifications">
+            <Bell size={18} />
+            {counts.escalated > 0 && <span className={styles.notifDot}>{counts.escalated}</span>}
+          </button>
+          <button type="button" className={styles.iconBtn} onClick={logout} aria-label="Sign out">
+            <LogOut size={18} />
+          </button>
         </div>
+      </header>
 
-        <div className={styles.toolbar}>
-          <div className={styles.filters}>
-            <span className={styles.filterLabel}>FILTER:</span>
-            {FILTER_TYPES.map(f => (
-              <button key={f} className={`${styles.filterBtn} ${filter === f ? styles.filterActive : ''}`} onClick={() => setFilter(f)}>
-                {f !== 'All' && <span className={styles.filterDot} style={{ background: f === 'P1 AMC' ? '#7B2FBE' : f === 'P2 Warranty' ? '#0099CC' : '#E63946' }}></span>}
-                {f}
+      <div className={styles.frame}>
+        {/* ─── Sidebar ─── */}
+        <aside className={styles.sidebar}>
+          {VIEWS.map(({ key, label, icon: Icon }) => {
+            const count = key === 'inbox' ? counts.inbox
+                        : key === 'escalated' ? counts.escalated
+                        : key === 'resolved' ? counts.resolvedToday
+                        : null;
+            const active = view === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setView(key)}
+                className={`${styles.sideItem} ${active ? styles.sideItemActive : ''}`}
+              >
+                <span className={styles.sideItemIcon}><Icon size={18} /></span>
+                <span className={styles.sideItemLabel}>{label}</span>
+                {count != null && count > 0 && (
+                  <span className={`${styles.sideCount} ${key === 'escalated' ? styles.sideCountAlert : ''}`}>
+                    {count}
+                  </span>
+                )}
               </button>
-            ))}
+            );
+          })}
+          <div className={styles.sideFooter}>
+            <Link href="/admin" className={styles.sideItem}>
+              <span className={styles.sideItemIcon}><Settings size={18} /></span>
+              <span className={styles.sideItemLabel}>Admin View</span>
+            </Link>
           </div>
-          <div className={styles.sortGroup}>
-            <span className={styles.sortLabel}>SORT:</span>
-            <select className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="sla">SLA Critical</option>
-              <option value="date">Newest First</option>
-            </select>
-          </div>
-        </div>
+        </aside>
 
-        {activeTickets.length === 0 ? (
-          <div className={styles.empty}>
-            <span>📭</span>
-            <h3>No active tickets</h3>
-            <p>All tickets have been resolved.</p>
+        {/* ─── Main ─── */}
+        <main className={styles.main}>
+          {/* SLA breach alert banner */}
+          <AnimatePresence>
+            {breachAlert && (
+              <motion.div
+                key="breach"
+                initial={{ y: -16, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -16, opacity: 0 }}
+                className={styles.breachBanner}
+              >
+                <AlertTriangle size={20} />
+                <strong>{breachAlert.ticketNumber}</strong>
+                <span>—</span>
+                <BreachCountdown deadlineISO={breachAlert.slaDeadlineL1} />
+                <span> to SLA breach! Respond immediately.</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Stats row */}
+          {stats && (
+            <div className={styles.statsRow}>
+              <StatTile label="My Inbox"      value={stats.myInboxCount}    color="primary" />
+              <StatTile label="Critical SLA"  value={stats.criticalCount}   color="warn" />
+              <StatTile label="SLA Breaches"  value={stats.slaBreachCount}  color="danger" />
+              <StatTile label="Resolved Today" value={stats.resolvedToday}  color="success" />
+              <StatTile label="Avg Response"  value={`${Math.round(stats.avgResponseMinutes || 0)}m`} color="muted" />
+            </div>
+          )}
+
+          {/* Filter row */}
+          <div className={styles.filterRow}>
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Filter:</span>
+              {PRIORITY_FILTERS.map((p) => {
+                const active = priorityFilter === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`${styles.filterChip} ${active ? styles.filterChipActive : ''}`}
+                    onClick={() => setPriorityFilter(p)}
+                  >
+                    {p !== 'All' && <PriorityDot priority={p} />}
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+            <div className={styles.sortGroup}>
+              <Filter size={14} />
+              <span className={styles.filterLabel}>Sort:</span>
+              <select
+                className={styles.sortSelect}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                {SORT_OPTIONS.map(({ key, label }) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        ) : (
-          <div className={styles.ticketList}>
-            {activeTickets.map(ticket => {
-              const isAcknowledged = ticket.status === 'ACKNOWLEDGED' || ticket.status === 'IN_PROGRESS';
-              const slaMin = getSlaRemaining(ticket.slaDeadlineL1);
-              const isUrgent = ticket.slaDeadlineL1 && (new Date(ticket.slaDeadlineL1) - new Date()) < 15 * 60000;
-              return (
-                <div key={ticket.ticketNumber} className={`${styles.ticketCard} ${isUrgent ? styles.ticketUrgent : ''}`}>
-                  <div className={styles.ticketBorder} style={{ background: getPriorityColor(ticket.priority) }}></div>
-                  <div className={styles.ticketContent}>
-                    <div className={styles.ticketTop}>
-                      <div className={styles.ticketTopLeft}>
-                        <span className={`badge ${getPriorityBadge(ticket.priority)}`}>{ticket.priority} {ticket.serviceType?.toUpperCase()}</span>
-                        <span className={styles.ticketNum}>{ticket.ticketNumber}</span>
-                        <span className={styles.ticketTime}>• {getTimeAgo(ticket.createdAt)}</span>
-                      </div>
-                      <div className={styles.slaInfo}>
-                        {isAcknowledged ? (
-                          <span className={styles.acknowledged}>✓ Acknowledged</span>
-                        ) : (
-                          <span className={`${styles.slaTimer} ${isUrgent ? styles.slaUrgent : ''}`}>
-                            ⏱ {slaMin} {isUrgent ? '— RESPOND NOW' : 'remaining'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <h3 className={styles.ticketTitle}>{ticket.problemCategory?.replace(/_/g, ' ')} — {ticket.acUnitRoom || 'N/A'}</h3>
-                    <p className={styles.ticketMeta}>
-                      👤 {ticket.customerName || 'Customer'} • 📍 {ticket.propertyLabel || 'Property'}
-                    </p>
-                    <div className={styles.ticketActions}>
-                      <a href={`tel:+914023540000`} className={`btn btn-primary btn-sm`}>📞 Call Customer</a>
-                      {!isAcknowledged && (
-                        <button className={`btn btn-outline btn-sm`}
-                          disabled={actionLoading === ticket.ticketNumber}
-                          onClick={() => handleAcknowledge(ticket.ticketNumber)}>
-                          ✓ Mark Acknowledged
-                        </button>
-                      )}
-                      {isAcknowledged && (
-                        <>
-                          <button className={`btn btn-secondary btn-sm`}
-                            disabled={actionLoading === ticket.ticketNumber}
-                            onClick={() => handleResolve(ticket.ticketNumber)}>
-                            ✓ Resolve
-                          </button>
-                        </>
-                      )}
-                      <button className={styles.escalateBtn} onClick={() => handleEscalate(ticket.ticketNumber)}
-                        disabled={actionLoading === ticket.ticketNumber}>
-                        Escalate to L2 ↑
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+
+          {loading ? (
+            <div className={styles.list}>
+              {[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 168 }} />)}
+            </div>
+          ) : visibleTickets.length === 0 ? (
+            <div className={styles.empty}>
+              <Inbox size={28} />
+              <h3>Nothing here</h3>
+              <p>{view === 'inbox' ? 'Your inbox is clear. New tickets will appear here in real time.' : 'No tickets match the current filters.'}</p>
+            </div>
+          ) : (
+            <motion.div
+              className={styles.list}
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+            >
+              <AnimatePresence mode="popLayout">
+                {visibleTickets.map((t) => (
+                  <motion.div
+                    key={t.id || t.ticketNumber}
+                    layout
+                    variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <CrmTicketCard
+                      ticket={t}
+                      busyAction={busy[t.ticketNumber]}
+                      onAcknowledge={() => handleAcknowledge(t)}
+                      onEscalate={() => handleEscalate(t)}
+                      onAssign={() => setShowAssign(t)}
+                      onResolve={() => setShowResolve(t)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </main>
       </div>
+
+      <AnimatePresence>
+        {showResolve && (
+          <ResolveSheet
+            ticket={showResolve}
+            onClose={() => setShowResolve(null)}
+            onSubmit={submitResolve}
+          />
+        )}
+        {showAssign && (
+          <AssignSheet
+            ticket={showAssign}
+            onClose={() => setShowAssign(null)}
+            onSubmit={submitAssign}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function getPriorityColor(p) {
-  if (p === 'P1') return '#7B2FBE';
-  if (p === 'P2') return '#0099CC';
-  return '#E63946';
+/* ─── Sub-components ─────────────────────────────────────── */
+
+function BreachCountdown({ deadlineISO }) {
+  const { displayText } = useSlaCountdown(deadlineISO);
+  return <strong className={styles.breachTime}>{displayText}</strong>;
 }
 
-function getPriorityBadge(p) {
-  if (p === 'P1') return 'badge-p1';
-  if (p === 'P2') return 'badge-p2';
-  return 'badge-p3';
+function StatTile({ label, value, color }) {
+  return (
+    <div className={`${styles.statTile} ${styles[`stat_${color}`]}`}>
+      <span className={styles.statValue}>{value ?? '—'}</span>
+      <span className={styles.statLabel}>{label}</span>
+    </div>
+  );
 }
 
-function getSlaRemaining(deadline) {
-  if (!deadline) return 'N/A';
-  const diff = new Date(deadline) - new Date();
-  if (diff <= 0) return 'BREACHED';
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins} min`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+function CrmTicketCard({ ticket, busyAction, onAcknowledge, onEscalate, onAssign, onResolve }) {
+  const acked = !!ticket.acknowledgedAt;
+  const escalated = (ticket.currentLevel || 1) > 1;
+  const resolved = ['RESOLVED', 'CLOSED'].includes(ticket.status);
+
+  const tone = escalated
+    ? 'esc'
+    : acked
+      ? 'ack'
+      : (ticket.slaRemainingSecondsL1 ?? Infinity) < 900
+        ? 'critical'
+        : (ticket.slaRemainingSecondsL1 ?? Infinity) < 1500
+          ? 'warning'
+          : 'normal';
+
+  return (
+    <article className={`${styles.card} ${styles[`accent_${tone}`]}`}>
+      <div className={styles.cardAccentBar} />
+      <div className={styles.cardBody}>
+        <div className={styles.cardHead}>
+          <div className={styles.cardHeadLeft}>
+            <PriorityBadge priority={ticket.priority} />
+            <Link href={`/tickets/${ticket.ticketNumber}`} className={styles.cardNumber}>
+              {ticket.ticketNumber}
+            </Link>
+            <span className={styles.cardAge}>· {relMin(ticket.createdAt)}</span>
+          </div>
+          <div className={styles.cardHeadRight}>
+            {acked && !resolved && !escalated ? (
+              <span className={styles.ackPill}>
+                <Check size={14} strokeWidth={3} /> Acknowledged
+              </span>
+            ) : escalated ? (
+              <span className={styles.escPill}>
+                <ArrowUp size={12} /> Level {ticket.currentLevel}
+              </span>
+            ) : (
+              <SlaCountdown deadlineISO={ticket.slaDeadlineL1} />
+            )}
+          </div>
+        </div>
+
+        <h3 className={styles.cardTitle}>{ticketTitle(ticket)}</h3>
+        <div className={styles.cardMetaRow}>
+          <span className={styles.metaItem}><User size={14} /> {ticket.customerName || 'Customer'}</span>
+          <span className={styles.metaDot}>·</span>
+          <span className={styles.metaItem}><MapPin size={14} /> {ticket.propertyLabel || '—'}</span>
+        </div>
+
+        <div className={styles.cardActions}>
+          <a className="btn btn-primary btn-sm" href={`tel:${ticket.customerPhone || ''}`}>
+            <Phone size={14} /> Call
+          </a>
+          {!acked && !resolved && (
+            <button
+              type="button"
+              className="btn btn-soft btn-sm"
+              onClick={onAcknowledge}
+              disabled={busyAction === 'ack'}
+            >
+              {busyAction === 'ack' ? <span className="spinner spinner-sm" /> : <><Check size={14} /> Acknowledge</>}
+            </button>
+          )}
+          {acked && !resolved && (
+            <button
+              type="button"
+              className="btn btn-soft btn-sm"
+              onClick={onAssign}
+              disabled={busyAction === 'assign'}
+            >
+              {busyAction === 'assign' ? <span className="spinner spinner-sm" /> : <><Wrench size={14} /> Assign Engineer</>}
+            </button>
+          )}
+          {acked && !resolved && (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={onResolve}
+              disabled={busyAction === 'resolve'}
+            >
+              {busyAction === 'resolve' ? <span className="spinner spinner-sm" /> : <><CheckCircle2 size={14} /> Resolve</>}
+            </button>
+          )}
+          <span style={{ flex: 1 }} />
+          {!resolved && !escalated && (
+            <button
+              type="button"
+              className={styles.escalateLink}
+              onClick={onEscalate}
+              disabled={busyAction === 'escalate'}
+            >
+              {busyAction === 'escalate' ? 'Escalating...' : (
+                <>Escalate to L{(ticket.currentLevel || 1) + 1} <ArrowUp size={14} /></>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
 }
 
-function getTimeAgo(date) {
-  if (!date) return '';
-  const mins = Math.floor((Date.now() - new Date(date)) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ago`;
+/* ─── Resolve sheet ──────────────────────────────────────── */
+function ResolveSheet({ ticket, onClose, onSubmit }) {
+  const [notes, setNotes] = useState('');
+  const [charge, setCharge] = useState('');
+  const [saving, setSaving] = useState(false);
+  const isPaid = ticket.priority === 'P3';
+
+  const handle = async () => {
+    if (!notes.trim()) return;
+    setSaving(true);
+    await onSubmit({
+      resolutionNotes: notes.trim(),
+      finalCharge: isPaid && charge ? Number(charge) : null,
+    });
+    setSaving(false);
+  };
+
+  return (
+    <SheetWrap onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>Resolve {ticket.ticketNumber}</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn} aria-label="Close">
+          <X size={18} />
+        </button>
+      </div>
+      <p className={styles.sheetSub}>Add resolution notes — these are visible to the customer.</p>
+      <textarea
+        className="input textarea"
+        rows={4}
+        maxLength={2000}
+        placeholder="What was done, parts replaced, follow-up needed..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+      {isPaid && (
+        <div className={styles.paidChargeRow}>
+          <label className="input-group" style={{ flex: 1 }}>
+            <span>Final charge (₹)</span>
+            <input
+              type="number"
+              min="0"
+              className="input"
+              placeholder="e.g. 2400"
+              value={charge}
+              onChange={(e) => setCharge(e.target.value)}
+            />
+          </label>
+        </div>
+      )}
+      <button
+        type="button"
+        className="btn btn-primary btn-full btn-lg"
+        disabled={!notes.trim() || saving}
+        onClick={handle}
+      >
+        {saving ? <span className="spinner spinner-sm" /> : 'Mark as Resolved'}
+      </button>
+    </SheetWrap>
+  );
+}
+
+/* ─── Assign sheet ──────────────────────────────────────── */
+function AssignSheet({ ticket, onClose, onSubmit }) {
+  const [engineerId, setEngineerId] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handle = async () => {
+    if (!engineerId) return;
+    setSaving(true);
+    await onSubmit({ engineerId, notes: notes.trim() || null });
+    setSaving(false);
+  };
+
+  return (
+    <SheetWrap onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>Assign Engineer</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn} aria-label="Close">
+          <X size={18} />
+        </button>
+      </div>
+      <p className={styles.sheetSub}>
+        For ticket <strong>{ticket.ticketNumber}</strong> — {ticket.customerName}.
+      </p>
+      <label className="input-group">
+        <span>Engineer ID (UUID)</span>
+        <input
+          className="input"
+          placeholder="00000000-0000-0000-0000-000000000000"
+          value={engineerId}
+          onChange={(e) => setEngineerId(e.target.value.trim())}
+        />
+      </label>
+      <label className="input-group">
+        <span>Notes (optional)</span>
+        <textarea
+          className="input textarea"
+          rows={3}
+          maxLength={500}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+      </label>
+      <button
+        type="button"
+        className="btn btn-primary btn-full btn-lg"
+        disabled={!engineerId || saving}
+        onClick={handle}
+      >
+        {saving ? <span className="spinner spinner-sm" /> : 'Assign Engineer'}
+      </button>
+    </SheetWrap>
+  );
+}
+
+function SheetWrap({ children, onClose }) {
+  return (
+    <motion.div
+      className={styles.sheetBackdrop}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className={styles.sheet}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.sheetHandle} />
+        {children}
+      </motion.div>
+    </motion.div>
+  );
 }

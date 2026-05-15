@@ -1,366 +1,795 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { properties, installations } from '@/lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight, Check, Plus, X, MapPin, Home, Building2, ChevronDown,
+  Sun, CloudSun, Moon, Pencil, ShieldCheck, Sparkles, ArrowLeft,
+  Snowflake, CalendarDays, Lightbulb, Phone, MessageCircle,
+} from 'lucide-react';
+import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import { useInstall, INSTALL_STEPS } from '@/store/installationStore';
+import { useToast } from '@/components/ui/Toast';
+import { properties as propertiesApi, installations as installationsApi } from '@/lib/api';
+import {
+  AC_TYPES, BRANDS, TONNAGES, ENERGY_RATINGS, SUGGESTED_MODELS,
+  ROOM_TYPES, TIME_SLOTS, slotLabel, acTypeLabel,
+} from '@/lib/constants';
+import AppTopBar from '@/components/ui/AppTopBar';
+import StepIndicator from '@/components/ui/StepIndicator';
+import DayPicker from '@/components/ui/DayPicker';
+import AcTypeIcon from '@/components/ui/AcTypeIcon';
 import styles from './installation.module.css';
 
-const AC_TYPES = [
-  { id: 'SPLIT', label: 'Split AC', desc: '1-3 rooms', range: '1T to 3T', icon: '❄️' },
-  { id: 'CASSETTE', label: 'Cassette AC', desc: 'Ceiling mounted', range: '2T to 5T', icon: '🔲' },
-  { id: 'CENTRAL_DUCTED', label: 'Central AC/Ducted', desc: 'Whole home', range: '3T to 20T', icon: '🌀' },
-  { id: 'VRF_VRV', label: 'VRF/VRV', desc: 'Multi-unit premium', range: 'Commercial', icon: '🏢' },
-  { id: 'WINDOW', label: 'Window AC', desc: 'Budget single room', range: '0.75T to 2T', icon: '🪟' },
-  { id: 'PORTABLE', label: 'Portable AC', desc: 'No install', range: '1T to 1.5T', icon: '📦' },
-];
+const TOTAL_STEPS = 4;
+const SLOT_ICONS = { MORNING: Sun, AFTERNOON: CloudSun, EVENING: Moon };
 
-const BRANDS = ['Daikin', 'Voltas', 'Blue Star', 'LG', 'SAMSUNG', 'Carrier', 'HITACHI', 'Panasonic', "O'General"];
-const TONNAGES = ['0.75T', '1.0T', '1.5T', '2.0T', '2.5T', '3.0T'];
-const ROOM_TYPES = ['Master Bedroom', 'Living Room', 'Guest Room', 'Study Room', 'Kitchen', 'Office', 'Other'];
-
-const SUGGESTED_MODELS = [
-  { brand: 'Daikin', tonnage: '1.5T', model: "FTKF35TV", price: "₹42,999", features: ["5 Star", "Wi-Fi", "Inverter"] },
-  { brand: 'Daikin', tonnage: '1.5T', model: "FTKG35TV", price: "₹45,500", features: ["5 Star", "PM 2.5 Filter"] },
-  { brand: 'Voltas', tonnage: '1.5T', model: "185V DZT", price: "₹34,999", features: ["5 Star", "Inverter"] },
-  { brand: 'Blue Star', tonnage: '1.5T', model: "IC518YNUW", price: "₹38,500", features: ["5 Star", "Wi-Fi"] },
-  { brand: 'LG', tonnage: '1.5T', model: "RS-Q18YNZE", price: "₹36,999", features: ["5 Star", "Dual Inverter"] }
-];
-
-const generateDays = () => {
-  const days = [];
-  for (let i = 0; i < 14; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    days.push({
-      dateStr: d.toISOString().split('T')[0],
-      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-      dayNum: d.getDate(),
-      disabled: i === 0 // Today greyed out
-    });
-  }
-  return days;
+const stepVariants = {
+  initial: (dir) => ({ x: dir > 0 ? 24 : -24, opacity: 0 }),
+  enter: { x: 0, opacity: 1, transition: { duration: 0.22 } },
+  exit: (dir) => ({ x: dir > 0 ? -24 : 24, opacity: 0, transition: { duration: 0.18 } }),
 };
 
-export default function InstallationPage() {
-  const { user, loading: authLoading } = useAuth();
+export default function InstallationWizard() {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1=type, 2=brand, 3=location, 4=schedule, 5=success
-  const [acType, setAcType] = useState('');
-  const [brand, setBrand] = useState('');
-  const [tonnage, setTonnage] = useState('1.5T');
-  const [selectedModel, setSelectedModel] = useState('');
-  const [propList, setPropList] = useState([]);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [propertyType, setPropertyType] = useState('RESIDENTIAL');
-  const [rooms, setRooms] = useState([{ roomType: 'Master Bedroom', sizeSqft: '', acType: 'Split AC' }]);
-  const [notes, setNotes] = useState('');
-  const [preferredDate, setPreferredDate] = useState('');
-  const [preferredSlot, setPreferredSlot] = useState('MORNING');
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const { state, set, reset, addRoom, updateRoom, removeRoom, hydrated } = useInstall();
+  const toast = useToast();
 
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [propertyList, setPropertyList] = useState([]);
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [submittedRequest, setSubmittedRequest] = useState(null);
+
+  // Auth guard
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.replace('/login'); return; }
-    async function load() {
-      try {
-        const props = await properties.list();
-        const arr = Array.isArray(props) ? props : [];
-        setPropList(arr);
-        if (arr.length > 0) setSelectedProperty(arr[0]);
-      } catch { /* ignore */ }
-      setLoading(false);
-    }
-    load();
+    if (!user) { router.replace('/login?next=/services/installation'); return; }
+    if (user.role !== 'CUSTOMER') router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router]);
 
-  const addRoom = () => setRooms([...rooms, { roomType: 'Living Room', sizeSqft: '', acType: 'Split AC' }]);
-  const removeRoom = (i) => setRooms(rooms.filter((_, idx) => idx !== i));
-  const updateRoom = (i, field, val) => {
-    const updated = [...rooms];
-    updated[i] = { ...updated[i], [field]: val };
-    setRooms(updated);
+  // Pre-load properties for step 3
+  useEffect(() => {
+    if (!user || user.role !== 'CUSTOMER') return;
+    propertiesApi.list().then((res) => {
+      const arr = Array.isArray(res) ? res : [];
+      setPropertyList(arr);
+      // Auto-select first property if none chosen yet
+      if (arr.length > 0 && !state.propertyId && !state.propertyAddress) {
+        set({ propertyId: arr[0].id });
+      }
+    }).catch(() => { /* silent */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const goNext = () => {
+    if (step < TOTAL_STEPS) { setDirection(1); setStep((s) => s + 1); }
+  };
+  const goBack = () => {
+    if (step > 1) { setDirection(-1); setStep((s) => s - 1); }
+    else router.back();
   };
 
+  // ─── Validations per step ──────────────────────────────
+  const step1Valid = !!state.acType;
+  const step2Valid = !!state.brand;
+  const step3Valid = useMemo(() => {
+    if (!state.propertyId && !state.propertyAddress?.trim()) return false;
+    if (state.rooms.length === 0) return false;
+    return state.rooms.every((r) =>
+      r.roomType && r.acType && r.sizeSqft && Number(r.sizeSqft) > 0
+    );
+  }, [state]);
+  const step4Valid = !!state.scheduledDate && !!state.scheduledSlot;
+
+  const stepValid = [step1Valid, step2Valid, step3Valid, step4Valid][step - 1];
+
+  // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
+    if (!step4Valid) return;
     setSubmitting(true);
-    setError('');
     try {
-      const res = await installations.create({
-        propertyId: selectedProperty?.id,
-        acType,
-        brand,
-        tonnage: parseFloat(tonnage),
-        rooms,
-        notes: notes || null,
-        scheduledDate: preferredDate || null,
-        scheduledSlot: preferredSlot,
-      });
-      setResult(res);
-      setStep(5);
+      const payload = {
+        propertyId: state.propertyId || null,
+        propertyAddress: !state.propertyId ? state.propertyAddress?.trim() || null : null,
+        acType: state.acType,
+        brand: state.brand || null,
+        modelNumber: state.modelNumber || null,
+        tonnage: state.tonnage ? Number(state.tonnage) : null,
+        energyRating: state.energyRating ? Number(state.energyRating) : null,
+        rooms: state.rooms.map((r) => ({
+          roomType: r.roomType,
+          sizeSqft: Number(r.sizeSqft),
+          acType: r.acType || state.acType,
+        })),
+        notes: state.notes?.trim() || null,
+        scheduledDate: state.scheduledDate,
+        scheduledSlot: state.scheduledSlot,
+      };
+      const res = await installationsApi.create(payload);
+      setSubmittedRequest(res);
+      reset();
+      toast.success('Installation request submitted.');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || 'Could not submit request.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (authLoading || loading) return <div className="loading-page"><div className="spinner"></div></div>;
+  if (authLoading || !user || !hydrated) {
+    return <div className="loading-page"><div className="spinner" /></div>;
+  }
 
-  // Success
-  if (step === 5) {
-    return (
-      <div className={`page-enter ${styles.page}`}>
-        <div className="container page-content">
-          <div className={styles.success}>
-            <div className={styles.successIcon}>✓</div>
-            <h1 className="headline-lg">Request Submitted!</h1>
-            <p className={styles.successRef}>Request No: <strong>{result?.requestNumber || 'N/A'}</strong></p>
-            <div className={styles.successInfo}>
-              <p>Our team will contact you within 2 hours to confirm your site visit on <strong>{preferredDate || 'TBD'}</strong>.</p>
-            </div>
-            <div className={styles.timeline}>
-              <h3>WHAT HAPPENS NEXT</h3>
-              <div className={`${styles.timelineItem} ${styles.active}`}><span className={styles.dotDone}>✓</span> Request received</div>
-              <div className={`${styles.timelineItem} ${styles.active}`}><span className={styles.dotActive}>●</span> Team reviews & confirms</div>
-              <div className={styles.timelineItem}><span className={styles.dotPending}>○</span> Engineer visits your site</div>
-              <div className={styles.timelineItem}><span className={styles.dotPending}>○</span> Quote shared within 24h</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px', width: '100%' }}>
-              <button className="btn btn-outline btn-full btn-lg" onClick={() => router.push('/tickets')}>Track This Request</button>
-              <button className="btn btn-primary btn-full btn-lg" onClick={() => router.push('/dashboard')}>Back to Home</button>
-            </div>
-            <div style={{ marginTop: '24px', color: 'var(--on-surface-variant)', fontSize: '14px' }}>
-              <p>Need to change or cancel?</p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px' }}>
-                <a href="tel:+914023540000" style={{ color: 'var(--secondary)', fontWeight: '600', textDecoration: 'none' }}>📞 Call Us</a>
-                <a href="https://wa.me/914023540000" style={{ color: '#25D366', fontWeight: '600', textDecoration: 'none' }}>💬 WhatsApp</a>
-              </div>
-            </div>
-          </div>
-        </div>
-    );
+  // Success page
+  if (submittedRequest) {
+    return <SuccessScreen request={submittedRequest} onHome={() => router.replace('/dashboard')} />;
   }
 
   return (
-    <div className={`page-enter ${styles.page}`}>
-      <div className={styles.topBar}>
-        <button className={styles.backBtn} onClick={() => step > 1 ? setStep(step - 1) : router.back()}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <h1 className={styles.pageTitle}>New Installation</h1>
-        <span className={styles.stepBadge}>{step} of 4</span>
+    <div className={styles.shell}>
+      <AppTopBar
+        title="New Installation"
+        onBack={goBack}
+        right={<StepIndicator current={step} total={TOTAL_STEPS} />}
+      />
+
+      <div className={styles.body}>
+        <AnimatePresence custom={direction} mode="wait" initial={false}>
+          {step === 1 && (
+            <motion.section
+              key="s1"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              className={styles.stepBody}
+            >
+              <Step1
+                value={state.acType}
+                onChange={(v) => set({ acType: v })}
+              />
+            </motion.section>
+          )}
+
+          {step === 2 && (
+            <motion.section
+              key="s2"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              className={styles.stepBody}
+            >
+              <Step2 state={state} set={set} />
+            </motion.section>
+          )}
+
+          {step === 3 && (
+            <motion.section
+              key="s3"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              className={styles.stepBody}
+            >
+              <Step3
+                state={state}
+                set={set}
+                addRoom={addRoom}
+                updateRoom={updateRoom}
+                removeRoom={removeRoom}
+                propertyList={propertyList}
+                showAddAddress={showAddAddress}
+                setShowAddAddress={setShowAddAddress}
+              />
+            </motion.section>
+          )}
+
+          {step === 4 && (
+            <motion.section
+              key="s4"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              className={styles.stepBody}
+            >
+              <Step4
+                state={state}
+                set={set}
+                propertyList={propertyList}
+                onEdit={(idx) => { setDirection(-1); setStep(idx); }}
+              />
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
-      <div className={styles.progress}><div className={styles.progressBar} style={{ width: `${(step / 4) * 100}%` }}></div></div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <div className={styles.actionBar}>
+        <div className={styles.actionInner}>
+          {step === 4 ? (
+            <button
+              className="btn btn-primary btn-full btn-lg"
+              disabled={!step4Valid || submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? <span className="spinner spinner-sm" /> : (
+                <>Submit Request <ArrowRight size={18} /></>
+              )}
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary btn-full btn-lg"
+              disabled={!stepValid}
+              onClick={goNext}
+            >
+              Continue <ArrowRight size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      {/* Step 1: AC Type */}
-      {step === 1 && (
-        <>
-          <div className={styles.stepContent}>
-            <h2>What type of AC do you need?</h2>
-            <p className={styles.stepDesc}>Choose based on your space requirements</p>
-            <div className={styles.typeList}>
-              {AC_TYPES.map(t => (
-                <button key={t.id} className={`${styles.typeCard} ${acType === t.id ? styles.typeSelected : ''}`} onClick={() => setAcType(t.id)}>
-                  {acType === t.id && <span className={styles.check}>✓</span>}
-                  <div><span className={styles.typeIconWrapper}>{t.icon}</span></div>
-                  <h3>{t.label}</h3>
-                  <p>{t.desc}</p>
-                  <div><span className={styles.typeRange}>{t.range}</span></div>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={styles.actionArea}>
-            <div className={styles.actionAreaInner} style={{width:'100%'}}>
-              <button className={styles.actionBtn} disabled={!acType} onClick={() => setStep(2)}>Continue →</button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Step 2: Brand & Specs */}
-      {step === 2 && (
-        <>
-          <div className={styles.stepContent}>
-            <h2 className={styles.sectionTitle}>Select Brand</h2>
-            <div className={styles.brandGrid}>
-              {BRANDS.map(b => (
-                <button key={b} className={`${styles.brandBtn} ${brand === b ? styles.brandSelected : ''}`} onClick={() => setBrand(b)}>
-                  {brand === b && <span className={styles.checkSmall}>✓</span>}
-                  {b}
-                </button>
-              ))}
-            </div>
-
-            <h2 className={styles.sectionTitle}>Capacity (Tonnage)</h2>
-            <div className={styles.scrollRow}>
-              {TONNAGES.map(t => (
-                <button key={t} className={`${styles.pillBtn} ${tonnage === t ? styles.pillSelected : ''}`} onClick={() => setTonnage(t)}>
-                  {t}
-                </button>
-              ))}
-              <button className={styles.pillBtn}>Custom</button>
-            </div>
-            
-            <h2 className={styles.sectionTitle}>Energy Rating</h2>
-            <div className={styles.scrollRow}>
-              <button className={styles.pillBtn}>3 Star ⭐⭐⭐</button>
-              <button className={styles.pillBtn}>4 Star ⭐⭐⭐⭐</button>
-              <button className={`${styles.pillBtn} ${styles.pillGold}`}>5 Star ⭐⭐⭐⭐⭐</button>
-            </div>
-            
-            {brand && tonnage && (
-              <>
-                <h2 className={styles.sectionTitle}>Suggested Models</h2>
-                <div className={styles.scrollRow}>
-                  {SUGGESTED_MODELS.filter(m => m.brand === brand && m.tonnage === tonnage).length > 0 ? (
-                    SUGGESTED_MODELS.filter(m => m.brand === brand && m.tonnage === tonnage).map(m => (
-                      <div key={m.model} className={styles.modelCard}>
-                        <h4>{m.model}</h4>
-                        <p>{m.brand} • {m.tonnage} • Split AC</p>
-                        <div className={styles.modelPrice}>{m.price} onwards</div>
-                        <div className={styles.modelFeatures}>
-                          {m.features.map(f => <span key={f} className={styles.modelFeature}>{f}</span>)}
-                        </div>
-                        <button 
-                          className={selectedModel === m.model ? styles.modelSelectedBtn : styles.modelSelectBtn}
-                          onClick={() => setSelectedModel(m.model)}
-                        >
-                          {selectedModel === m.model ? 'Selected' : 'Select Model'}
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{padding: '0 20px', color: 'var(--outline)'}}>No exact matches. Our engineer will suggest the best option.</div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          <div className={styles.actionArea}>
-            <div className={styles.actionAreaInner} style={{display:'flex', justifyContent:'space-between', width:'100%'}}>
-              <button className={styles.skipBtn} onClick={() => setStep(3)}>Skip for now</button>
-              <button className={styles.actionBtn} style={{width:'auto', padding:'0 32px'}} disabled={!brand} onClick={() => setStep(3)}>Continue →</button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Step 3: Property & Rooms */}
-      {step === 3 && (
-        <>
-          <div className={styles.stepContent}>
-            <h2>Where do you need installation?</h2>
-            <p className={styles.stepDesc}>Tell us about your property</p>
-            
-            <div className={styles.propTypeToggle}>
-              <button className={`${styles.propTypeBtn} ${propertyType === 'RESIDENTIAL' ? styles.propTypeActive : ''}`} onClick={() => setPropertyType('RESIDENTIAL')}>Residential</button>
-              <button className={`${styles.propTypeBtn} ${propertyType === 'COMMERCIAL' ? styles.propTypeActive : ''}`} onClick={() => setPropertyType('COMMERCIAL')}>Commercial/Office</button>
-            </div>
-
-            {propList.length > 0 && (
-              <div style={{marginBottom: '24px'}}>
-                <label className={styles.fieldLabel}>INSTALLATION ADDRESS</label>
-                <select className="input select" value={selectedProperty?.id || ''} onChange={(e) => setSelectedProperty(propList.find(p => p.id === Number(e.target.value)))}>
-                  {propList.map(p => <option key={p.id} value={p.id}>{p.label}, {p.addressLine1}</option>)}
-                </select>
+/* ─── Step 1 — AC Type ────────────────────────────────── */
+function Step1({ value, onChange }) {
+  return (
+    <>
+      <Heading title="What type of AC do you need?" sub="Choose based on your space requirements." />
+      <div className={styles.acTypeGrid}>
+        {AC_TYPES.map((t) => {
+          const selected = value === t.value;
+          return (
+            <motion.button
+              key={t.value}
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onChange(t.value)}
+              className={`${styles.acTypeCard} ${selected ? styles.acTypeSelected : ''}`}
+            >
+              {selected && (
+                <span className={styles.checkBadge}><Check size={14} strokeWidth={3} /></span>
+              )}
+              <div className={styles.acTypeIcon}>
+                <AcTypeIcon type={t.value} size={22} />
               </div>
-            )}
-
-            <label className={styles.fieldLabel}>ROOM DETAILS</label>
-            {rooms.map((room, i) => (
-              <div key={i} className={styles.roomCard}>
-                {rooms.length > 1 && <button className={styles.removeRoom} onClick={() => removeRoom(i)}>✕</button>}
-                <div className="input-group">
-                  <label>Room Type</label>
-                  <select className="input select" value={room.roomType} onChange={(e) => updateRoom(i, 'roomType', e.target.value)}>
-                    {ROOM_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label>Size (sq ft)</label>
-                  <input className="input" type="number" placeholder="e.g. 200" value={room.sizeSqft} onChange={(e) => updateRoom(i, 'sizeSqft', e.target.value)} />
-                </div>
+              <div>
+                <h4 className={styles.acTypeName}>{t.label}</h4>
+                <p className={styles.acTypeDesc}>{t.desc}</p>
+                <span className={styles.acTypeRange}>{t.range}</span>
               </div>
-            ))}
-            <button className={`btn btn-outline btn-full`} style={{marginBottom: '24px'}} onClick={addRoom}>＋ Add Another Room</button>
+            </motion.button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
-            <div className="input-group">
-              <label className={styles.fieldLabel}>ADDITIONAL NOTES</label>
-              <textarea className="input textarea" placeholder="Any specific requirements? (e.g., concealed wiring, specific unit placement...)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+/* ─── Step 2 — Brand & Model ──────────────────────────── */
+function Step2({ state, set }) {
+  const filteredModels = useMemo(
+    () => SUGGESTED_MODELS.filter(
+      (m) => m.brand === state.brand && m.tonnage === state.tonnage
+    ),
+    [state.brand, state.tonnage]
+  );
+
+  return (
+    <>
+      <SectionLabel>Select Brand</SectionLabel>
+      <div className={styles.brandGrid}>
+        {BRANDS.map((b) => {
+          const selected = state.brand === b;
+          return (
+            <button
+              key={b}
+              type="button"
+              className={`${styles.brandTile} ${selected ? styles.brandSelected : ''}`}
+              onClick={() => set({ brand: b, modelNumber: '' })}
+            >
+              {selected && (
+                <span className={styles.brandCheck}><Check size={12} strokeWidth={3} /></span>
+              )}
+              <span>{b}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button type="button" className={styles.linkButton} onClick={() => set({ brand: 'Other' })}>
+        <Plus size={14} /> Other brand
+      </button>
+
+      <SectionLabel>Capacity (Tonnage)</SectionLabel>
+      <div className={styles.chipScroll}>
+        {TONNAGES.map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={`${styles.chipPill} ${state.tonnage === t ? styles.chipPillActive : ''}`}
+            onClick={() => set({ tonnage: t, modelNumber: '' })}
+          >
+            {t}T
+          </button>
+        ))}
+      </div>
+
+      <SectionLabel>Energy Rating</SectionLabel>
+      <div className={styles.chipScroll}>
+        {ENERGY_RATINGS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            className={`${styles.ratingChip} ${state.energyRating === value ? styles.ratingChipActive : ''} ${value === 5 ? styles.ratingChipGold : ''}`}
+            onClick={() => set({ energyRating: value })}
+          >
+            {label}
+            <span className={styles.starRow}>
+              {Array.from({ length: value }).map((_, i) => (
+                <span key={i}>★</span>
+              ))}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {state.brand && state.brand !== 'Other' && (
+        <>
+          <SectionLabel
+            right={filteredModels.length > 0 ? <span className={styles.swipeHint}>Swipe to view more</span> : null}
+          >
+            Suggested Models
+          </SectionLabel>
+          {filteredModels.length === 0 ? (
+            <p className={styles.muted}>
+              No suggested models for {state.brand} {state.tonnage}T. Our engineer will recommend the best fit during the site visit.
+            </p>
+          ) : (
+            <div className={styles.modelScroll}>
+              {filteredModels.map((m) => {
+                const selected = state.modelNumber === m.model;
+                return (
+                  <div key={m.model} className={`${styles.modelCard} ${selected ? styles.modelCardSelected : ''}`}>
+                    <span className={styles.modelEyebrow}>{m.model}</span>
+                    <h4 className={styles.modelTitle}>
+                      {m.brand} {m.tonnage}T {m.features.includes('Inverter') ? 'Inverter' : ''} Split AC
+                    </h4>
+                    <span className={styles.modelPrice}>{m.price} <span className={styles.modelPriceSub}>onwards</span></span>
+                    <div className={styles.modelFeatures}>
+                      {m.features.map((f) => (
+                        <span key={f} className={styles.modelFeature}>{f}</span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className={`${styles.modelButton} ${selected ? styles.modelButtonSelected : ''}`}
+                      onClick={() => set({ modelNumber: selected ? '' : m.model })}
+                    >
+                      {selected ? (
+                        <><Check size={14} strokeWidth={3} /> Selected</>
+                      ) : 'Select Model'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-          
-          <div className={styles.actionArea}>
-            <div className={styles.actionAreaInner} style={{width:'100%'}}>
-              <button className={styles.actionBtn} onClick={() => setStep(4)}>Continue →</button>
-            </div>
-          </div>
+          )}
         </>
       )}
+    </>
+  );
+}
 
-      {/* Step 4: Schedule */}
-      {step === 4 && (
-        <>
-          <div className={styles.stepContent}>
-            <h2>When should we visit?</h2>
-            <div className={styles.visitInfo}>
-              <span style={{fontSize:'20px'}}>ℹ️</span>
-              <p>Free site visit. Our engineer will assess and provide a detailed quote within 24 hours.</p>
-            </div>
+/* ─── Step 3 — Property & Rooms ───────────────────────── */
+function Step3({
+  state, set, addRoom, updateRoom, removeRoom,
+  propertyList, showAddAddress, setShowAddAddress,
+}) {
+  const [propertyType, setPropertyType] = useState('RESIDENTIAL');
 
-            <label className={styles.fieldLabel}>PREFERRED DATE</label>
-            <div className={styles.dayPicker}>
-              {generateDays().map(day => (
-                <button
-                  key={day.dateStr}
-                  disabled={day.disabled}
-                  className={`${styles.dayCard} ${day.disabled ? styles.dayDisabled : ''} ${preferredDate === day.dateStr ? styles.daySelected : ''}`}
-                  onClick={() => setPreferredDate(day.dateStr)}
-                >
-                  <span>{day.dayName}</span>
-                  <span>{day.dayNum}</span>
-                </button>
-              ))}
-            </div>
+  return (
+    <>
+      <Heading
+        title="Where do you need installation?"
+        sub="Pick from your saved properties or add a new address."
+      />
 
-            <label className={styles.fieldLabel}>TIME SLOT</label>
-            <div className={styles.slotList}>
-              {[
-                { id: 'MORNING', label: 'Morning', time: '9AM – 12PM', icon: '☀️' },
-                { id: 'AFTERNOON', label: 'Afternoon', time: '12PM – 4PM', icon: '🌤️' },
-                { id: 'EVENING', label: 'Evening', time: '4PM – 7PM', icon: '🌙' },
-              ].map(s => (
-                <button key={s.id} className={`${styles.slotCard} ${preferredSlot === s.id ? styles.slotActive : ''}`} onClick={() => setPreferredSlot(s.id)}>
-                  <div className={`${styles.slotIcon} ${preferredSlot === s.id ? styles.slotSelectedIcon : ''}`}>{s.icon}</div>
-                  <div style={{flex: 1}}><h4>{s.label}</h4><p>{s.time}</p></div>
-                  {preferredSlot === s.id && <div className={styles.slotCheck}>✓</div>}
-                </button>
-              ))}
-            </div>
+      <div className={styles.segment} role="tablist">
+        <button
+          role="tab"
+          aria-selected={propertyType === 'RESIDENTIAL'}
+          className={`${styles.segmentButton} ${propertyType === 'RESIDENTIAL' ? styles.segmentActive : ''}`}
+          onClick={() => setPropertyType('RESIDENTIAL')}
+        >
+          <Home size={14} /> Residential
+        </button>
+        <button
+          role="tab"
+          aria-selected={propertyType === 'COMMERCIAL'}
+          className={`${styles.segmentButton} ${propertyType === 'COMMERCIAL' ? styles.segmentActive : ''}`}
+          onClick={() => setPropertyType('COMMERCIAL')}
+        >
+          <Building2 size={14} /> Commercial / Office
+        </button>
+        <span
+          className={styles.segmentIndicator}
+          style={{ transform: `translateX(${propertyType === 'COMMERCIAL' ? '100%' : '0%'})` }}
+        />
+      </div>
 
-            <div className={styles.installSummary}>
-              <h3>Installation Summary</h3>
-              <div className={styles.summaryRow}><span>Equipment</span><span>{acType?.replace(/_/g, ' ')} • {brand || 'Any'} • {tonnage}</span></div>
-              <div className={styles.summaryRow}><span>Location</span><span>{rooms.length} Room{rooms.length > 1 ? 's' : ''} @ {selectedProperty?.label || 'TBD'}</span></div>
-              <div className={styles.summaryRow}><span>Scheduled Visit</span><span>{preferredDate || 'TBD'}, {preferredSlot}</span></div>
-            </div>
-          </div>
-          
-          <div className={styles.actionArea}>
-            <div className={styles.actionAreaInner} style={{width:'100%'}}>
-              <button className={styles.actionBtn} disabled={submitting || !preferredDate} onClick={handleSubmit}>
-                {submitting ? 'Submitting...' : 'Submit Request →'}
+      <SectionLabel>Installation Address</SectionLabel>
+      {propertyList.length > 0 ? (
+        <div className={styles.propertyList}>
+          {propertyList.map((p) => {
+            const selected = state.propertyId === p.id && !showAddAddress;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`${styles.propertyCard} ${selected ? styles.propertySelected : ''}`}
+                onClick={() => { set({ propertyId: p.id, propertyAddress: '' }); setShowAddAddress(false); }}
+              >
+                <div className={styles.propertyIcon}>
+                  <MapPin size={18} />
+                </div>
+                <div className={styles.propertyBody}>
+                  <h4>{p.label}</h4>
+                  <p>{[p.addressLine1, p.city].filter(Boolean).join(', ')}</p>
+                  {p.isPrimary && <span className={styles.primaryTag}>Primary</span>}
+                </div>
+                {selected && (
+                  <span className={styles.propertyCheck}><Check size={16} strokeWidth={3} /></span>
+                )}
               </button>
-            </div>
-          </div>
-        </>
+            );
+          })}
+        </div>
+      ) : (
+        <p className={styles.muted}>You have no saved properties — add a new address below.</p>
       )}
+
+      <button
+        type="button"
+        className={styles.linkButton}
+        onClick={() => {
+          const next = !showAddAddress;
+          setShowAddAddress(next);
+          if (next) set({ propertyId: null });
+          else set({ propertyAddress: '' });
+        }}
+      >
+        <Plus size={14} /> {showAddAddress ? 'Cancel' : 'Add new address'}
+      </button>
+
+      {(showAddAddress || (propertyList.length === 0 && !state.propertyId)) && (
+        <div className="input-group">
+          <label htmlFor="address">Address</label>
+          <textarea
+            id="address"
+            className="input textarea"
+            placeholder="House / flat number, road, locality, city, PIN"
+            value={state.propertyAddress}
+            onChange={(e) => set({ propertyAddress: e.target.value })}
+            maxLength={500}
+          />
+        </div>
+      )}
+
+      <SectionLabel right={<span className={styles.muted}>{state.rooms.length} room{state.rooms.length === 1 ? '' : 's'}</span>}>
+        Room Details
+      </SectionLabel>
+
+      <div className={styles.roomList}>
+        {state.rooms.map((room, i) => (
+          <RoomCard
+            key={i}
+            index={i}
+            room={room}
+            canRemove={state.rooms.length > 1}
+            onChange={(patch) => updateRoom(i, patch)}
+            onRemove={() => removeRoom(i)}
+            defaultAcType={state.acType}
+          />
+        ))}
+        <button type="button" className={styles.addRoomBtn} onClick={() => addRoom(state.acType)}>
+          <Plus size={16} /> Add another room
+        </button>
+      </div>
+
+      <SectionLabel>Additional Notes</SectionLabel>
+      <div className="input-group">
+        <textarea
+          className="input textarea"
+          placeholder="Concealed wiring, specific unit placement, accessibility notes…"
+          value={state.notes}
+          onChange={(e) => set({ notes: e.target.value })}
+          maxLength={1000}
+        />
+      </div>
+    </>
+  );
+}
+
+function RoomCard({ index, room, canRemove, onChange, onRemove, defaultAcType }) {
+  return (
+    <div className={styles.roomCard}>
+      <div className={styles.roomHeader}>
+        <span className={styles.roomBadge}>Room {index + 1}</span>
+        {canRemove && (
+          <button
+            type="button"
+            className={styles.roomRemove}
+            onClick={onRemove}
+            aria-label={`Remove room ${index + 1}`}
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      <div className="input-group">
+        <label>Room type</label>
+        <div className={styles.selectWrap}>
+          <select
+            className="input select"
+            value={room.roomType}
+            onChange={(e) => onChange({ roomType: e.target.value })}
+          >
+            {ROOM_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className={styles.roomGrid}>
+        <div className="input-group">
+          <label>Size (sq ft)</label>
+          <input
+            className="input"
+            type="number"
+            min="1"
+            max="10000"
+            placeholder="200"
+            value={room.sizeSqft}
+            onChange={(e) => onChange({ sizeSqft: e.target.value.replace(/\D/g, '') })}
+          />
+        </div>
+        <div className="input-group">
+          <label>AC type</label>
+          <div className={styles.selectWrap}>
+            <select
+              className="input select"
+              value={room.acType || defaultAcType || ''}
+              onChange={(e) => onChange({ acType: e.target.value })}
+            >
+              <option value="" disabled>Select AC type…</option>
+              {AC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Step 4 — Schedule + Confirm ─────────────────────── */
+function Step4({ state, set, propertyList, onEdit }) {
+  const property = propertyList.find((p) => p.id === state.propertyId);
+  const equipment = [
+    state.brand,
+    state.tonnage ? `${state.tonnage}T` : null,
+    acTypeLabel(state.acType),
+    state.modelNumber,
+  ].filter(Boolean).join(' · ');
+
+  const scheduledLabel = state.scheduledDate
+    ? new Date(state.scheduledDate).toLocaleDateString('en-IN', {
+        weekday: 'short', day: '2-digit', month: 'short',
+      })
+    : 'Pick a date';
+
+  return (
+    <>
+      <Heading title="When should we visit?" sub="Free site visit. We'll provide a detailed quote within 24 hours." />
+
+      <div className={styles.infoBanner}>
+        <CalendarDays size={16} />
+        <p>Today is unavailable — earliest slot is tomorrow.</p>
+      </div>
+
+      <SectionLabel>Pick a day</SectionLabel>
+      <DayPicker value={state.scheduledDate} onChange={(d) => set({ scheduledDate: d })} />
+
+      <SectionLabel>Time slot</SectionLabel>
+      <div className={styles.slotList}>
+        {TIME_SLOTS.map(({ value, label, range, tag }) => {
+          const Icon = SLOT_ICONS[value] || Sun;
+          const selected = state.scheduledSlot === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              className={`${styles.slotCard} ${selected ? styles.slotCardSelected : ''}`}
+              onClick={() => set({ scheduledSlot: value })}
+            >
+              <div className={styles.slotIcon}>
+                <Icon size={20} />
+              </div>
+              <div className={styles.slotBody}>
+                <h4>{label}</h4>
+                <p>{range}</p>
+              </div>
+              {tag && <span className={styles.slotTag}>{tag}</span>}
+              {selected && <span className={styles.slotCheck}><Check size={14} strokeWidth={3} /></span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={styles.summaryCard}>
+        <div className={styles.summaryHeader}>
+          <Lightbulb size={16} />
+          <h3>Installation Summary</h3>
+        </div>
+        <SummaryRow
+          label="Equipment"
+          value={equipment || 'Not specified'}
+          onEdit={() => onEdit(2)}
+        />
+        <SummaryRow
+          label="Location"
+          value={
+            property
+              ? `${state.rooms.length} room${state.rooms.length === 1 ? '' : 's'} @ ${property.label}`
+              : state.propertyAddress
+                ? `${state.rooms.length} room${state.rooms.length === 1 ? '' : 's'} @ new address`
+                : 'No address selected'
+          }
+          onEdit={() => onEdit(3)}
+        />
+        <SummaryRow
+          label="Scheduled visit"
+          value={`${scheduledLabel} · ${slotLabel(state.scheduledSlot)}`}
+          onEdit={() => {/* same screen */}}
+          hideEdit
+        />
+      </div>
+    </>
+  );
+}
+
+function SummaryRow({ label, value, onEdit, hideEdit = false }) {
+  return (
+    <div className={styles.summaryRow}>
+      <div>
+        <span className={styles.summaryLabel}>{label}</span>
+        <p className={styles.summaryValue}>{value}</p>
+      </div>
+      {!hideEdit && (
+        <button type="button" className={styles.editBtn} onClick={onEdit} aria-label={`Edit ${label}`}>
+          <Pencil size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Success ─────────────────────────────────────────── */
+function SuccessScreen({ request, onHome }) {
+  const router = useRouter();
+  const dateLabel = request.scheduledDate
+    ? new Date(request.scheduledDate).toLocaleDateString('en-IN', {
+        weekday: 'long', day: '2-digit', month: 'long',
+      })
+    : null;
+
+  return (
+    <div className={styles.successPage}>
+      <AppTopBar title="Request Submitted" showBack={false} variant="transparent" />
+
+      <motion.div
+        className={styles.successInner}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <motion.div
+          className={styles.successCheckRing}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 220, damping: 18, delay: 0.1 }}
+        >
+          <span className={styles.successCheck}>
+            <Check size={36} strokeWidth={3} />
+          </span>
+          <span className={styles.successPulse} aria-hidden="true" />
+        </motion.div>
+
+        <h1 className={styles.successHeading}>Request Submitted!</h1>
+        <p className={styles.successRef}>
+          Request No: <strong>{request.requestNumber || 'PENDING'}</strong>
+        </p>
+
+        <div className={styles.successInfoBox}>
+          <Sparkles size={18} className={styles.successInfoIcon} />
+          <p>
+            Our team will contact you within <strong>2 hours</strong> to confirm your site visit
+            {dateLabel ? <> on <strong>{dateLabel}</strong></> : '.'}
+            {request.scheduledSlot ? <> ({slotLabel(request.scheduledSlot)})</> : ''}
+          </p>
+        </div>
+
+        <div className={styles.timeline}>
+          <h4 className={styles.timelineTitle}>What happens next</h4>
+          <ol className={styles.timelineList}>
+            {[
+              { state: 'done', label: 'Request received', sub: 'We have your details' },
+              { state: 'active', label: 'Team reviews & confirms', sub: 'Within 2 hours' },
+              { state: 'pending', label: 'Engineer visits your site', sub: 'On the scheduled day' },
+              { state: 'pending', label: 'Quote shared within 24h', sub: 'You can accept and schedule installation' },
+            ].map((step, i) => (
+              <li key={i} className={`${styles.timelineItem} ${styles[`timeline_${step.state}`]}`}>
+                <span className={styles.timelineDot}>
+                  {step.state === 'done' && <Check size={12} strokeWidth={3} />}
+                </span>
+                <div>
+                  <p className={styles.timelineLabel}>{step.label}</p>
+                  <p className={styles.timelineSub}>{step.sub}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className={styles.successContactCard}>
+          <h4>Need to change or cancel?</h4>
+          <div className={styles.contactRow}>
+            <a href="tel:+914023540000" className={`${styles.contactBtn} ${styles.contactBtnPrimary}`}>
+              <Phone size={14} /> +91 40-2354-XXXX
+            </a>
+            <a href="https://wa.me/914023540000" className={`${styles.contactBtn} ${styles.contactBtnGhost}`}>
+              <MessageCircle size={14} /> WhatsApp Us
+            </a>
+          </div>
+        </div>
+
+        <div className={styles.successActions}>
+          <button className="btn btn-outline btn-full" onClick={() => router.push('/tickets')}>
+            Track this request
+          </button>
+          <button className="btn btn-primary btn-full" onClick={onHome}>
+            Back to home
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─── Tiny helpers ────────────────────────────────────── */
+function Heading({ title, sub }) {
+  return (
+    <div className={styles.heading}>
+      <h2>{title}</h2>
+      <p>{sub}</p>
+    </div>
+  );
+}
+
+function SectionLabel({ children, right }) {
+  return (
+    <div className={styles.sectionLabel}>
+      <span>{children}</span>
+      {right}
     </div>
   );
 }

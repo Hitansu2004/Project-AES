@@ -2,25 +2,26 @@ package com.aes.service;
 
 import com.aes.entity.User;
 import com.aes.enums.UserRole;
+import com.aes.exception.BusinessException;
 import com.aes.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Assignment Service — round-robin assignment for CRM agents and managers.
+ * Round-robin assignment service for CRM agents, service managers and admins.
  *
- * Per Section 8 (line 1743):
- *   AssignmentService.java ← round-robin assignment logic
+ * <p>Per Section 4.6 (line 647) — new tickets are auto-assigned to the next
+ * available CRM agent. Per Section 4.8 (lines 768, 794) — escalations cycle
+ * through service managers and admins respectively.</p>
  *
- * Per Section 4.6 (line 647):
- *   Auto-assign to available CRM agent (round-robin among CRM_AGENT users)
- *
- * Per Section 4.8 (line 768):
- *   Assign to available SERVICE_MANAGER (round-robin)
+ * <p>The {@link AtomicInteger} counters give a thread-safe round-robin index
+ * across concurrent requests (the escalation scheduler and the ticket-creation
+ * controller can run simultaneously).</p>
  */
 @Service
 @Slf4j
@@ -29,61 +30,56 @@ public class AssignmentService {
 
     private final UserRepository userRepository;
 
-    // Atomic counters for round-robin
     private final AtomicInteger crmAgentIndex = new AtomicInteger(0);
     private final AtomicInteger managerIndex = new AtomicInteger(0);
     private final AtomicInteger adminIndex = new AtomicInteger(0);
 
-    /**
-     * Get next available CRM agent using round-robin.
-     * Per line 647.
-     */
+    /** Section 4.6 line 647 — pick the next available CRM agent for a new ticket. */
     public User getNextAvailableCrmAgent() {
-        List<User> agents = userRepository.findByRoleAndIsActiveTrue(UserRole.CRM_AGENT);
-        if (agents.isEmpty()) {
-            log.warn("No active CRM agents found! Falling back to any admin.");
-            List<User> admins = userRepository.findByRoleAndIsActiveTrue(UserRole.ADMIN);
-            if (admins.isEmpty()) {
-                throw new IllegalStateException("No CRM agents or admins available for ticket assignment");
-            }
-            return admins.get(0);
-        }
-        int index = Math.abs(crmAgentIndex.getAndIncrement() % agents.size());
-        User agent = agents.get(index);
-        log.info("Round-robin assigned CRM agent: {} (index {})", agent.getName(), index);
-        return agent;
+        return pickRoundRobin(UserRole.CRM_AGENT, crmAgentIndex,
+                "No active CRM agents are available to handle this ticket. Please contact admin.");
     }
 
-    /**
-     * Get next available Service Manager using round-robin.
-     * Per line 768.
-     */
+    /** Section 4.8 line 768 — pick the next available service manager for L2 escalation. */
     public User getNextAvailableManager() {
-        List<User> managers = userRepository.findByRoleAndIsActiveTrue(UserRole.SERVICE_MANAGER);
-        if (managers.isEmpty()) {
-            log.warn("No active Service Managers found! Falling back to admin.");
-            List<User> admins = userRepository.findByRoleAndIsActiveTrue(UserRole.ADMIN);
-            if (admins.isEmpty()) {
-                throw new IllegalStateException("No service managers or admins available for escalation");
-            }
-            return admins.get(0);
+        try {
+            return pickRoundRobin(UserRole.SERVICE_MANAGER, managerIndex,
+                    "No active service managers are available for L2 escalation.");
+        } catch (BusinessException ex) {
+            // Fail-safe: fall back to an admin so a critical ticket never goes unassigned.
+            User fallback = firstActiveOrThrow(UserRole.ADMIN, ex.getMessage());
+            log.warn("L2 escalation falling back to admin {} (no service managers available)", fallback.getName());
+            return fallback;
         }
-        int index = Math.abs(managerIndex.getAndIncrement() % managers.size());
-        User manager = managers.get(index);
-        log.info("Round-robin assigned Service Manager: {} (index {})", manager.getName(), index);
-        return manager;
     }
 
-    /**
-     * Get next available Admin for L3 escalation.
-     * Per line 794.
-     */
+    /** Section 4.8 line 794 — pick the next available admin for L3 escalation. */
     public User getNextAvailableAdmin() {
-        List<User> admins = userRepository.findByRoleAndIsActiveTrue(UserRole.ADMIN);
-        if (admins.isEmpty()) {
-            throw new IllegalStateException("No admins available for L3 escalation");
+        return pickRoundRobin(UserRole.ADMIN, adminIndex,
+                "No active admins are available for L3 escalation.");
+    }
+
+    private User pickRoundRobin(UserRole role, AtomicInteger counter, String emptyMessage) {
+        List<User> pool = userRepository.findByRoleAndIsActiveTrue(role);
+        if (pool.isEmpty()) {
+            throw new BusinessException("NO_STAFF_AVAILABLE", emptyMessage,
+                    HttpStatus.SERVICE_UNAVAILABLE);
         }
-        int index = Math.abs(adminIndex.getAndIncrement() % admins.size());
-        return admins.get(index);
+        // & 0x7FFFFFFF clears the sign bit so the index is always non-negative
+        // even after AtomicInteger wraps past Integer.MAX_VALUE.
+        int index = (counter.getAndIncrement() & 0x7FFFFFFF) % pool.size();
+        User chosen = pool.get(index);
+        log.debug("Round-robin assignment {} → {} (index {} of {})",
+                role, chosen.getName(), index, pool.size());
+        return chosen;
+    }
+
+    private User firstActiveOrThrow(UserRole role, String emptyMessage) {
+        List<User> pool = userRepository.findByRoleAndIsActiveTrue(role);
+        if (pool.isEmpty()) {
+            throw new BusinessException("NO_STAFF_AVAILABLE", emptyMessage,
+                    HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        return pool.get(0);
     }
 }

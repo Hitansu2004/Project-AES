@@ -41,7 +41,7 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     // Escalation engine queries — CRITICAL
     @Query("SELECT t FROM ServiceTicket t WHERE t.currentLevel = 1 " +
            "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +
-           "AND t.slaDeadlineL1 < :now " +
+           "AND t.slaDeadlineL1 IS NOT NULL AND t.slaDeadlineL1 < :now " +
            "AND t.acknowledgedAt IS NULL")
     List<ServiceTicket> findL1OverdueTickets(@Param("now") OffsetDateTime now);
 
@@ -61,6 +61,23 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.currentLevel > 1 " +
            "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
     long countCurrentlyEscalated();
+
+    /**
+     * Average minutes between {@code created_at} and {@code acknowledged_at}
+     * for tickets acknowledged on or after the supplied timestamp. Returns
+     * {@code null} when no tickets have been acknowledged in the window.
+     */
+    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (acknowledged_at - created_at)) / 60.0) " +
+                   "FROM service_tickets " +
+                   "WHERE acknowledged_at IS NOT NULL AND acknowledged_at >= :since",
+           nativeQuery = true)
+    Double avgAcknowledgmentMinutesSince(@Param("since") OffsetDateTime since);
+
+    @Query("SELECT COUNT(t) FROM ServiceTicket t " +
+           "WHERE t.slaDeadlineFinal IS NOT NULL " +
+           "AND t.slaDeadlineFinal < :now " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countFinalSlaBreached(@Param("now") OffsetDateTime now);
 
     // Ticket sequence
     @Query(value = "SELECT nextval('ticket_seq')", nativeQuery = true)

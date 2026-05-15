@@ -1,6 +1,8 @@
 package com.aes.dto.request;
 
+import com.aes.enums.PropertyType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,8 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Create property request DTO.
- * Per Section 4.3, line 561.
+ * Request body for {@code POST /api/v1/properties}.
+ * Per Section 4.3 (line 561).
  */
 @Data
 @Builder
@@ -18,25 +20,25 @@ import lombok.NoArgsConstructor;
 public class CreatePropertyRequest {
 
     @NotBlank(message = "Property label is required")
-    @Size(max = 100)
+    @Size(max = 100, message = "Property label must be at most 100 characters")
     private String label;
 
     @NotBlank(message = "Address line 1 is required")
-    @Size(max = 200)
+    @Size(max = 200, message = "Address line 1 must be at most 200 characters")
     private String addressLine1;
 
-    @Size(max = 200)
+    @Size(max = 200, message = "Address line 2 must be at most 200 characters")
     private String addressLine2;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "City must be at most 100 characters")
     @Builder.Default
     private String city = "Hyderabad";
 
-    @Size(max = 10)
+    @Pattern(regexp = "^\\d{6}$", message = "PIN code must be exactly 6 digits")
     private String pincode;
 
     @Builder.Default
-    private String propertyType = "RESIDENTIAL";
+    private PropertyType propertyType = PropertyType.RESIDENTIAL;
 
     @Builder.Default
     private Boolean isPrimary = false;

@@ -1,11 +1,11 @@
 package com.aes.service;
 
+import com.aes.config.AppProperties;
 import com.aes.entity.OtpToken;
 import com.aes.exception.BusinessException;
 import com.aes.repository.OtpTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,112 +15,127 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 
 /**
- * OTP Service — generates, validates, and rate-limits OTPs.
+ * OTP service — generates, dispatches, and verifies one-time passwords.
  *
- * Per Section 4.1 (lines 493-504) and Section 7 (lines 1675-1678):
- *   - Max 3 OTP requests per phone per 10 minutes
- *   - Max 5 verification attempts per OTP
- *   - OTP validity: 10 minutes
+ * <p>Per Section 4.1 (lines 493-518) and Section 7 (lines 1675-1678):</p>
+ * <ul>
+ *   <li>Six-digit numeric OTPs generated with {@link SecureRandom}.</li>
+ *   <li>Rate limit: max 3 OTP requests per phone per 10 minutes.</li>
+ *   <li>Verification: max 5 attempts per OTP; OTP valid for 10 minutes.</li>
+ *   <li>Demo bypass: when {@code app.demo-mode=true}, the value of
+ *       {@code app.demo-otp-bypass} is accepted as a universal OTP
+ *       (spec line 2013 — "OTP always succeed with '000000' as fallback").
+ *       The bypass never triggers in production where the property is empty.</li>
+ * </ul>
  */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class OtpService {
 
-    private final OtpTokenRepository otpTokenRepository;
+    private static final int OTP_LENGTH_DIGITS = 6;
+    private static final int OTP_VALIDITY_MINUTES = 10;
+    private static final int OTP_RATE_LIMIT_WINDOW_MINUTES = 10;
+    private static final int OTP_RATE_LIMIT_COUNT = 3;
+    private static final int OTP_MAX_VERIFICATION_ATTEMPTS = 5;
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
+    private final OtpTokenRepository otpTokenRepository;
+    private final SmsService smsService;
+    private final AppProperties appProperties;
 
     /**
-     * Generate and save a 6-digit OTP for the given phone number.
-     * Rate-limited to max 3 OTPs per phone per 10 minutes (line 499, 1676).
+     * Generate, persist and dispatch a fresh OTP for the given phone number.
      *
-     * @return the generated OTP code
+     * @return the generated OTP code (callers expose it only when demo mode is enabled).
      */
     @Transactional
     public String generateOtp(String phoneNumber) {
-        // Check rate limit: max 3 OTPs per phone per 10 minutes
-        OffsetDateTime tenMinutesAgo = OffsetDateTime.now().minusMinutes(10);
-        long recentCount = otpTokenRepository.countByPhoneNumberAndCreatedAtAfter(phoneNumber, tenMinutesAgo);
-
-        if (recentCount >= 3) {
-            throw new BusinessException("OTP_RATE_LIMIT", "Too many OTP requests. Please wait before trying again.",
+        OffsetDateTime windowStart = OffsetDateTime.now().minusMinutes(OTP_RATE_LIMIT_WINDOW_MINUTES);
+        long recentCount = otpTokenRepository.countByPhoneNumberAndCreatedAtAfter(phoneNumber, windowStart);
+        if (recentCount >= OTP_RATE_LIMIT_COUNT) {
+            throw new BusinessException(
+                    "OTP_RATE_LIMIT",
+                    "Too many OTP requests. Please wait a few minutes before trying again.",
                     HttpStatus.TOO_MANY_REQUESTS);
         }
 
-        // Generate 6-digit OTP
-        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
+        String otpCode = generateSecureOtp();
 
-        // Save to otp_tokens with expires_at = NOW() + 10 minutes
         OtpToken otpToken = OtpToken.builder()
                 .phoneNumber(phoneNumber)
                 .otpCode(otpCode)
-                .expiresAt(OffsetDateTime.now().plusMinutes(10))
+                .expiresAt(OffsetDateTime.now().plusMinutes(OTP_VALIDITY_MINUTES))
                 .isUsed(false)
                 .attemptCount(0)
                 .build();
-
         otpTokenRepository.save(otpToken);
 
-        // In production: would call Twilio SMS API here
-        // For development: log OTP to console so it can be used for login
-        log.info("========== OTP for {} : {} ==========", phoneNumber, otpCode);
+        smsService.sendOtpSms(phoneNumber, otpCode);
 
         return otpCode;
     }
 
     /**
-     * Verify OTP for the given phone number.
+     * Verify a submitted OTP for the given phone number.
      *
-     * Per lines 510-514:
-     *   1. Find latest unused OTP for phone where is_used=false and expires_at > NOW()
-     *   2. Increment attempt_count; if > 5, invalidate OTP and return error
-     *   3. Compare OTP code (case-insensitive)
-     *   4. Mark OTP as used
-     *
-     * @return true if OTP is valid
+     * @throws BusinessException with code {@code OTP_EXPIRED}, {@code OTP_INVALID},
+     *         or {@code OTP_MAX_ATTEMPTS} on failure paths.
      */
     @Transactional
-    public boolean verifyOtp(String phoneNumber, String otp) {
+    public void verifyOtp(String phoneNumber, String submittedOtp) {
+        // Demo bypass — only honored when explicitly enabled via configuration.
+        if (isDemoBypass(submittedOtp)) {
+            log.warn("Demo OTP bypass accepted for {}", phoneNumber);
+            return;
+        }
+
         OffsetDateTime now = OffsetDateTime.now();
-
-
-
-        // Find latest unused, non-expired OTP for this phone
-        Optional<OtpToken> otpTokenOpt = otpTokenRepository
+        Optional<OtpToken> latest = otpTokenRepository
                 .findFirstByPhoneNumberAndIsUsedFalseAndExpiresAtAfterOrderByCreatedAtDesc(phoneNumber, now);
 
-        if (otpTokenOpt.isEmpty()) {
-            throw new BusinessException("OTP_EXPIRED", "OTP has expired or not found. Please request a new one.",
+        if (latest.isEmpty()) {
+            throw new BusinessException(
+                    "OTP_EXPIRED",
+                    "OTP has expired or was not found. Please request a new one.",
                     HttpStatus.BAD_REQUEST);
         }
 
-        OtpToken otpToken = otpTokenOpt.get();
-
-        // Increment attempt count
+        OtpToken otpToken = latest.get();
         otpToken.setAttemptCount(otpToken.getAttemptCount() + 1);
 
-        // Max 5 verification attempts per OTP (line 512, 1677)
-        if (otpToken.getAttemptCount() > 5) {
-            otpToken.setIsUsed(true); // invalidate
+        if (otpToken.getAttemptCount() > OTP_MAX_VERIFICATION_ATTEMPTS) {
+            otpToken.setIsUsed(true);
             otpTokenRepository.save(otpToken);
-            throw new BusinessException("OTP_MAX_ATTEMPTS", "Maximum verification attempts exceeded. Request a new OTP.",
+            throw new BusinessException(
+                    "OTP_MAX_ATTEMPTS",
+                    "Maximum verification attempts exceeded. Please request a new OTP.",
                     HttpStatus.TOO_MANY_REQUESTS);
         }
 
-        // Compare OTP code (case-insensitive as per line 513)
-        if ("123456".equals(otp)) {
-            // bypass for local dev testing
-        } else if (!otpToken.getOtpCode().equalsIgnoreCase(otp)) {
+        if (!otpToken.getOtpCode().equalsIgnoreCase(submittedOtp)) {
             otpTokenRepository.save(otpToken);
-            throw new BusinessException("OTP_INVALID", "Invalid OTP. Please try again.",
+            throw new BusinessException(
+                    "OTP_INVALID",
+                    "Invalid OTP. Please try again.",
                     HttpStatus.BAD_REQUEST);
         }
 
-        // Mark OTP as used (line 514)
         otpToken.setIsUsed(true);
         otpTokenRepository.save(otpToken);
+    }
 
-        return true;
+    private String generateSecureOtp() {
+        int max = (int) Math.pow(10, OTP_LENGTH_DIGITS);
+        return String.format("%0" + OTP_LENGTH_DIGITS + "d", SECURE_RANDOM.nextInt(max));
+    }
+
+    private boolean isDemoBypass(String submittedOtp) {
+        if (!appProperties.isDemoMode()) {
+            return false;
+        }
+        String bypass = appProperties.getDemoOtpBypass();
+        return bypass != null && !bypass.isBlank() && bypass.equals(submittedOtp);
     }
 }
