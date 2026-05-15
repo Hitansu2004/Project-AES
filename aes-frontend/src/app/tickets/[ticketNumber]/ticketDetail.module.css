@@ -1,0 +1,77 @@
+.page { min-height: 100dvh; background: var(--surface); color: var(--on-surface); padding-bottom: 100px; }
+
+.topBar { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--margin-mobile); height: 56px; border-bottom: 1px solid var(--border-light); background: var(--surface); position: sticky; top: 0; z-index: 50; }
+.iconBtn { background: none; border: none; color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: background 0.2s; font-size: 18px; }
+.iconBtn:hover { background: var(--surface-container-high); }
+.pageTitle { font-size: 16px; font-weight: 700; color: var(--primary); margin: 0; }
+
+.header { padding: var(--space-4) var(--margin-mobile); }
+.priorityGroup { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.handlingTeam { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
+.ticketId { font-size: 24px; font-weight: 800; color: var(--primary-dark); margin: 0; }
+
+.slaBanner { padding: 16px var(--margin-mobile); display: flex; align-items: center; gap: 16px; color: #fff; }
+.slaIcon { font-size: 28px; }
+.slaContent { display: flex; flex-direction: column; }
+.slaContent strong { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.slaContent span { font-size: 14px; opacity: 0.9; }
+
+.slaBanner-green { background: #16a34a; }
+.slaBanner-orange { background: #f59e0b; }
+.slaBanner-red { background: #dc2626; animation: pulse 2s infinite; }
+.slaBannerGreen { background: #16a34a; }
+
+@keyframes pulse {
+  0% { background-color: #dc2626; }
+  50% { background-color: #ef4444; }
+  100% { background-color: #dc2626; }
+}
+
+.content { padding: var(--space-5) var(--margin-mobile); max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-6); }
+
+/* Escalation Ladder */
+.escalationLadder { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: var(--space-5); box-shadow: var(--shadow-sm); }
+.step { display: flex; gap: 16px; position: relative; }
+.stepDot { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-container); color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; border: 2px solid var(--border-light); z-index: 2; position: relative; }
+.stepInfo { flex: 1; padding-bottom: 24px; }
+.stepInfo h4 { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.stepStatus { font-size: 14px; font-weight: 600; color: var(--on-surface); margin-bottom: 2px; }
+.stepSub { font-size: 13px; color: var(--secondary); font-weight: 500; }
+
+.stepLine { position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px; background: var(--border-light); z-index: 1; margin-left: 20px; margin-top: 104px; height: 40px; } /* Adjust these lines carefully later if doing true dynamic CSS */
+
+.stepActive .stepDot { background: #E6F5FA; border-color: var(--secondary); color: var(--secondary); }
+.stepPast .stepDot { background: var(--surface-container-high); border-color: var(--outline-variant); color: var(--outline); }
+.stepPast .stepStatus, .stepPast h4 { color: var(--on-surface-variant); }
+.stepFuture .stepDot { opacity: 0.5; }
+.stepFuture .stepInfo { opacity: 0.6; }
+.stepUrgent .stepDot { background: #fee2e2; border-color: var(--error); color: var(--error); }
+.stepUrgent h4 { color: var(--error); }
+
+.escalationNote { font-size: 12px; color: var(--on-surface-variant); margin-top: var(--space-4); text-align: center; background: var(--surface-container-low); padding: 8px; border-radius: 8px; }
+
+/* Cards */
+.card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: var(--space-5); box-shadow: var(--shadow-sm); }
+.cardHeader { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px; }
+.cardIcon { font-size: 24px; }
+.cardHeader h3 { font-size: 16px; font-weight: 700; color: var(--primary); }
+
+.detailRow { margin-bottom: 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.detailRow:last-child { margin-bottom: 0; }
+.detailRow span { color: var(--on-surface-variant); }
+.detailRow strong { color: var(--on-surface); font-weight: 600; }
+
+/* Timeline */
+.timelineCard { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: var(--space-5); box-shadow: var(--shadow-sm); }
+.timeline { display: flex; flex-direction: column; gap: 16px; }
+.timelineEvent { display: flex; gap: 12px; position: relative; }
+.timelineEvent:not(:last-child)::after { content: ''; position: absolute; left: 5px; top: 20px; bottom: -16px; width: 2px; background: var(--border-light); }
+.tlDot { width: 12px; height: 12px; border-radius: 50%; background: var(--outline-variant); margin-top: 4px; z-index: 2; position: relative; }
+.timelineEvent:first-child .tlDot { background: var(--secondary); border: 2px solid #E6F5FA; transform: scale(1.2); }
+.tlContent { flex: 1; }
+.tlTime { font-size: 12px; color: var(--on-surface-variant); display: block; margin-bottom: 2px; }
+.tlContent p { font-size: 14px; font-weight: 500; color: var(--on-surface); }
+
+/* Bottom */
+.bottomActions { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border-light); padding: var(--space-4) var(--margin-mobile); z-index: 40; padding-bottom: calc(env(safe-area-inset-bottom) + var(--space-4)); display: flex; gap: var(--space-3); }
+@media (min-width: 768px) { .bottomActions { display: flex; justify-content: center; } .bottomActions button, .bottomActions a { max-width: 300px; } }

@@ -11,126 +11,174 @@
   align-items: center;
   gap: var(--space-2);
 }
-.mobileTitle { font-size: 17px; font-weight: 700; color: var(--primary-dark); }
+.mobileTitle { font-size: 17px; font-weight: 700; color: var(--primary); }
 .mobileRight { display: flex; align-items: center; gap: var(--space-3); }
 .avatar {
   width: 36px; height: 36px; border-radius: 50%;
-  background: var(--secondary); color: #fff;
+  background: var(--secondary-container); color: var(--on-secondary-container);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 15px;
 }
-
 @media (min-width: 768px) { .mobileHeader { display: none; } }
 
-/* Greeting */
+/* Welcome Card */
 .greeting {
-  background: linear-gradient(135deg, #001e40 0%, #003366 100%);
-  border-radius: var(--radius-md);
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
   color: #fff;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-md);
 }
-.greetingTitle { font-size: 22px; font-weight: 700; margin-bottom: 4px; color: #fff; }
-.greetingSubtext { font-size: 14px; opacity: 0.8; margin-bottom: var(--space-4); }
-.greetingBadges { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.greetingTitle { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+.greetingSubtext { font-size: 14px; color: var(--inverse-primary); margin-bottom: var(--space-6); }
+.greetingBadges { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .greetingBadge {
-  background: rgba(255,255,255,0.15);
-  padding: 5px 12px; border-radius: var(--radius-full);
-  font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 6px 12px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 500; color: #fff;
+  display: flex; align-items: center; gap: 6px;
 }
 
-/* Action Cards */
+/* Two Action Cards */
 .actionCards {
   display: grid;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
-@media (min-width: 640px) { .actionCards { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 768px) { .actionCards { grid-template-columns: 1fr 1fr; } }
 
 .actionCard {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
   color: #fff;
   text-decoration: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  transition: transform var(--transition), box-shadow var(--transition);
+  justify-content: space-between;
+  min-height: 220px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition);
 }
-.actionCard::after {
-  content: '';
+.actionCard:hover { box-shadow: var(--shadow-lg); }
+
+.bgIcon {
   position: absolute;
-  top: -40px; right: -40px;
-  width: 120px; height: 120px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 50%;
+  font-size: 120px;
+  opacity: 0.15;
+  transition: transform 0.5s ease;
 }
-.actionCard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.installCard { background: var(--primary); }
+.installCard .bgIcon { right: -24px; top: -24px; color: #fff; transform: rotate(12deg); }
+.installCard:hover .bgIcon { transform: rotate(6deg); }
 
-.installCard { background: linear-gradient(135deg, #003366 0%, #0066a6 100%); }
-.serviceCard { background: linear-gradient(135deg, #004d80 0%, #0099CC 100%); }
+.serviceCard { background: linear-gradient(to bottom right, var(--secondary-dark), #3a5f94); }
+.serviceCard .bgIcon { right: -16px; bottom: -16px; color: #fff; transform: rotate(-12deg); }
+.serviceCard:hover .bgIcon { transform: rotate(0deg); }
 
-.actionIcon { font-size: 28px; }
-.actionTitle { font-size: 18px; font-weight: 700; color: #fff; }
-.actionDesc { font-size: 13px; opacity: 0.8; }
-.actionTags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.actionContent { position: relative; z-index: 10; }
+.actionIcon { font-size: 36px; margin-bottom: 16px; color: #fff; }
+.actionTitle { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.actionDesc { font-size: 14px; color: var(--inverse-primary); margin-bottom: 16px; }
+.serviceCard .actionDesc { color: var(--secondary-container); }
+
+.actionTags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
 .actionTags span {
-  background: rgba(255,255,255,0.15);
-  padding: 4px 10px; border-radius: var(--radius-sm);
-  font-size: 11px; font-weight: 600;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 4px 8px; border-radius: var(--radius);
+  font-size: 12px; font-weight: 500; color: #fff;
 }
+
 .actionBtn {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: rgba(255,255,255,0.2);
-  padding: 8px 16px; border-radius: var(--radius);
-  font-size: 14px; font-weight: 700;
-  align-self: flex-start; margin-top: var(--space-2);
-  transition: background var(--transition-fast);
+  position: relative; z-index: 10;
+  align-self: flex-end;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--radius-full);
+  font-size: 14px; font-weight: 600;
+  transition: opacity var(--transition), background var(--transition);
+  box-shadow: var(--shadow-sm);
 }
-.actionCard:hover .actionBtn { background: rgba(255,255,255,0.3); }
+.installBtn { background: #E63946; color: #fff; }
+.installBtn:hover { opacity: 0.9; }
+.serviceBtn { background: #fff; color: var(--secondary); }
+.serviceBtn:hover { background: var(--surface-container-low); }
 
 /* Sections */
 .section { margin-bottom: var(--space-6); }
 .sectionHeader {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
-.viewAll { color: var(--secondary); font-size: 14px; font-weight: 600; }
+.sectionTitle { font-size: 20px; font-weight: 600; color: var(--on-surface); }
+.viewAll { color: var(--secondary); font-size: 14px; font-weight: 600; text-decoration: none; }
+.viewAll:hover { text-decoration: underline; }
 
-/* Tickets */
-.ticketList { display: flex; flex-direction: column; gap: var(--space-3); }
+/* Grid for Tickets and AMC */
+.bottomGrid {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+@media (min-width: 768px) { .bottomGrid { grid-template-columns: 1fr 1fr; } }
+
+/* Projects & Tickets */
 .ticketCard {
   background: var(--surface-container-lowest);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
-  box-shadow: var(--shadow);
-  text-decoration: none;
-  border-left: 4px solid var(--secondary);
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-.ticketCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.ticketTop { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
-.ticketId { font-size: 13px; font-weight: 700; color: var(--on-surface-variant); }
-.ticketTitle { font-size: 15px; font-weight: 600; color: var(--primary-dark); margin-bottom: var(--space-2); }
-.ticketMeta { display: flex; align-items: center; gap: var(--space-3); }
-.ticketDate { font-size: 12px; color: var(--outline); }
-
-/* AMC Banner */
-.amcBanner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  background: var(--surface-container-low);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   text-decoration: none;
-  border: 1px solid var(--border-light);
+  border-left: 4px solid #E63946;
+  display: flex; flex-direction: column; justify-content: space-between;
   transition: box-shadow var(--transition);
+  height: 100%;
 }
-.amcBanner:hover { box-shadow: var(--shadow-md); }
-.amcIcon { font-size: 36px; }
-.amcInfo h3 { font-size: 16px; font-weight: 700; color: var(--primary-dark); }
-.amcInfo p { font-size: 13px; color: var(--outline); margin: 2px 0; }
-.amcLink { font-size: 13px; color: var(--secondary); font-weight: 600; }
+.projectCard { border-left-color: var(--secondary); }
+.ticketCard:hover { box-shadow: var(--shadow-md); }
+
+.ticketTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.ticketTitle { font-size: 18px; font-weight: 600; color: var(--on-surface); }
+.ticketDesc { font-size: 14px; color: var(--on-surface-variant); margin-bottom: 16px; }
+
+.ticketTags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.ticketTag { font-size: 12px; font-weight: 500; padding: 4px 8px; border-radius: var(--radius); }
+.tagPriority { background: var(--primary-fixed); color: var(--on-primary-fixed); }
+.tagStatus { background: var(--surface-container); color: var(--on-surface-variant); }
+
+.ticketFooter {
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 12px;
+  font-size: 14px; font-weight: 700; color: #E63946;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* AMC Mini Card */
+.amcCard {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border-left: 4px solid #7B2FBE;
+  display: flex; align-items: flex-start; gap: var(--space-4);
+  position: relative; overflow: hidden;
+  height: 100%; text-decoration: none;
+}
+.amcBgIcon { position: absolute; right: -16px; bottom: -16px; font-size: 100px; color: rgba(123,47,190,0.05); transform: rotate(12deg); }
+.amcIconWrapper {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--tertiary-fixed); color: var(--tertiary);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 10;
+}
+.amcInfo { position: relative; z-index: 10; }
+.amcInfo h4 { font-size: 18px; font-weight: 600; color: var(--on-surface); margin-bottom: 4px; }
+.amcInfo p { font-size: 14px; color: var(--on-surface-variant); margin-bottom: 4px; }
+.amcInfo span { font-size: 12px; color: var(--outline); display: block; margin-bottom: 12px; }
+.amcLink { font-size: 14px; font-weight: 600; color: #7B2FBE; display: flex; align-items: center; gap: 4px; }
+.amcCard:hover .amcLink { text-decoration: underline; }
+

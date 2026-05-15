@@ -13,6 +13,11 @@ export default function CustomerDashboard() {
   const [contracts, setContracts] = useState([]);
   const [recentTickets, setRecentTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -39,7 +44,7 @@ export default function CustomerDashboard() {
     load();
   }, [user, authLoading, router]);
 
-  if (authLoading || loading) {
+  if (!mounted || authLoading || loading) {
     return <div className="loading-page"><div className="spinner"></div></div>;
   }
 
@@ -56,9 +61,9 @@ export default function CustomerDashboard() {
     <div className={`page-enter ${styles.page}`}>
       <div className="container page-content">
         {/* Mobile Header */}
-        <div className={styles.mobileHeader}>
+        <header className={styles.mobileHeader}>
           <div>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
             </svg>
             <span className={styles.mobileTitle}>Arial Engineering</span>
@@ -66,103 +71,127 @@ export default function CustomerDashboard() {
           <div className={styles.mobileRight}>
             <div className={styles.avatar}>{(user?.name || 'U')[0]}</div>
           </div>
-        </div>
+        </header>
 
-        {/* Greeting Banner */}
-        <div className={styles.greeting}>
-          <h1 className={styles.greetingTitle}>{greeting()}, {user?.name?.split(' ')[0] || 'there'} 👋</h1>
+        {/* Welcome Card */}
+        <section className={styles.greeting}>
+          <h2 className={styles.greetingTitle}>{greeting()}, {user?.name?.split(' ')[0] || 'there'} 👋</h2>
           <p className={styles.greetingSubtext}>
             {data?.activeProjects || 0} active project{data?.activeProjects !== 1 ? 's' : ''} · {data?.openTickets || 0} open ticket{data?.openTickets !== 1 ? 's' : ''}
           </p>
           <div className={styles.greetingBadges}>
-            {data?.activeProjects > 0 && (
-              <span className={styles.greetingBadge}>🏗️ {data.activeProjects} Project{data.activeProjects !== 1 ? 's' : ''}</span>
-            )}
-            {data?.openTickets > 0 && (
-              <span className={styles.greetingBadge}>🎫 {data.openTickets} Ticket{data.openTickets !== 1 ? 's' : ''}</span>
-            )}
+            <span className={styles.greetingBadge}>🏗 {data?.activeProjects || 0} Project{(data?.activeProjects !== 1) ? 's' : ''}</span>
+            <span className={styles.greetingBadge}>🎫 {data?.openTickets || 0} Ticket{(data?.openTickets !== 1) ? 's' : ''}</span>
             {activeContract && <span className={styles.greetingBadge}>📋 AMC Active</span>}
           </div>
-        </div>
+        </section>
 
         {/* Quick Action Cards */}
-        <div className={styles.actionCards}>
+        <section className={styles.actionCards}>
+          {/* Card 1: New AC Installation */}
           <Link href="/services/installation" className={`${styles.actionCard} ${styles.installCard}`}>
-            <div className={styles.actionIcon}>❄️</div>
-            <h2 className={styles.actionTitle}>New AC Installation</h2>
-            <p className={styles.actionDesc}>Get a quote for Split, Central, VRF/VRV</p>
-            <div className={styles.actionTags}>
-              <span>Split AC</span><span>Central AC</span><span>VRF/VRV</span>
+            <div className={styles.bgIcon}>❄️</div>
+            <div className={styles.actionContent}>
+              <div className={styles.actionIcon}>❄️</div>
+              <h3 className={styles.actionTitle}>New AC Installation</h3>
+              <p className={styles.actionDesc}>Get a quote for Split, Central, VRF/VRV</p>
+              <div className={styles.actionTags}>
+                <span>Split AC</span><span>Central AC</span><span>VRF/VRV</span>
+              </div>
             </div>
-            <span className={styles.actionBtn}>Request Now →</span>
+            <span className={`${styles.actionBtn} ${styles.installBtn}`}>Request Now →</span>
           </Link>
 
+          {/* Card 2: Service Request */}
           <Link href="/services/ticket" className={`${styles.actionCard} ${styles.serviceCard}`}>
-            <div className={styles.actionIcon}>🔧</div>
-            <h2 className={styles.actionTitle}>Service Request</h2>
-            <p className={styles.actionDesc}>AMC · Warranty · Paid Service</p>
-            <div className={styles.actionTags}>
-              <span>Not Cooling</span><span>Noise</span><span>Leaking</span><span>Other</span>
+            <div className={styles.bgIcon}>🔧</div>
+            <div className={styles.actionContent}>
+              <div className={styles.actionIcon}>🔧</div>
+              <h3 className={styles.actionTitle}>Service Request</h3>
+              <p className={styles.actionDesc}>AMC · Warranty · Paid Service</p>
+              <div className={styles.actionTags}>
+                <span>Not Cooling</span><span>Noise</span><span>Leaking</span><span>Other</span>
+              </div>
             </div>
-            <span className={styles.actionBtn}>Book Service →</span>
+            <span className={`${styles.actionBtn} ${styles.serviceBtn}`}>Book Service →</span>
           </Link>
-        </div>
+        </section>
 
-        {/* My Tickets */}
-        {recentTickets.length > 0 && (
+        {/* Active Projects (Placeholder for UI design) */}
+        {data?.activeProjects > 0 && (
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
-              <h2 className="headline-sm">My Tickets</h2>
-              <Link href="/tickets" className={styles.viewAll}>View All</Link>
+              <h3 className={styles.sectionTitle}>My Projects</h3>
+              <Link href="/account" className={styles.viewAll}>View All</Link>
             </div>
-            <div className={styles.ticketList}>
-              {recentTickets.map((ticket) => (
-                <Link key={ticket.ticketNumber} href={`/tickets/${ticket.ticketNumber}`} className={styles.ticketCard}>
-                  <div className={styles.ticketTop}>
-                    <span className={styles.ticketId}>{ticket.ticketNumber}</span>
-                    <span className={`badge ${getPriorityBadgeClass(ticket.priority)}`}>
-                      {ticket.priority} {ticket.serviceType?.toUpperCase()}
-                    </span>
-                  </div>
-                  <h3 className={styles.ticketTitle}>{ticket.problemCategory?.replace(/_/g, ' ')} — {ticket.acUnitRoom || 'N/A'}</h3>
-                  <div className={styles.ticketMeta}>
-                    <span className={`badge ${getStatusBadgeClass(ticket.status)}`}>{formatStatus(ticket.status)}</span>
-                    <span className={styles.ticketDate}>{new Date(ticket.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <Link href="/account" className={`${styles.ticketCard} ${styles.projectCard}`}>
+              <div>
+                <div className={styles.ticketTop}>
+                  <h4 className={styles.ticketTitle}>Ongoing AC Installation</h4>
+                </div>
+                <p className={styles.ticketDesc}>📍 Check address in profile</p>
+                <div className={styles.ticketTags}>
+                  <span className={`${styles.ticketTag} ${styles.tagStatus}`}>In Progress</span>
+                </div>
+              </div>
+            </Link>
           </section>
         )}
 
-        {/* AMC Banner */}
-        {activeContract && (
-          <Link href="/account" className={styles.amcBanner}>
-            <div className={styles.amcIcon}>📋</div>
-            <div className={styles.amcInfo}>
-              <h3>Your AMC is Active</h3>
-              <p>Next visit: {activeContract.nextVisitDate || 'TBD'}</p>
-              <span className={styles.amcLink}>View AMC →</span>
+        {/* Bottom Grid: Tickets & AMC */}
+        <section className={styles.bottomGrid}>
+          {/* My Tickets */}
+          <div className={styles.gridCol}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>My Tickets</h3>
+              <Link href="/tickets" className={styles.viewAll}>View All</Link>
             </div>
-          </Link>
-        )}
+            {recentTickets.length > 0 ? (
+              <Link href={`/tickets/${recentTickets[0].ticketNumber}`} className={styles.ticketCard}>
+                <div>
+                  <div className={styles.ticketTop}>
+                    <h4 className={styles.ticketTitle}>{recentTickets[0].problemCategory?.replace(/_/g, ' ')}</h4>
+                    <span className="text-outline">→</span>
+                  </div>
+                  <p className={styles.ticketDesc}>{recentTickets[0].acUnitRoom || 'N/A'}</p>
+                  <div className={styles.ticketTags}>
+                    <span className={`${styles.ticketTag} ${styles.tagPriority}`}>{recentTickets[0].priority} — {recentTickets[0].serviceType?.replace(/_/g, ' ')}</span>
+                    <span className={`${styles.ticketTag} ${styles.tagStatus}`}>Status: {recentTickets[0].status?.replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+                <div className={styles.ticketFooter}>
+                  <span>⏱</span> SLA Deadline: {new Date(recentTickets[0].createdAt).toLocaleDateString()}
+                </div>
+              </Link>
+            ) : (
+               <div className={styles.ticketCard} style={{justifyContent: 'center', alignItems: 'center', color: 'var(--outline)'}}>
+                 No open tickets
+               </div>
+            )}
+          </div>
+
+          {/* AMC Mini Card */}
+          {activeContract && (
+            <div className={styles.gridCol}>
+              <div className={`${styles.sectionHeader} hidden-mobile`}>
+                <h3 className={styles.sectionTitle} style={{opacity: 0}}>Spacer</h3>
+              </div>
+              <Link href="/services/amc" className={styles.amcCard}>
+                <div className={styles.amcBgIcon}>🛡️</div>
+                <div className={styles.amcIconWrapper}>
+                  <span>📅</span>
+                </div>
+                <div className={styles.amcInfo}>
+                  <h4>Your AMC is Active</h4>
+                  <p>Next visit: {activeContract.nextVisitDate || 'TBD'}</p>
+                  <span>Visits left: {(activeContract.visitsPerYear || 4) - (activeContract.visitsCompleted || 0)}</span>
+                  <div className={styles.amcLink}>View AMC →</div>
+                </div>
+              </Link>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
-}
-
-function getPriorityBadgeClass(priority) {
-  if (priority === 'P1') return 'badge-p1';
-  if (priority === 'P2') return 'badge-p2';
-  return 'badge-p3';
-}
-
-function getStatusBadgeClass(status) {
-  if (status === 'RESOLVED' || status === 'CLOSED') return 'badge-resolved';
-  if (status === 'ESCALATED') return 'badge-escalated';
-  return 'badge-open';
-}
-
-function formatStatus(status) {
-  return status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || '';
 }

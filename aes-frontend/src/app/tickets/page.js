@@ -41,10 +41,18 @@ export default function TicketsPage() {
 
   return (
     <div className={`page-enter ${styles.page}`}>
-      <div className="container page-content">
-        <div className={styles.header}>
-          <h1 className="headline-lg">My Tickets</h1>
+      <div className={styles.topBar}>
+        <div className={styles.logoGroup}>
+          <div className={styles.logo}></div>
+          <span className={styles.brand}>Arial Engineering</span>
         </div>
+        <h1 className={styles.pageTitle}>My Tickets</h1>
+        <div className={styles.bellBtn}>
+          <span className={styles.notificationDot}></span>
+          🔔
+        </div>
+      </div>
+      <div className="container page-content">
 
         <div className={styles.filters}>
           {FILTERS.map(f => (
@@ -68,9 +76,10 @@ export default function TicketsPage() {
                   <div className={styles.cardTop}>
                     <span className={styles.ticketId}>{ticket.ticketNumber}</span>
                     <div className={styles.badges}>
-                      <span className={`badge ${getPriorityBadge(ticket.priority)}`}>{ticket.priority} {ticket.serviceType?.toUpperCase()}</span>
-                      {ticket.status === 'ESCALATED' && <span className="badge badge-escalated">ESCALATED ◆</span>}
-                      {(ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') && <span className="badge badge-resolved">RESOLVED ✓</span>}
+                      <span className={`badge ${ticket.priority === 'P1' ? 'badge-amc' : ticket.priority === 'P2' ? 'badge-warranty' : 'badge-paid'}`}>{ticket.priority}</span>
+                      {ticket.status === 'ESCALATED' && <span className="badge" style={{background:'#fff3cd', color:'#856404'}}>ESCALATED</span>}
+                      {(ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') && <span className="badge" style={{background:'#d4edda', color:'#155724'}}>RESOLVED</span>}
+                      {ticket.status === 'OPEN' && <span className="badge" style={{background:'#cce5ff', color:'#004085'}}>OPEN</span>}
                     </div>
                   </div>
                   <h3 className={styles.ticketTitle}>{ticket.problemCategory?.replace(/_/g, ' ')} — {ticket.acUnitRoom || 'N/A'}</h3>
@@ -80,7 +89,12 @@ export default function TicketsPage() {
                   </div>
                   {ticket.slaDeadlineFinal && new Date(ticket.slaDeadlineFinal) > new Date() && ticket.status !== 'RESOLVED' && ticket.status !== 'CLOSED' && (
                     <div className={styles.slaTimer}>
-                      ⏱ {getSlaRemaining(ticket.slaDeadlineFinal)} remaining
+                      ⏱ {getSlaRemaining(ticket.slaDeadlineFinal)} SLA remaining
+                    </div>
+                  )}
+                  {(ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') && (
+                    <div style={{marginTop: '12px', fontSize: '13px', color: '#f59e0b', fontWeight: '600'}}>
+                      ⭐ Rate your experience
                     </div>
                   )}
                 </div>

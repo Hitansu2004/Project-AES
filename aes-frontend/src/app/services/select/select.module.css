@@ -1,0 +1,48 @@
+.page { min-height: 100dvh; background: var(--surface); color: var(--on-surface); padding-bottom: 80px; }
+
+.topBar { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--margin-mobile); height: 56px; border-bottom: 1px solid var(--border-light); background: var(--surface); }
+.backBtn { background: none; border: none; color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: background 0.2s; }
+.backBtn:hover { background: var(--surface-container-high); }
+.pageTitle { font-size: 18px; font-weight: 700; color: var(--primary); }
+
+.content { padding: var(--space-6) var(--margin-mobile); max-width: 1200px; margin: 0 auto; }
+
+.headerSection { margin-bottom: var(--space-6); text-align: center; }
+@media (min-width: 768px) { .headerSection { text-align: left; } }
+.title { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: var(--space-2); }
+@media (min-width: 768px) { .title { font-size: 32px; } }
+.subtitle { font-size: 16px; color: var(--on-surface-variant); }
+
+.cardContainer { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.card { width: 100%; text-align: left; border-radius: 16px; padding: 24px; position: relative; overflow: hidden; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: var(--shadow-sm); }
+.card:active { transform: scale(0.98); }
+@media (min-width: 768px) { .card:hover { transform: scale(1.01); box-shadow: var(--shadow-md); } }
+
+.cardPrimary { background: linear-gradient(135deg, var(--primary), #003366); color: #fff; }
+.cardSecondary { background: linear-gradient(135deg, var(--secondary), #004c68); color: #fff; }
+.cardTertiary { background: linear-gradient(135deg, #7B2FBE, #9B51E0); color: #fff; }
+
+.badge { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; border: 1px solid rgba(255,255,255,0.3); }
+
+.cardInner { display: flex; flex-direction: column; gap: var(--space-4); position: relative; z-index: 10; }
+@media (min-width: 768px) { .cardInner { flex-direction: row; align-items: center; } }
+
+.iconBox { background: rgba(255,255,255,0.1); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.cardText { flex: 1; }
+.cardText h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.cardText p { font-size: 14px; opacity: 0.8; margin-bottom: 16px; max-width: 400px; }
+
+.chipRow { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.chipBold { background: #fff; color: #7B2FBE; font-weight: 700; border: none; }
+
+.arrowBox { background: rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; align-self: flex-start; margin-top: 16px; font-size: 20px; transition: background 0.2s; }
+@media (min-width: 768px) { .arrowBox { align-self: center; margin-top: 0; } }
+.card:hover .arrowBox { background: rgba(255,255,255,0.2); }
+
+.footerContact { margin-top: 40px; text-align: center; }
+.footerContact p { font-size: 14px; color: var(--on-surface-variant); }
+.phoneLink { font-weight: 700; color: var(--secondary); text-decoration: none; }
+.phoneLink:hover { text-decoration: underline; }

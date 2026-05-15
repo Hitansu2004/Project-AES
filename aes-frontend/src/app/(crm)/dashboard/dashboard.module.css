@@ -1,0 +1,467 @@
+/* Dashboard Styles */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background, #f8f9ff);
+  color: var(--on-surface, #0f1c2c);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.header {
+  background-color: var(--surface, #f8f9ff);
+  border-bottom: 1px solid var(--outline-variant, #c3c6d1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brandIcon {
+  color: var(--primary, #001e40);
+  font-size: 24px;
+}
+
+.brandName {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary, #001e40);
+}
+
+.headerTitle {
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid var(--outline-variant, #c3c6d1);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-surface-variant, #43474f);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.agentName {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.headerIcon {
+  color: var(--primary, #001e40);
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headerIcon:hover {
+  background-color: var(--surface-container-high, #dbe9fe);
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--error, #ba1a1a);
+  color: white;
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Main Container */
+.mainContainer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background-color: var(--primary, #001e40);
+  color: var(--on-primary, #ffffff);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  z-index: 40;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+.nav {
+  flex: 1;
+  padding: 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--primary-fixed-dim, #a7c8ff);
+}
+
+.navItem:hover {
+  background-color: var(--surface-tint, #3a5f94);
+  color: white;
+}
+
+.navItemActive {
+  background-color: var(--primary-container, #003366);
+  color: white;
+}
+
+.navItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navItemLabel {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.navBadgeSecondary {
+  background-color: var(--secondary, #006689);
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.navBadgeError {
+  background-color: var(--error, #ba1a1a);
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.sidebarFooter {
+  padding: 8px;
+  border-top: 1px solid var(--surface-tint, #3a5f94);
+}
+
+/* Content Canvas */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* SLA Alert Banner */
+.slaAlertBanner {
+  background-color: var(--error, #ba1a1a);
+  color: white;
+  padding: 8px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+.slaAlertText {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Dashboard Inner */
+.dashboardInner {
+  padding: 40px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Filter Row */
+.filterRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--surface-container-lowest, #ffffff);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant, #c3c6d1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-surface-variant, #43474f);
+  text-transform: uppercase;
+  padding: 0 8px;
+}
+
+.filterChip {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant, #43474f);
+}
+
+.filterChip:hover {
+  background-color: var(--surface-container-low, #eef4ff);
+}
+
+.filterChipActive {
+  background-color: var(--secondary, #006689);
+  color: white;
+}
+
+.filterChipActive:hover {
+  background-color: var(--secondary, #006689);
+}
+
+.chipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.sortSelect {
+  background-color: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #c3c6d1);
+  color: var(--on-surface, #0f1c2c);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sortSelect:focus {
+  border-color: var(--secondary, #0099CC);
+}
+
+/* Ticket List */
+.ticketList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ticketCard {
+  background-color: var(--surface-container-lowest, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant, #c3c6d1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.ticketCard:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.cardEscalated {
+  opacity: 0.6;
+  filter: grayscale(80%);
+  pointer-events: none;
+}
+
+.borderCritical { border-left: 4px solid var(--error, #ba1a1a); }
+.borderUrgent { border-left: 4px solid #f59e0b; }
+.borderNormal { border-left: 4px solid #0099CC; }
+.borderAck { border-left: 4px solid #00C896; }
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priorityBadge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: white;
+}
+
+.priorityP1 { background-color: #7B2FBE; }
+.priorityP2 { background-color: #0099CC; }
+.priorityP3 { background-color: #E63946; }
+
+.ticketNum {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary, #001e40);
+}
+
+.timeAgo {
+  font-size: 14px;
+  color: var(--on-surface-variant, #43474f);
+}
+
+.slaTimer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.slaCritical { color: var(--error, #ba1a1a); }
+.slaUrgent { color: #f59e0b; }
+.slaNormal { color: var(--on-surface-variant, #43474f); }
+.slaAck { color: #00C896; }
+
+.cardBody {
+  margin-bottom: 16px;
+}
+
+.problemTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--on-surface, #0f1c2c);
+  margin: 0 0 4px 0;
+}
+
+.customerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--on-surface-variant, #43474f);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--outline-variant, #c3c6d1);
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btnPrimary {
+  background-color: var(--secondary, #0099CC);
+  color: white;
+}
+.btnPrimary:hover { opacity: 0.9; }
+
+.btnSecondary {
+  background-color: transparent;
+  border: 1px solid var(--primary-container, #003366);
+  color: var(--primary-container, #003366);
+}
+.btnSecondary:hover { background-color: var(--surface-container-low, #eef4ff); }
+
+.btnSuccess {
+  background-color: transparent;
+  border: 1px solid #00C896;
+  color: #00C896;
+}
+.btnSuccess:hover { background-color: rgba(0, 200, 150, 0.05); }
+
+.escalateLink {
+  font-size: 14px;
+  color: var(--outline, #737780);
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.escalateLink:hover {
+  color: var(--on-surface, #0f1c2c);
+}

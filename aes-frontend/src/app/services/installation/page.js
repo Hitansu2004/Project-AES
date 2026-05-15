@@ -18,6 +18,29 @@ const BRANDS = ['Daikin', 'Voltas', 'Blue Star', 'LG', 'SAMSUNG', 'Carrier', 'HI
 const TONNAGES = ['0.75T', '1.0T', '1.5T', '2.0T', '2.5T', '3.0T'];
 const ROOM_TYPES = ['Master Bedroom', 'Living Room', 'Guest Room', 'Study Room', 'Kitchen', 'Office', 'Other'];
 
+const SUGGESTED_MODELS = [
+  { brand: 'Daikin', tonnage: '1.5T', model: "FTKF35TV", price: "₹42,999", features: ["5 Star", "Wi-Fi", "Inverter"] },
+  { brand: 'Daikin', tonnage: '1.5T', model: "FTKG35TV", price: "₹45,500", features: ["5 Star", "PM 2.5 Filter"] },
+  { brand: 'Voltas', tonnage: '1.5T', model: "185V DZT", price: "₹34,999", features: ["5 Star", "Inverter"] },
+  { brand: 'Blue Star', tonnage: '1.5T', model: "IC518YNUW", price: "₹38,500", features: ["5 Star", "Wi-Fi"] },
+  { brand: 'LG', tonnage: '1.5T', model: "RS-Q18YNZE", price: "₹36,999", features: ["5 Star", "Dual Inverter"] }
+];
+
+const generateDays = () => {
+  const days = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    days.push({
+      dateStr: d.toISOString().split('T')[0],
+      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      dayNum: d.getDate(),
+      disabled: i === 0 // Today greyed out
+    });
+  }
+  return days;
+};
+
 export default function InstallationPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -25,6 +48,7 @@ export default function InstallationPage() {
   const [acType, setAcType] = useState('');
   const [brand, setBrand] = useState('');
   const [tonnage, setTonnage] = useState('1.5T');
+  const [selectedModel, setSelectedModel] = useState('');
   const [propList, setPropList] = useState([]);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [propertyType, setPropertyType] = useState('RESIDENTIAL');
@@ -99,54 +123,71 @@ export default function InstallationPage() {
             </div>
             <div className={styles.timeline}>
               <h3>WHAT HAPPENS NEXT</h3>
-              <div className={styles.timelineItem}><span className={styles.dotDone}>✓</span> Request received</div>
-              <div className={styles.timelineItem}><span className={styles.dotActive}>●</span> Team reviews & confirms</div>
+              <div className={`${styles.timelineItem} ${styles.active}`}><span className={styles.dotDone}>✓</span> Request received</div>
+              <div className={`${styles.timelineItem} ${styles.active}`}><span className={styles.dotActive}>●</span> Team reviews & confirms</div>
               <div className={styles.timelineItem}><span className={styles.dotPending}>○</span> Engineer visits your site</div>
               <div className={styles.timelineItem}><span className={styles.dotPending}>○</span> Quote shared within 24h</div>
             </div>
-            <button className="btn btn-primary btn-full btn-lg" onClick={() => router.push('/dashboard')}>Back to Home</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px', width: '100%' }}>
+              <button className="btn btn-outline btn-full btn-lg" onClick={() => router.push('/tickets')}>Track This Request</button>
+              <button className="btn btn-primary btn-full btn-lg" onClick={() => router.push('/dashboard')}>Back to Home</button>
+            </div>
+            <div style={{ marginTop: '24px', color: 'var(--on-surface-variant)', fontSize: '14px' }}>
+              <p>Need to change or cancel?</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px' }}>
+                <a href="tel:+914023540000" style={{ color: 'var(--secondary)', fontWeight: '600', textDecoration: 'none' }}>📞 Call Us</a>
+                <a href="https://wa.me/914023540000" style={{ color: '#25D366', fontWeight: '600', textDecoration: 'none' }}>💬 WhatsApp</a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
     <div className={`page-enter ${styles.page}`}>
-      <div className="container page-content">
-        <div className={styles.topBar}>
-          <button className={styles.backBtn} onClick={() => step > 1 ? setStep(step - 1) : router.back()}>← Back</button>
-          <h1 className={styles.pageTitle}>New Installation</h1>
-          <span className={styles.stepBadge}>{step} of 4</span>
-        </div>
-        <div className={styles.progress}><div className={styles.progressBar} style={{ width: `${(step / 4) * 100}%` }}></div></div>
+      <div className={styles.topBar}>
+        <button className={styles.backBtn} onClick={() => step > 1 ? setStep(step - 1) : router.back()}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <h1 className={styles.pageTitle}>New Installation</h1>
+        <span className={styles.stepBadge}>{step} of 4</span>
+      </div>
+      <div className={styles.progress}><div className={styles.progressBar} style={{ width: `${(step / 4) * 100}%` }}></div></div>
 
-        {error && <div className={styles.error}>{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
-        {/* Step 1: AC Type */}
-        {step === 1 && (
+      {/* Step 1: AC Type */}
+      {step === 1 && (
+        <>
           <div className={styles.stepContent}>
-            <h2 className="headline-md">What type of AC do you need?</h2>
+            <h2>What type of AC do you need?</h2>
             <p className={styles.stepDesc}>Choose based on your space requirements</p>
             <div className={styles.typeList}>
               {AC_TYPES.map(t => (
                 <button key={t.id} className={`${styles.typeCard} ${acType === t.id ? styles.typeSelected : ''}`} onClick={() => setAcType(t.id)}>
                   {acType === t.id && <span className={styles.check}>✓</span>}
-                  <span className={styles.typeIcon}>{t.icon}</span>
+                  <div><span className={styles.typeIconWrapper}>{t.icon}</span></div>
                   <h3>{t.label}</h3>
                   <p>{t.desc}</p>
-                  <span className={styles.typeRange}>{t.range}</span>
+                  <div><span className={styles.typeRange}>{t.range}</span></div>
                 </button>
               ))}
             </div>
-            {acType && <button className="btn btn-primary btn-full btn-lg" onClick={() => setStep(2)}>Continue →</button>}
           </div>
-        )}
+          <div className={styles.actionArea}>
+            <div className={styles.actionAreaInner} style={{width:'100%'}}>
+              <button className={styles.actionBtn} disabled={!acType} onClick={() => setStep(2)}>Continue →</button>
+            </div>
+          </div>
+        </>
+      )}
 
-        {/* Step 2: Brand & Specs */}
-        {step === 2 && (
+      {/* Step 2: Brand & Specs */}
+      {step === 2 && (
+        <>
           <div className={styles.stepContent}>
-            <h2 className="headline-md">Select Brand</h2>
+            <h2 className={styles.sectionTitle}>Select Brand</h2>
             <div className={styles.brandGrid}>
               {BRANDS.map(b => (
                 <button key={b} className={`${styles.brandBtn} ${brand === b ? styles.brandSelected : ''}`} onClick={() => setBrand(b)}>
@@ -156,38 +197,79 @@ export default function InstallationPage() {
               ))}
             </div>
 
-            <h2 className="headline-md">Capacity (Tonnage)</h2>
-            <div className={styles.tonnageRow}>
+            <h2 className={styles.sectionTitle}>Capacity (Tonnage)</h2>
+            <div className={styles.scrollRow}>
               {TONNAGES.map(t => (
-                <button key={t} className={`${styles.tonnageBtn} ${tonnage === t ? styles.tonnageActive : ''}`} onClick={() => setTonnage(t)}>
+                <button key={t} className={`${styles.pillBtn} ${tonnage === t ? styles.pillSelected : ''}`} onClick={() => setTonnage(t)}>
                   {t}
                 </button>
               ))}
+              <button className={styles.pillBtn}>Custom</button>
             </div>
-
-            <div className={styles.actions}>
-              <button className="btn btn-ghost" onClick={() => setStep(3)}>Skip for now</button>
-              <button className="btn btn-primary btn-lg" onClick={() => setStep(3)}>Continue →</button>
+            
+            <h2 className={styles.sectionTitle}>Energy Rating</h2>
+            <div className={styles.scrollRow}>
+              <button className={styles.pillBtn}>3 Star ⭐⭐⭐</button>
+              <button className={styles.pillBtn}>4 Star ⭐⭐⭐⭐</button>
+              <button className={`${styles.pillBtn} ${styles.pillGold}`}>5 Star ⭐⭐⭐⭐⭐</button>
+            </div>
+            
+            {brand && tonnage && (
+              <>
+                <h2 className={styles.sectionTitle}>Suggested Models</h2>
+                <div className={styles.scrollRow}>
+                  {SUGGESTED_MODELS.filter(m => m.brand === brand && m.tonnage === tonnage).length > 0 ? (
+                    SUGGESTED_MODELS.filter(m => m.brand === brand && m.tonnage === tonnage).map(m => (
+                      <div key={m.model} className={styles.modelCard}>
+                        <h4>{m.model}</h4>
+                        <p>{m.brand} • {m.tonnage} • Split AC</p>
+                        <div className={styles.modelPrice}>{m.price} onwards</div>
+                        <div className={styles.modelFeatures}>
+                          {m.features.map(f => <span key={f} className={styles.modelFeature}>{f}</span>)}
+                        </div>
+                        <button 
+                          className={selectedModel === m.model ? styles.modelSelectedBtn : styles.modelSelectBtn}
+                          onClick={() => setSelectedModel(m.model)}
+                        >
+                          {selectedModel === m.model ? 'Selected' : 'Select Model'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{padding: '0 20px', color: 'var(--outline)'}}>No exact matches. Our engineer will suggest the best option.</div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className={styles.actionArea}>
+            <div className={styles.actionAreaInner} style={{display:'flex', justifyContent:'space-between', width:'100%'}}>
+              <button className={styles.skipBtn} onClick={() => setStep(3)}>Skip for now</button>
+              <button className={styles.actionBtn} style={{width:'auto', padding:'0 32px'}} disabled={!brand} onClick={() => setStep(3)}>Continue →</button>
             </div>
           </div>
-        )}
+        </>
+      )}
 
-        {/* Step 3: Property & Rooms */}
-        {step === 3 && (
+      {/* Step 3: Property & Rooms */}
+      {step === 3 && (
+        <>
           <div className={styles.stepContent}>
-            <h2 className="headline-md">Where do you need installation?</h2>
+            <h2>Where do you need installation?</h2>
+            <p className={styles.stepDesc}>Tell us about your property</p>
+            
             <div className={styles.propTypeToggle}>
               <button className={`${styles.propTypeBtn} ${propertyType === 'RESIDENTIAL' ? styles.propTypeActive : ''}`} onClick={() => setPropertyType('RESIDENTIAL')}>Residential</button>
               <button className={`${styles.propTypeBtn} ${propertyType === 'COMMERCIAL' ? styles.propTypeActive : ''}`} onClick={() => setPropertyType('COMMERCIAL')}>Commercial/Office</button>
             </div>
 
             {propList.length > 0 && (
-              <>
+              <div style={{marginBottom: '24px'}}>
                 <label className={styles.fieldLabel}>INSTALLATION ADDRESS</label>
                 <select className="input select" value={selectedProperty?.id || ''} onChange={(e) => setSelectedProperty(propList.find(p => p.id === Number(e.target.value)))}>
                   {propList.map(p => <option key={p.id} value={p.id}>{p.label}, {p.addressLine1}</option>)}
                 </select>
-              </>
+              </div>
             )}
 
             <label className={styles.fieldLabel}>ROOM DETAILS</label>
@@ -206,31 +288,48 @@ export default function InstallationPage() {
                 </div>
               </div>
             ))}
-            <button className={`btn btn-outline btn-full`} onClick={addRoom}>＋ Add Another Room</button>
+            <button className={`btn btn-outline btn-full`} style={{marginBottom: '24px'}} onClick={addRoom}>＋ Add Another Room</button>
 
             <div className="input-group">
-              <label>ADDITIONAL NOTES</label>
+              <label className={styles.fieldLabel}>ADDITIONAL NOTES</label>
               <textarea className="input textarea" placeholder="Any specific requirements? (e.g., concealed wiring, specific unit placement...)" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
-
-            <button className="btn btn-primary btn-full btn-lg" onClick={() => setStep(4)}>Continue →</button>
           </div>
-        )}
+          
+          <div className={styles.actionArea}>
+            <div className={styles.actionAreaInner} style={{width:'100%'}}>
+              <button className={styles.actionBtn} onClick={() => setStep(4)}>Continue →</button>
+            </div>
+          </div>
+        </>
+      )}
 
-        {/* Step 4: Schedule */}
-        {step === 4 && (
+      {/* Step 4: Schedule */}
+      {step === 4 && (
+        <>
           <div className={styles.stepContent}>
-            <h2 className="headline-md">When should we visit?</h2>
+            <h2>When should we visit?</h2>
             <div className={styles.visitInfo}>
-              <p>ℹ️ Free site visit. Our engineer will assess and provide a detailed quote within 24 hours.</p>
+              <span style={{fontSize:'20px'}}>ℹ️</span>
+              <p>Free site visit. Our engineer will assess and provide a detailed quote within 24 hours.</p>
             </div>
 
-            <div className="input-group">
-              <label>Preferred Date</label>
-              <input className="input" type="date" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]} />
+            <label className={styles.fieldLabel}>PREFERRED DATE</label>
+            <div className={styles.dayPicker}>
+              {generateDays().map(day => (
+                <button
+                  key={day.dateStr}
+                  disabled={day.disabled}
+                  className={`${styles.dayCard} ${day.disabled ? styles.dayDisabled : ''} ${preferredDate === day.dateStr ? styles.daySelected : ''}`}
+                  onClick={() => setPreferredDate(day.dateStr)}
+                >
+                  <span>{day.dayName}</span>
+                  <span>{day.dayNum}</span>
+                </button>
+              ))}
             </div>
 
+            <label className={styles.fieldLabel}>TIME SLOT</label>
             <div className={styles.slotList}>
               {[
                 { id: 'MORNING', label: 'Morning', time: '9AM – 12PM', icon: '☀️' },
@@ -238,9 +337,9 @@ export default function InstallationPage() {
                 { id: 'EVENING', label: 'Evening', time: '4PM – 7PM', icon: '🌙' },
               ].map(s => (
                 <button key={s.id} className={`${styles.slotCard} ${preferredSlot === s.id ? styles.slotActive : ''}`} onClick={() => setPreferredSlot(s.id)}>
-                  <span className={styles.slotIcon}>{s.icon}</span>
-                  <div><h4>{s.label}</h4><p>{s.time}</p></div>
-                  {preferredSlot === s.id && <span className={styles.slotCheck}>✓</span>}
+                  <div className={`${styles.slotIcon} ${preferredSlot === s.id ? styles.slotSelectedIcon : ''}`}>{s.icon}</div>
+                  <div style={{flex: 1}}><h4>{s.label}</h4><p>{s.time}</p></div>
+                  {preferredSlot === s.id && <div className={styles.slotCheck}>✓</div>}
                 </button>
               ))}
             </div>
@@ -251,13 +350,17 @@ export default function InstallationPage() {
               <div className={styles.summaryRow}><span>Location</span><span>{rooms.length} Room{rooms.length > 1 ? 's' : ''} @ {selectedProperty?.label || 'TBD'}</span></div>
               <div className={styles.summaryRow}><span>Scheduled Visit</span><span>{preferredDate || 'TBD'}, {preferredSlot}</span></div>
             </div>
-
-            <button className="btn btn-primary btn-full btn-lg" disabled={submitting} onClick={handleSubmit}>
-              {submitting ? 'Submitting...' : 'Submit Request →'}
-            </button>
           </div>
-        )}
-      </div>
+          
+          <div className={styles.actionArea}>
+            <div className={styles.actionAreaInner} style={{width:'100%'}}>
+              <button className={styles.actionBtn} disabled={submitting || !preferredDate} onClick={handleSubmit}>
+                {submitting ? 'Submitting...' : 'Submit Request →'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

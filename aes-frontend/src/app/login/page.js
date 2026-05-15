@@ -23,7 +23,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await authApi.sendOtp(phone);
+      const formattedPhone = phone.length === 10 ? `+91${phone}` : phone;
+      const res = await authApi.sendOtp(formattedPhone);
       // Removed dev autofill
       setOtpSent(true);
       setStep('otp');
@@ -39,7 +40,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await loginWithOtp(phone, otp);
+      const formattedPhone = phone.length === 10 ? `+91${phone}` : phone;
+      await loginWithOtp(formattedPhone, otp);
       router.push('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -53,7 +55,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const data = await staffLogin(staffPhone, password);
+      const formattedPhone = staffPhone.length === 10 ? `+91${staffPhone}` : staffPhone;
+      const data = await staffLogin(formattedPhone, password);
       // Route based on role
       if (data.role === 'CRM_AGENT') router.push('/crm');
       else if (data.role === 'SERVICE_MANAGER' || data.role === 'ADMIN') router.push('/admin');
@@ -103,9 +106,9 @@ export default function LoginPage() {
                 <input
                   className="input"
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="9876543210"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   required
                 />
               </div>
@@ -146,9 +149,9 @@ export default function LoginPage() {
               <input
                 className="input"
                 type="tel"
-                placeholder="+919876543210"
+                placeholder="9876543210"
                 value={staffPhone}
-                onChange={(e) => setStaffPhone(e.target.value)}
+                onChange={(e) => setStaffPhone(e.target.value.replace(/\D/g, ''))}
                 required
               />
             </div>
