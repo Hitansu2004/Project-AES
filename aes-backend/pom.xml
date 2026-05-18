@@ -107,10 +107,23 @@
         </dependency>
 
         <!-- Twilio SDK -->
+        <!--
+            Twilio's Apache httpclient 4.5.x transitively pulls in
+            commons-logging.jar.  Spring Boot already provides JCL via
+            spring-jcl, so the duplicate triggers a noisy "Standard Commons
+            Logging discovery in action" warning at start-up.  We exclude
+            commons-logging here so spring-jcl handles every JCL call.
+        -->
         <dependency>
             <groupId>com.twilio.sdk</groupId>
             <artifactId>twilio</artifactId>
             <version>${twilio.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Test Dependencies -->

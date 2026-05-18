@@ -154,10 +154,22 @@ public class TicketActionService {
      * scheduler (which has no enclosing transaction). Every per-ticket
      * escalation therefore commits or rolls back atomically — escalation log,
      * ticket update and activity row stay consistent.</p>
+     *
+     * <p>The ticket is re-fetched by ID so we always operate on a managed
+     * entity within this transaction. The auto-escalation scheduler reads the
+     * candidates in a separate read-only session — by the time we land here
+     * those entities are detached, so any subsequent lazy access (e.g.
+     * {@code ticket.getCustomer()}) would otherwise fail with
+     * {@code LazyInitializationException}.</p>
      */
     @Transactional
-    public void escalateToLevel(ServiceTicket ticket, int fromLevel, int toLevel,
+    public void escalateToLevel(ServiceTicket detached, int fromLevel, int toLevel,
                                  String reason, EscalationType type) {
+        // Re-attach: scheduler hands us a detached entity, manual flow an
+        // attached one. A re-fetch normalises both code paths.
+        final UUID ticketId = detached.getId();
+        ServiceTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new NotFoundException("ServiceTicket", ticketId.toString()));
         OffsetDateTime now = OffsetDateTime.now();
 
         TicketEscalationLog escLog = TicketEscalationLog.builder()
@@ -262,12 +274,16 @@ public class TicketActionService {
     /**
      * Rate and close ticket.
      * Per lines 703-709.
+     *
+     * <p>When the rating is at or below {@code app.reopen.auto-reopen-rating}
+     * (default 2★) the ticket is auto-reopened (FLOW.md C18 / S12) and put
+     * back on the owner's queue with a {@code REOPENED} status instead of
+     * being marked {@code CLOSED}.</p>
      */
     @Transactional
     public TicketResponse rateTicket(String ticketNumber, UUID customerId, RateTicketRequest request) {
         ServiceTicket ticket = findTicket(ticketNumber);
 
-        // Validate: CUSTOMER (own ticket), status=RESOLVED (line 704)
         if (!ticket.getCustomer().getId().equals(customerId)) {
             throw new BusinessException("FORBIDDEN", "You can only rate your own tickets",
                     HttpStatus.FORBIDDEN);
@@ -277,23 +293,227 @@ public class TicketActionService {
                     HttpStatus.BAD_REQUEST);
         }
 
-        // 1. Set rating + feedback (line 707)
         ticket.setCustomerRating(request.getRating());
         ticket.setCustomerFeedback(request.getFeedback());
 
-        // 2. Set status = CLOSED (line 708)
-        ticket.setStatus(TicketStatus.CLOSED);
-        ticket.setClosedAt(OffsetDateTime.now());
+        int autoReopenAt = appProperties.getReopen().getAutoReopenRating();
+        boolean shouldAutoReopen = request.getRating() != null && request.getRating() <= autoReopenAt;
+
+        if (shouldAutoReopen) {
+            ticket.setStatus(TicketStatus.REOPENED);
+            ticket.setClosedAt(null);
+        } else {
+            ticket.setStatus(TicketStatus.CLOSED);
+            ticket.setClosedAt(OffsetDateTime.now());
+        }
         ticketRepository.save(ticket);
 
-        // 3. Create activity (line 709)
         User customer = userRepository.findById(customerId).orElse(null);
         ticketService.createActivity(ticket, customer, ActivityType.RATED,
                 "Customer rated: " + request.getRating() + " stars" +
-                        (request.getFeedback() != null ? ". Feedback: " + request.getFeedback() : ""));
+                        (request.getFeedback() != null ? ". Feedback: " + request.getFeedback() : "") +
+                        (shouldAutoReopen ? " — AUTO REOPENED (rating ≤ " + autoReopenAt + ")" : ""));
 
-        log.info("Ticket {} rated {} stars by customer", ticketNumber, request.getRating());
+        if (shouldAutoReopen) {
+            if (ticket.getCurrentAssignee() != null) {
+                notificationService.notifyUser(ticket.getCurrentAssignee().getId(),
+                        "Ticket reopened — " + ticketNumber,
+                        "Customer rated " + request.getRating() + "★ — please investigate.",
+                        NotificationType.TICKET_ESCALATED, ticket.getId());
+            }
+            notifyOpsManagers(ticket, "Low-rating reopen — " + ticketNumber,
+                    "Customer rated " + request.getRating() + "★ — reopened automatically.");
+            webSocketService.broadcastTicketUpdate(ticketNumber, "REOPENED",
+                    ticket.getCurrentLevel(), 0,
+                    ticket.getCurrentAssignee() != null
+                            ? ticket.getCurrentAssignee().getName() : "Owner CRM");
+        }
+
+        log.info("Ticket {} rated {}★ — {}", ticketNumber, request.getRating(),
+                shouldAutoReopen ? "AUTO_REOPENED" : "CLOSED");
         return ticketService.toFullResponse(ticket);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Phase 6 — Customer T1 escalation (FLOW.md C16)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Customer-initiated escalation (T1). Status flips to
+     * {@link TicketStatus#ESCALATED_BY_CUSTOMER}; the ticket re-surfaces in
+     * the Ops Manager triage inbox with a red-flag so they can re-route.
+     * The current owner stays as a courtesy assignee until OPS re-decides.
+     */
+    @Transactional
+    public TicketResponse customerEscalate(String ticketNumber, UUID customerId,
+                                            CustomerEscalateRequest request) {
+        ServiceTicket ticket = findTicket(ticketNumber);
+        if (!ticket.getCustomer().getId().equals(customerId)) {
+            throw new BusinessException("FORBIDDEN",
+                    "You can only escalate your own tickets.", HttpStatus.FORBIDDEN);
+        }
+        if (ticket.getStatus() == TicketStatus.RESOLVED
+                || ticket.getStatus() == TicketStatus.CLOSED
+                || ticket.getStatus() == TicketStatus.CANCELLED) {
+            throw new BusinessException("INVALID_STATE",
+                    "Cannot escalate a " + ticket.getStatus() + " ticket. "
+                            + "Use re-open instead.", HttpStatus.CONFLICT);
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        TicketStatus previousStatus = ticket.getStatus();
+        ticket.setStatus(TicketStatus.ESCALATED_BY_CUSTOMER);
+        ticket.setEscalationReason(request.getReason());
+        ticketRepository.save(ticket);
+
+        TicketEscalationLog escLog = TicketEscalationLog.builder()
+                .ticket(ticket)
+                .fromLevel(ticket.getCurrentLevel())
+                .toLevel(ticket.getCurrentLevel())
+                .fromUserId(customerId)
+                .reason("Customer escalation: " + request.getReason()
+                        + (request.getDetails() != null ? " — " + request.getDetails() : ""))
+                .escalationType(EscalationType.MANUAL)
+                .escalatedAt(now)
+                .build();
+        escalationLogRepository.save(escLog);
+
+        User customer = userRepository.findById(customerId).orElse(null);
+        ticketService.createActivity(ticket, customer, ActivityType.ESCALATED,
+                "T1 customer escalation (" + request.getReason()
+                        + (request.getDetails() != null ? " — " + request.getDetails() : "")
+                        + "). Previous status: " + previousStatus);
+
+        if (ticket.getCurrentAssignee() != null) {
+            notificationService.notifyUser(ticket.getCurrentAssignee().getId(),
+                    "Customer escalated " + ticketNumber,
+                    "Reason: " + request.getReason()
+                            + (request.getDetails() != null ? ". " + request.getDetails() : ""),
+                    NotificationType.TICKET_ESCALATED, ticket.getId());
+        }
+        notifyOpsManagers(ticket, "T1 escalation — " + ticketNumber,
+                "Customer flagged: " + request.getReason() + ". Re-triage required.");
+        smsService.sendTicketSms(ticket.getCustomer().getPhoneNumber(),
+                "AES: your escalation for " + ticketNumber
+                        + " has been logged. Our manager will contact you shortly.");
+        webSocketService.broadcastTicketUpdate(ticketNumber, "ESCALATED_BY_CUSTOMER",
+                ticket.getCurrentLevel(), 0, "Customer");
+
+        log.info("Ticket {} customer-escalated: {}", ticketNumber, request.getReason());
+        return ticketService.toFullResponse(ticket);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Phase 6 — Customer reschedule (FLOW.md C19)
+    // ─────────────────────────────────────────────────────────────
+
+    @Transactional
+    public TicketResponse rescheduleTicket(String ticketNumber, UUID customerId,
+                                            RescheduleTicketRequest request) {
+        ServiceTicket ticket = findTicket(ticketNumber);
+        if (!ticket.getCustomer().getId().equals(customerId)) {
+            throw new BusinessException("FORBIDDEN",
+                    "You can only reschedule your own tickets.", HttpStatus.FORBIDDEN);
+        }
+        TicketStatus s = ticket.getStatus();
+        if (s == TicketStatus.EN_ROUTE || s == TicketStatus.ON_SITE
+                || s == TicketStatus.IN_PROGRESS
+                || s == TicketStatus.RESOLVED || s == TicketStatus.CLOSED
+                || s == TicketStatus.CANCELLED) {
+            throw new BusinessException("INVALID_STATE",
+                    "Cannot reschedule a " + s + " ticket. Please call the engineer directly.",
+                    HttpStatus.CONFLICT);
+        }
+
+        ticket.setScheduledDate(request.getNewDate());
+        if (request.getNewSlot() != null) {
+            ticket.setScheduledSlot(request.getNewSlot());
+        }
+        // If an engineer was already dispatched, drop them so the owner CRM can re-pick.
+        if (ticket.getEngineer() != null) {
+            ticket.setEngineer(null);
+            ticket.setEngineerAcceptedAt(null);
+            if (ticket.getStatus() == TicketStatus.ENGINEER_OFFERED
+                    || ticket.getStatus() == TicketStatus.ASSIGNED) {
+                ticket.setStatus(TicketStatus.ACKNOWLEDGED);
+            }
+        }
+        ticketRepository.save(ticket);
+
+        User customer = userRepository.findById(customerId).orElse(null);
+        ticketService.createActivity(ticket, customer, ActivityType.STATUS_CHANGED,
+                "Customer rescheduled to " + request.getNewDate()
+                        + (request.getNewSlot() != null ? " (" + request.getNewSlot() + ")" : "")
+                        + (request.getReason() != null ? " — " + request.getReason() : ""));
+        if (ticket.getCurrentAssignee() != null) {
+            notificationService.notifyUser(ticket.getCurrentAssignee().getId(),
+                    "Customer rescheduled " + ticketNumber,
+                    "New slot: " + request.getNewDate()
+                            + (request.getNewSlot() != null ? " " + request.getNewSlot() : "")
+                            + ". Re-dispatch the engineer if needed.",
+                    NotificationType.TICKET_ASSIGNED, ticket.getId());
+        }
+        return ticketService.toFullResponse(ticket);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Phase 6 — Customer re-open (FLOW.md C18 / S12)
+    // ─────────────────────────────────────────────────────────────
+
+    @Transactional
+    public TicketResponse reopenTicket(String ticketNumber, UUID customerId,
+                                        ReopenTicketRequest request) {
+        ServiceTicket ticket = findTicket(ticketNumber);
+        if (!ticket.getCustomer().getId().equals(customerId)) {
+            throw new BusinessException("FORBIDDEN",
+                    "You can only re-open your own tickets.", HttpStatus.FORBIDDEN);
+        }
+        if (ticket.getStatus() != TicketStatus.CLOSED
+                && ticket.getStatus() != TicketStatus.RESOLVED) {
+            throw new BusinessException("INVALID_STATE",
+                    "Only CLOSED / RESOLVED tickets can be re-opened.", HttpStatus.CONFLICT);
+        }
+        int windowDays = appProperties.getReopen().getWindowDays();
+        OffsetDateTime cutoff = ticket.getClosedAt() != null
+                ? ticket.getClosedAt() : ticket.getResolvedAt();
+        if (cutoff != null && cutoff.plusDays(windowDays).isBefore(OffsetDateTime.now())) {
+            throw new BusinessException("WINDOW_EXPIRED",
+                    "Re-open window of " + windowDays + " days has expired. "
+                            + "Please raise a new ticket linked to " + ticketNumber + ".",
+                    HttpStatus.CONFLICT);
+        }
+
+        ticket.setStatus(TicketStatus.REOPENED);
+        ticket.setClosedAt(null);
+        ticketRepository.save(ticket);
+
+        User customer = userRepository.findById(customerId).orElse(null);
+        ticketService.createActivity(ticket, customer, ActivityType.STATUS_CHANGED,
+                "Re-opened by customer: " + request.getReason());
+        if (ticket.getCurrentAssignee() != null) {
+            notificationService.notifyUser(ticket.getCurrentAssignee().getId(),
+                    "Ticket " + ticketNumber + " was re-opened",
+                    "Customer reason: " + request.getReason(),
+                    NotificationType.TICKET_ESCALATED, ticket.getId());
+        }
+        notifyOpsManagers(ticket, "Ticket re-opened — " + ticketNumber,
+                "Customer reason: " + request.getReason());
+        webSocketService.broadcastTicketUpdate(ticketNumber, "REOPENED",
+                ticket.getCurrentLevel(), 0,
+                ticket.getCurrentAssignee() != null
+                        ? ticket.getCurrentAssignee().getName() : "Owner CRM");
+        return ticketService.toFullResponse(ticket);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Helpers
+    // ─────────────────────────────────────────────────────────────
+
+    private void notifyOpsManagers(ServiceTicket ticket, String title, String body) {
+        for (User ops : userRepository.findByRoleAndIsActiveTrue(UserRole.OPS_MANAGER)) {
+            notificationService.notifyUser(ops.getId(), title, body,
+                    NotificationType.TICKET_ESCALATED, ticket.getId());
+        }
     }
 
     private ServiceTicket findTicket(String ticketNumber) {

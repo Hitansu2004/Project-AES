@@ -95,8 +95,10 @@ public class ServiceTicketController {
     private UserRole extractUserRole() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) return UserRole.ADMIN;
+        if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OPS_MANAGER"))) return UserRole.OPS_MANAGER;
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE_MANAGER"))) return UserRole.SERVICE_MANAGER;
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_CRM_AGENT"))) return UserRole.CRM_AGENT;
+        if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SITE_ENGINEER"))) return UserRole.SITE_ENGINEER;
         return UserRole.CUSTOMER;
     }
 }

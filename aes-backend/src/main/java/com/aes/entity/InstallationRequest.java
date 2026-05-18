@@ -87,6 +87,45 @@ public class InstallationRequest {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    // ── Workflow re-design (V7) ────────────────────────────────────
+    @Column(name = "triage_at")
+    private OffsetDateTime triageAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "triaged_by")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User triagedBy;
+
+    /** CRM agent who owns this installation lead (post-triage). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_crm_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User ownerCrm;
+
+    @Column(name = "site_visit_at")
+    private OffsetDateTime siteVisitAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "site_visit_engineer_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User siteVisitEngineer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lead_engineer_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User leadEngineer;
+
+    @Column(length = 50)
+    @Builder.Default
+    private String branch = "HYDERABAD";
+
+    @Column(length = 100)
+    private String locality;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

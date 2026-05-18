@@ -1,12 +1,12 @@
 package com.aes.service;
 
+import com.aes.config.AppProperties;
 import com.aes.dto.request.CreateInstallationRequest;
 import com.aes.dto.response.InstallationRequestResponse;
 import com.aes.entity.InstallationRequest;
 import com.aes.entity.Property;
 import com.aes.entity.User;
 import com.aes.enums.InstallationStatus;
-import com.aes.enums.NotificationType;
 import com.aes.enums.UserRole;
 import com.aes.exception.BusinessException;
 import com.aes.exception.NotFoundException;
@@ -46,6 +46,7 @@ public class InstallationRequestService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+    private final AppProperties appProperties;
 
     /**
      * Create a new installation request.
@@ -116,7 +117,9 @@ public class InstallationRequestService {
                 .roomsJson(roomsJson)
                 .scheduledDate(request.getScheduledDate())
                 .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
-                .status(InstallationStatus.PENDING)
+                .status(appProperties.getWorkflow().isOpsTriageEnabled()
+                        ? InstallationStatus.NEW
+                        : InstallationStatus.PENDING)
                 .notes(annotatedNotes)
                 .build();
 
@@ -132,13 +135,23 @@ public class InstallationRequestService {
                 installReq.getId()
         );
 
-        // 5. Notify CRM agents (line 613)
-        List<User> crmAgents = userRepository.findByRoleAndIsActiveTrue(UserRole.CRM_AGENT);
-        for (User agent : crmAgents) {
+        // 5. Notify the right inbox — Ops Manager triage queue if the
+        //    workflow re-design is enabled, otherwise the legacy broadcast to
+        //    every CRM agent (which is what the V4 demo expects).
+        UserRole notifyRole = appProperties.getWorkflow().isOpsTriageEnabled()
+                ? UserRole.OPS_MANAGER
+                : UserRole.CRM_AGENT;
+        String body = appProperties.getWorkflow().isOpsTriageEnabled()
+                ? "New installation request " + requestNumber + " from " + customer.getName()
+                        + " — needs triage (route to a CRM agent or site engineer for survey)."
+                : "New installation request " + requestNumber + " from " + customer.getName();
+
+        List<User> recipients = userRepository.findByRoleAndIsActiveTrue(notifyRole);
+        for (User recipient : recipients) {
             notificationService.notifyInstallation(
-                    agent.getId(),
+                    recipient.getId(),
                     "New Installation Request",
-                    "New installation request " + requestNumber + " from " + customer.getName(),
+                    body,
                     installReq.getId()
             );
         }
@@ -173,9 +186,11 @@ public class InstallationRequestService {
             return InstallationStatus.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new BusinessException("INVALID_STATUS",
-                    "Unknown installation status '" + value + "'. Valid values: PENDING, "
-                            + "CONFIRMED, SITE_VISIT_DONE, QUOTE_SENT, QUOTE_ACCEPTED, "
-                            + "INSTALLATION_SCHEDULED, COMPLETED, CANCELLED.",
+                    "Unknown installation status '" + value + "'. Valid values: PENDING, NEW, "
+                            + "OFFERED_CRM, CONFIRMED, SURVEY_SCHEDULED, SITE_VISIT_DONE, SITE_VISITED, "
+                            + "QUOTE_DRAFT, QUOTE_PENDING_APPROVAL, QUOTE_REJECTED_INTERNAL, QUOTE_SENT, "
+                            + "QUOTE_NEGOTIATING, QUOTE_ACCEPTED, INSTALLATION_SCHEDULED, "
+                            + "INSTALLATION_IN_PROGRESS, COMPLETED, CANCELLED.",
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -204,7 +219,8 @@ public class InstallationRequestService {
      */
     private String generateRequestNumber() {
         Long seq = installationRequestRepository.getNextSequenceValue();
-        return String.format("REQ-%d-%04d", Year.now().getValue(), seq);
+        // Runtime now matches the seeded demo prefix (PLAN.md F21).
+        return String.format("INS-%d-%04d", Year.now().getValue(), seq);
     }
 
     /**

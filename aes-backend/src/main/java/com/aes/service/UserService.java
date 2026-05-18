@@ -2,10 +2,12 @@ package com.aes.service;
 
 import com.aes.dto.request.UpdateUserRequest;
 import com.aes.dto.response.UserResponse;
+import com.aes.entity.StaffProfile;
 import com.aes.entity.User;
 import com.aes.exception.NotFoundException;
 import com.aes.repository.AcUnitRepository;
 import com.aes.repository.PropertyRepository;
+import com.aes.repository.StaffProfileRepository;
 import com.aes.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +31,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PropertyRepository propertyRepository;
     private final AcUnitRepository acUnitRepository;
+    private final StaffProfileRepository staffProfileRepository;
 
     /**
      * Get current user profile including properties + AC units count (line 545).
+     * For staff (CRM / SM / engineer / ops / admin) we also surface the
+     * on-shift flag and branch so the front-end can render the shift toggle
+     * without an extra round-trip.
      */
     public UserResponse getUserProfile(UUID userId) {
         User user = userRepository.findById(userId)
@@ -40,15 +46,21 @@ public class UserService {
         long propertiesCount = propertyRepository.countByCustomerId(userId);
         long acUnitsCount = acUnitRepository.countByCustomerId(userId);
 
-        return UserResponse.builder()
+        UserResponse.UserResponseBuilder b = UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .propertiesCount(propertiesCount)
-                .acUnitsCount(acUnitsCount)
-                .build();
+                .acUnitsCount(acUnitsCount);
+
+        StaffProfile sp = staffProfileRepository.findById(userId).orElse(null);
+        if (sp != null) {
+            b.onShift(Boolean.TRUE.equals(sp.getOnShift()));
+            b.branch(sp.getBranch());
+        }
+        return b.build();
     }
 
     /**

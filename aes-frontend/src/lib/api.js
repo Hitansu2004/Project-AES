@@ -196,12 +196,109 @@ export const ticketActions = {
     request(`/service-tickets/${ticketNumber}/acknowledge`, { method: 'POST' }),
   assignEngineer: (ticketNumber, data) =>
     request(`/service-tickets/${ticketNumber}/assign-engineer`, { method: 'POST', body: data }),
+  dispatchEngineer: (ticketNumber, data) =>
+    request(`/service-tickets/${ticketNumber}/dispatch-engineer`, { method: 'POST', body: data }),
   escalate: (ticketNumber, data) =>
     request(`/service-tickets/${ticketNumber}/escalate`, { method: 'POST', body: data }),
   resolve: (ticketNumber, data) =>
     request(`/service-tickets/${ticketNumber}/resolve`, { method: 'POST', body: data }),
   rate: (ticketNumber, data) =>
     request(`/service-tickets/${ticketNumber}/rate`, { method: 'POST', body: data }),
+  customerEscalate: (ticketNumber, data) =>
+    request(`/service-tickets/${ticketNumber}/customer-escalate`, { method: 'POST', body: data }),
+  reschedule: (ticketNumber, data) =>
+    request(`/service-tickets/${ticketNumber}/reschedule`, { method: 'POST', body: data }),
+  reopen: (ticketNumber, data) =>
+    request(`/service-tickets/${ticketNumber}/reopen`, { method: 'POST', body: data }),
+};
+
+// ─── Ops Manager (triage + assignment) ──────────────────────
+export const ops = {
+  inbox: () => request('/ops/triage/inbox'),
+  offer: (ticketOrInstall, data) =>
+    request(`/ops/triage/${ticketOrInstall.kind === 'INSTALL' ? 'installs' : 'tickets'}/${ticketOrInstall.id}/offer`, {
+      method: 'POST',
+      body: data,
+    }),
+  offerTicket: (ticketNumber, data) =>
+    request(`/ops/triage/tickets/${ticketNumber}/offer`, { method: 'POST', body: data }),
+  offerInstall: (installNumber, data) =>
+    request(`/ops/triage/installs/${installNumber}/offer`, { method: 'POST', body: data }),
+};
+
+// ─── Offers (recipient inbox) ───────────────────────────────
+export const offers = {
+  mine: () => request('/offers/mine'),
+  accept: (offerId) =>
+    request(`/offers/${offerId}/accept`, { method: 'POST' }),
+  decline: (offerId, data) =>
+    request(`/offers/${offerId}/decline`, { method: 'POST', body: data }),
+  withdraw: (offerId) =>
+    request(`/offers/${offerId}/withdraw`, { method: 'POST' }),
+};
+
+// ─── Site Engineer (mobile dashboard) ───────────────────────
+export const engineer = {
+  dashboard: () => request('/engineer/dashboard'),
+  myJobs: () => request('/engineer/my-jobs'),
+  enRoute: (ticketNumber, data) =>
+    request(`/engineer/tickets/${ticketNumber}/en-route`, { method: 'POST', body: data || {} }),
+  onSite: (ticketNumber, data) =>
+    request(`/engineer/tickets/${ticketNumber}/on-site`, { method: 'POST', body: data || {} }),
+  inProgress: (ticketNumber, data) =>
+    request(`/engineer/tickets/${ticketNumber}/in-progress`, { method: 'POST', body: data || {} }),
+  cannotAttend: (ticketNumber, data) =>
+    request(`/engineer/tickets/${ticketNumber}/cannot-attend`, { method: 'POST', body: data }),
+  needHelp: (ticketNumber, data) =>
+    request(`/engineer/tickets/${ticketNumber}/need-help`, { method: 'POST', body: data }),
+};
+
+// ─── Part Requests ──────────────────────────────────────────
+export const parts = {
+  forTicket: (ticketNumber) =>
+    request(`/service-tickets/${ticketNumber}/parts`),
+  raise: (ticketNumber, data) =>
+    request(`/service-tickets/${ticketNumber}/parts`, { method: 'POST', body: data }),
+  approve: (partId) =>
+    request(`/parts/${partId}/approve`, { method: 'POST' }),
+  reject: (partId, reason) =>
+    request(`/parts/${partId}/reject${reason ? `?reason=${encodeURIComponent(reason)}` : ''}`, { method: 'POST' }),
+  markOrdered: (partId, data) =>
+    request(`/parts/${partId}/ordered`, { method: 'POST', body: data || {} }),
+  markDelivered: (partId) =>
+    request(`/parts/${partId}/delivered`, { method: 'POST' }),
+  markInstalled: (partId) =>
+    request(`/parts/${partId}/installed`, { method: 'POST' }),
+  queue: () => request('/parts/queue'),
+  mine: () => request('/parts/mine'),
+};
+
+// ─── Quotes ─────────────────────────────────────────────────
+export const quotes = {
+  draft: (data) => request('/quotes', { method: 'POST', body: data }),
+  revise: (quoteNumber, data) =>
+    request(`/quotes/${quoteNumber}/revise`, { method: 'POST', body: data }),
+  submit: (quoteNumber) =>
+    request(`/quotes/${quoteNumber}/submit`, { method: 'POST' }),
+  approve: (quoteNumber) =>
+    request(`/quotes/${quoteNumber}/approve`, { method: 'POST' }),
+  reject: (quoteNumber, reason) =>
+    request(`/quotes/${quoteNumber}/reject${reason ? `?reason=${encodeURIComponent(reason)}` : ''}`, { method: 'POST' }),
+  send: (quoteNumber) =>
+    request(`/quotes/${quoteNumber}/send`, { method: 'POST' }),
+  customerDecision: (quoteNumber, data) =>
+    request(`/quotes/${quoteNumber}/customer-decision`, { method: 'POST', body: data }),
+  get: (quoteNumber) => request(`/quotes/${quoteNumber}`),
+  queue: () => request('/quotes/queue'),
+  mine: () => request('/quotes/mine'),
+  forInstall: (installId) => request(`/quotes/install/${installId}`),
+  forTicket: (ticketId) => request(`/quotes/ticket/${ticketId}`),
+};
+
+// ─── Staff (shift toggle) ───────────────────────────────────
+export const staff = {
+  toggleShift: (data) =>
+    request('/staff/me/shift', { method: 'PUT', body: data }),
 };
 
 // ─── AMC ────────────────────────────────────────────────────
@@ -216,6 +313,7 @@ export const amc = {
 export const dashboard = {
   customer: () => request('/dashboard/customer'),
   crm: () => request('/dashboard/crm'),
+  ops: () => request('/dashboard/ops'),
   escalation: () => request('/dashboard/escalation'),
 };
 

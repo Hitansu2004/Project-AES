@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +22,32 @@ public interface InstallationRequestRepository extends JpaRepository<Installatio
     Page<InstallationRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     Optional<InstallationRequest> findByRequestNumber(String requestNumber);
+
+    /**
+     * Ops Manager triage inbox for installations: anything still owner-less
+     * that has not already been completed or cancelled. Oldest first so the
+     * service layer can re-sort (P1 first, then created_at) without losing
+     * the deterministic tiebreak.
+     */
+    @Query("SELECT i FROM InstallationRequest i WHERE i.ownerCrm IS NULL " +
+           "AND i.status IN ('PENDING','NEW','OFFERED_CRM') " +
+           "ORDER BY i.createdAt ASC")
+    List<InstallationRequest> findOpsInbox();
+
+    /** Count for the OPS dashboard "Untriaged Installs" KPI tile. */
+    @Query("SELECT COUNT(i) FROM InstallationRequest i WHERE i.ownerCrm IS NULL " +
+           "AND i.status IN ('PENDING','NEW','OFFERED_CRM')")
+    long countOpsInbox();
+
+    /** Active (non-terminal) installations a CRM agent owns — used by workload board. */
+    @Query("SELECT COUNT(i) FROM InstallationRequest i WHERE i.ownerCrm.id = :crmId " +
+           "AND i.status NOT IN ('COMPLETED','CANCELLED')")
+    long countActiveByOwner(UUID crmId);
+
+    /** Full list (not just count) of active installs owned by a CRM — used by shift handoff. */
+    @Query("SELECT i FROM InstallationRequest i WHERE i.ownerCrm.id = :crmId " +
+           "AND i.status NOT IN ('COMPLETED','CANCELLED') ORDER BY i.createdAt DESC")
+    List<InstallationRequest> findActiveByOwner(UUID crmId);
 
     @Query(value = "SELECT nextval('installation_req_seq')", nativeQuery = true)
     Long getNextSequenceValue();

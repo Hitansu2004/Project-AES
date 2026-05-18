@@ -12,6 +12,7 @@ import com.aes.enums.UserRole;
 import com.aes.exception.BusinessException;
 import com.aes.exception.UnauthorizedException;
 import com.aes.repository.RefreshTokenRepository;
+import com.aes.repository.StaffProfileRepository;
 import com.aes.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final StaffProfileRepository staffProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final AppProperties appProperties;
     private final JwtConfig jwtConfig;
@@ -162,13 +164,17 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
-        UserResponse userResponse = UserResponse.builder()
+        UserResponse.UserResponseBuilder urb = UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
-                .role(user.getRole().name())
-                .build();
+                .role(user.getRole().name());
+        staffProfileRepository.findById(user.getId()).ifPresent(sp -> {
+            urb.onShift(Boolean.TRUE.equals(sp.getOnShift()));
+            urb.branch(sp.getBranch());
+        });
+        UserResponse userResponse = urb.build();
 
         return AuthResponse.builder()
                 .accessToken(accessToken)

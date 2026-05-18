@@ -22,4 +22,8 @@ public class UserResponse {
     private String role;
     private long propertiesCount;
     private long acUnitsCount;
+
+    /** Staff-only: present on CRM / SM / engineer / ops / admin payloads. */
+    private Boolean onShift;
+    private String branch;
 }

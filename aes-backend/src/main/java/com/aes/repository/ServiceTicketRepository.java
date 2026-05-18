@@ -106,6 +106,63 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
            "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
     long countFinalSlaBreached(@Param("now") OffsetDateTime now);
 
+    // ── Ops Manager triage inbox (Phase 2 — PLAN.md §9.1, FLOW.md C1/C9/C16) ────
+    /**
+     * Everything the Ops Manager needs to see in the triage inbox:
+     * tickets awaiting triage ({@code NEW}), tickets currently offered to a
+     * CRM and still pending acceptance ({@code OFFERED_CRM}), and customer-
+     * raised escalations ({@code ESCALATED_BY_CUSTOMER}). Oldest first so the
+     * P1s rise to the top after a tie-break sort on the service layer.
+     */
+    @Query("SELECT t FROM ServiceTicket t " +
+           "WHERE t.status IN ('NEW','OFFERED_CRM','ESCALATED_BY_CUSTOMER') " +
+           "ORDER BY t.createdAt ASC")
+    List<ServiceTicket> findOpsInbox();
+
+    /** How many tickets are sitting in the Ops Manager inbox right now. */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t " +
+           "WHERE t.status IN ('NEW','OFFERED_CRM','ESCALATED_BY_CUSTOMER')")
+    long countOpsInbox();
+
+    /** Active (non-terminal) ticket count for a CRM agent (used by the workload board). */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.currentAssignee.id = :assigneeId " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countActiveByAssignee(@Param("assigneeId") UUID assigneeId);
+
+    /** Tickets resolved today by a given assignee (workload "Resolved today" tile). */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.currentAssignee.id = :assigneeId " +
+           "AND t.resolvedAt IS NOT NULL AND t.resolvedAt >= :since")
+    long countResolvedByAssigneeSince(@Param("assigneeId") UUID assigneeId,
+                                       @Param("since") OffsetDateTime since);
+
+    /** Active tickets for which a given engineer has been dispatched (workload board). */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t WHERE t.engineer.id = :engineerId " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countActiveByEngineer(@Param("engineerId") UUID engineerId);
+
+    // ── Engineer mobile dashboard (Phase 3 — PLAN.md §9.3, FLOW.md C12) ─────────
+    /** All active jobs for a given site engineer, newest first. */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.engineer.id = :engineerId " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +
+           "ORDER BY t.priority ASC, t.scheduledDate ASC, t.assignedAt DESC")
+    List<ServiceTicket> findActiveByEngineerOrdered(@Param("engineerId") UUID engineerId);
+
+    /** Tickets the engineer has resolved since a given timestamp (today's done list). */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.engineer.id = :engineerId " +
+           "AND t.resolvedAt IS NOT NULL AND t.resolvedAt >= :since " +
+           "ORDER BY t.resolvedAt DESC")
+    List<ServiceTicket> findResolvedByEngineerSince(@Param("engineerId") UUID engineerId,
+                                                     @Param("since") OffsetDateTime since);
+
+    // ── Stage D — "stuck" tickets (PLAN.md §8.2 C17) ───────────────────────────
+    /** Tickets that have exceeded 2× their final SLA without being resolved. */
+    @Query(value = "SELECT * FROM service_tickets t " +
+                   "WHERE t.sla_deadline_final IS NOT NULL " +
+                   "AND t.sla_deadline_final + (t.sla_deadline_final - t.created_at) < :now " +
+                   "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')",
+           nativeQuery = true)
+    List<ServiceTicket> findDoubleFinalSlaBreached(@Param("now") OffsetDateTime now);
+
     // Ticket sequence
     @Query(value = "SELECT nextval('ticket_seq')", nativeQuery = true)
     Long getNextTicketSequence();

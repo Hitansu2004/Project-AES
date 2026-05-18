@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Inbox, ListChecks, AlertTriangle, CheckCircle2, Settings, LogOut,
   Bell, Phone, Check, ArrowUp, Wrench, Filter, Search,
-  X, MapPin, User,
+  X, MapPin, User, Send, PackageSearch, Package, Clock, Timer,
+  FileText, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
@@ -15,6 +16,9 @@ import {
   tickets as ticketsApi,
   ticketActions,
   dashboard as dashboardApi,
+  offers as offersApi,
+  parts as partsApi,
+  quotes as quotesApi,
 } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
@@ -22,10 +26,14 @@ import SlaCountdown from '@/components/ui/SlaCountdown';
 import useSlaCountdown, { formatRemaining } from '@/hooks/useSlaCountdown';
 import useStompTopic from '@/hooks/useStompTopic';
 import Logo from '@/components/ui/Logo';
+import ShiftToggle from '@/components/ui/ShiftToggle';
 import styles from './crm.module.css';
 
 const VIEWS = [
-  { key: 'inbox',     label: 'My Inbox',       icon: Inbox },
+  { key: 'offers',    label: 'Offers',         icon: Send },
+  { key: 'inbox',     label: 'My Tickets',     icon: Inbox },
+  { key: 'parts',     label: 'Parts Approval', icon: PackageSearch },
+  { key: 'quotes',    label: 'My Quotes',      icon: FileText },
   { key: 'all',       label: 'All Tickets',    icon: ListChecks },
   { key: 'escalated', label: 'Escalated',      icon: AlertTriangle },
   { key: 'resolved',  label: 'Resolved Today', icon: CheckCircle2 },
@@ -66,15 +74,19 @@ function relMin(stamp) {
 
 export default function CrmDashboard() {
   const router = useRouter();
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, fetchUser } = useAuth();
   const { unread } = useNotifications();
   const toast = useToast();
 
-  const [view, setView] = useState('inbox');
+  const [view, setView] = useState('offers');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [sortBy, setSortBy] = useState('sla');
   const [tickets, setTickets] = useState([]);
   const [stats, setStats] = useState(null);
+  const [offers, setOffers] = useState([]);
+  const [partsQueue, setPartsQueue] = useState([]);
+  const [myQuotes, setMyQuotes] = useState([]);
+  const [opsEngineers, setOpsEngineers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState({});       // ticketNumber → action label
   const [showResolve, setShowResolve] = useState(null); // ticket
@@ -89,20 +101,27 @@ export default function CrmDashboard() {
     if (!allowed.includes(user.role)) router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router]);
 
-  // Fetch tickets + stats
+  // Fetch tickets + stats + offers + parts queue + my quotes + engineer board
   const fetchAll = async () => {
     try {
-      const [list, dash] = await Promise.allSettled([
+      const [list, dash, mine, queue, qs, opsDash] = await Promise.allSettled([
         ticketsApi.list(),
         dashboardApi.crm(),
+        offersApi.mine(),
+        partsApi.queue(),
+        quotesApi.queue().catch(() => []), // CRM may not have queue rights
+        dashboardApi.ops().catch(() => null), // for engineer board (optional)
       ]);
       if (list.status === 'fulfilled') {
         const arr = Array.isArray(list.value) ? list.value : list.value?.content || [];
         setTickets(arr);
       }
-      if (dash.status === 'fulfilled') {
-        setStats(dash.value || null);
-      }
+      if (dash.status === 'fulfilled') setStats(dash.value || null);
+      if (mine.status === 'fulfilled') setOffers(Array.isArray(mine.value) ? mine.value : []);
+      if (queue.status === 'fulfilled') setPartsQueue(Array.isArray(queue.value) ? queue.value : []);
+      if (qs.status === 'fulfilled')   setMyQuotes(Array.isArray(qs.value) ? qs.value : []);
+      if (opsDash.status === 'fulfilled' && opsDash.value)
+        setOpsEngineers(Array.isArray(opsDash.value.engineers) ? opsDash.value.engineers : []);
     } finally {
       setLoading(false);
     }
@@ -132,8 +151,10 @@ export default function CrmDashboard() {
     let list = tickets.slice();
     // View filter
     if (view === 'inbox') {
+      // My owned tickets (CRM agent is currentAssignee).
       list = list.filter((t) => (t.currentLevel || 1) === 1
-        && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status));
+        && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status)
+        && (!user || (t.currentAssignee?.id ?? t.currentAssigneeId) === user.id));
     } else if (view === 'escalated') {
       list = list.filter((t) => (t.currentLevel || 1) > 1
         && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status));
@@ -202,8 +223,15 @@ export default function CrmDashboard() {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       return new Date(stamp) >= today;
     }).length;
-    return { inbox, escalated, resolvedToday };
-  }, [tickets]);
+    return {
+      inbox,
+      escalated,
+      resolvedToday,
+      offers: offers.length,
+      parts: partsQueue.length,
+      quotes: myQuotes.length,
+    };
+  }, [tickets, offers, partsQueue, myQuotes]);
 
   // Actions
   const setBusyFor = (number, label) => setBusy((b) => ({ ...b, [number]: label }));
@@ -252,20 +280,58 @@ export default function CrmDashboard() {
     }
   };
 
-  const submitAssign = async ({ engineerId, notes }) => {
+  const submitAssign = async ({ engineerId, notes, mode }) => {
     if (!showAssign) return;
     const number = showAssign.ticketNumber;
     setBusyFor(number, 'assign');
     try {
-      await ticketActions.assignEngineer(number, { engineerId, notes });
-      toast.success(`Engineer assigned to ${number}.`);
+      await ticketActions.dispatchEngineer(number, { engineerId, mode: mode || 'DIRECT', note: notes });
+      toast.success(`Dispatch offer sent for ${number}.`);
       setShowAssign(null);
       await fetchAll();
     } catch (err) {
-      toast.error(err.message || 'Could not assign engineer.');
+      toast.error(err.message || 'Could not dispatch engineer.');
     } finally {
       clearBusy(number);
     }
+  };
+
+  // ─── Offer actions ────────────────────────────────────────
+  const acceptOffer = async (o) => {
+    setBusyFor(`offer-${o.id}`, 'accept');
+    try {
+      await offersApi.accept(o.id);
+      toast.success(`Accepted ${o.ticketNumber || o.installRequestNumber}`);
+      await fetchAll();
+    } catch (err) { toast.error(err?.message || 'Could not accept'); }
+    finally { clearBusy(`offer-${o.id}`); }
+  };
+  const declineOffer = async (o) => {
+    const reason = prompt('Decline reason (e.g. on another job)?');
+    if (reason === null) return;
+    setBusyFor(`offer-${o.id}`, 'decline');
+    try {
+      await offersApi.decline(o.id, { reason, comment: reason });
+      toast.success('Declined. Bounced to Ops.');
+      await fetchAll();
+    } catch (err) { toast.error(err?.message || 'Could not decline'); }
+    finally { clearBusy(`offer-${o.id}`); }
+  };
+
+  // ─── Part actions ─────────────────────────────────────────
+  const approvePart = async (p) => {
+    setBusyFor(`part-${p.id}`, 'approve');
+    try { await partsApi.approve(p.id); toast.success('Approved'); await fetchAll(); }
+    catch (err) { toast.error(err?.message || 'Could not approve'); }
+    finally { clearBusy(`part-${p.id}`); }
+  };
+  const rejectPart = async (p) => {
+    const reason = prompt('Reason for rejection?') || '';
+    if (!reason) return;
+    setBusyFor(`part-${p.id}`, 'reject');
+    try { await partsApi.reject(p.id, reason); toast.success('Rejected'); await fetchAll(); }
+    catch (err) { toast.error(err?.message || 'Could not reject'); }
+    finally { clearBusy(`part-${p.id}`); }
   };
 
   if (authLoading || !user) {
@@ -311,11 +377,15 @@ export default function CrmDashboard() {
         {/* ─── Sidebar ─── */}
         <aside className={styles.sidebar}>
           {VIEWS.map(({ key, label, icon: Icon }) => {
-            const count = key === 'inbox' ? counts.inbox
+            const count = key === 'offers'    ? counts.offers
+                        : key === 'inbox'     ? counts.inbox
+                        : key === 'parts'     ? counts.parts
+                        : key === 'quotes'    ? counts.quotes
                         : key === 'escalated' ? counts.escalated
-                        : key === 'resolved' ? counts.resolvedToday
+                        : key === 'resolved'  ? counts.resolvedToday
                         : null;
             const active = view === key;
+            const isAlert = key === 'escalated' || key === 'offers';
             return (
               <button
                 key={key}
@@ -326,7 +396,7 @@ export default function CrmDashboard() {
                 <span className={styles.sideItemIcon}><Icon size={18} /></span>
                 <span className={styles.sideItemLabel}>{label}</span>
                 {count != null && count > 0 && (
-                  <span className={`${styles.sideCount} ${key === 'escalated' ? styles.sideCountAlert : ''}`}>
+                  <span className={`${styles.sideCount} ${isAlert ? styles.sideCountAlert : ''}`}>
                     {count}
                   </span>
                 )}
@@ -334,10 +404,9 @@ export default function CrmDashboard() {
             );
           })}
           <div className={styles.sideFooter}>
-            <Link href="/admin" className={styles.sideItem}>
-              <span className={styles.sideItemIcon}><Settings size={18} /></span>
-              <span className={styles.sideItemLabel}>Admin View</span>
-            </Link>
+            <div style={{ padding: '8px 12px' }}>
+              <ShiftToggle onShift={!!user?.onShift} onChange={() => fetchUser()} />
+            </div>
           </div>
         </aside>
 
@@ -407,7 +476,33 @@ export default function CrmDashboard() {
             </div>
           </div>
 
-          {loading ? (
+          {/* ─── Offers view ─── */}
+          {view === 'offers' && (
+            <OfferInboxPanel
+              offers={offers}
+              busyMap={busy}
+              onAccept={acceptOffer}
+              onDecline={declineOffer}
+            />
+          )}
+
+          {/* ─── Parts queue view ─── */}
+          {view === 'parts' && (
+            <PartsApprovalPanel
+              parts={partsQueue}
+              busyMap={busy}
+              onApprove={approvePart}
+              onReject={rejectPart}
+            />
+          )}
+
+          {/* ─── My quotes view ─── */}
+          {view === 'quotes' && (
+            <MyQuotesPanel quotes={myQuotes} />
+          )}
+
+          {/* ─── Ticket list (inbox / all / escalated / resolved) ─── */}
+          {(view === 'inbox' || view === 'all' || view === 'escalated' || view === 'resolved') && (loading ? (
             <div className={styles.list}>
               {[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 168 }} />)}
             </div>
@@ -415,7 +510,7 @@ export default function CrmDashboard() {
             <div className={styles.empty}>
               <Inbox size={28} />
               <h3>Nothing here</h3>
-              <p>{view === 'inbox' ? 'Your inbox is clear. New tickets will appear here in real time.' : 'No tickets match the current filters.'}</p>
+              <p>{view === 'inbox' ? 'No active tickets owned by you.' : 'No tickets match the current filters.'}</p>
             </div>
           ) : (
             <motion.div
@@ -444,7 +539,7 @@ export default function CrmDashboard() {
                 ))}
               </AnimatePresence>
             </motion.div>
-          )}
+          ))}
         </main>
       </div>
 
@@ -457,13 +552,160 @@ export default function CrmDashboard() {
           />
         )}
         {showAssign && (
-          <AssignSheet
+          <DispatchSheet
             ticket={showAssign}
+            engineers={opsEngineers}
             onClose={() => setShowAssign(null)}
             onSubmit={submitAssign}
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── New panels ──────────────────────────────────────────── */
+
+function OfferInboxPanel({ offers, busyMap, onAccept, onDecline }) {
+  if (!offers.length) {
+    return (
+      <div className={styles.empty}>
+        <Send size={28} />
+        <h3>No offers right now</h3>
+        <p>When the Ops Manager pushes a ticket to you, it will appear here. You have 15 minutes to accept.</p>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.list}>
+      {offers.map((o) => (
+        <article key={o.id} className={styles.card} style={{ border: '1.5px solid var(--warning)' }}>
+          <div className={styles.cardBody}>
+            <div className={styles.cardHead}>
+              <div className={styles.cardHeadLeft}>
+                <PriorityBadge priority={o.ticketPriority || 'P2'} />
+                <Link href={`/tickets/${o.ticketNumber || o.installRequestNumber}`}
+                      className={styles.cardNumber}>
+                  {o.ticketNumber || o.installRequestNumber}
+                </Link>
+                <span className={styles.cardAge}>· offered by {o.offeredByName}</span>
+              </div>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'var(--warning-light)', color: '#92400e',
+                padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+              }}>
+                <Timer size={12} /> {Math.max(0, Math.round((o.secondsUntilExpiry || 0) / 60))}m left
+              </span>
+            </div>
+            <h3 className={styles.cardTitle}>
+              {o.customerName} — {(o.ticketProblemCategory || '').replace(/_/g, ' ')}
+            </h3>
+            {o.note && <p style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>"{o.note}"</p>}
+            <div className={styles.cardActions}>
+              <button className="btn btn-soft btn-sm" disabled={!!busyMap[`offer-${o.id}`]}
+                      onClick={() => onDecline(o)}>
+                <ThumbsDown size={14} /> Decline
+              </button>
+              <button className="btn btn-primary btn-sm" disabled={!!busyMap[`offer-${o.id}`]}
+                      onClick={() => onAccept(o)}>
+                <ThumbsUp size={14} /> Accept
+              </button>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function PartsApprovalPanel({ parts, busyMap, onApprove, onReject }) {
+  if (!parts.length) {
+    return (
+      <div className={styles.empty}>
+        <PackageSearch size={28} />
+        <h3>Approval queue is clear</h3>
+        <p>Part requests routed to you (CRM band ≤ ₹5k on your tickets) appear here.</p>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.list}>
+      {parts.map((p) => (
+        <article key={p.id} className={styles.card}>
+          <div className={styles.cardBody}>
+            <div className={styles.cardHead}>
+              <div className={styles.cardHeadLeft}>
+                <Package size={16} />
+                <Link href={`/tickets/${p.ticketNumber}`} className={styles.cardNumber}>
+                  {p.ticketNumber}
+                </Link>
+                <span className={styles.cardAge}>· {p.requiredApprovalBand}</span>
+              </div>
+              <span style={{
+                fontSize: 16, fontWeight: 800, color: 'var(--on-surface)',
+              }}>
+                ₹{Number(p.totalCost || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <h3 className={styles.cardTitle}>
+              {p.partName} × {p.quantity} <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--on-surface-variant)' }}>· {p.urgency || 'NORMAL'}</span>
+            </h3>
+            <p style={{ color: 'var(--on-surface-variant)', fontSize: 13, marginTop: 0 }}>
+              Requested by {p.requestedByName || '—'}
+              {p.notes && <> — "{p.notes}"</>}
+            </p>
+            <div className={styles.cardActions}>
+              <button className="btn btn-soft btn-sm" disabled={!!busyMap[`part-${p.id}`]}
+                      onClick={() => onReject(p)}>
+                <X size={14} /> Reject
+              </button>
+              <button className="btn btn-primary btn-sm" disabled={!!busyMap[`part-${p.id}`]}
+                      onClick={() => onApprove(p)}>
+                <Check size={14} /> Approve
+              </button>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function MyQuotesPanel({ quotes }) {
+  if (!quotes.length) {
+    return (
+      <div className={styles.empty}>
+        <FileText size={28} />
+        <h3>No quotes pending</h3>
+        <p>Submitted quotes waiting for SM/Admin approval appear here.</p>
+      </div>
+    );
+  }
+  return (
+    <div className={styles.list}>
+      {quotes.map((q) => (
+        <article key={q.id} className={styles.card}>
+          <div className={styles.cardBody}>
+            <div className={styles.cardHead}>
+              <div className={styles.cardHeadLeft}>
+                <FileText size={16} />
+                <span className={styles.cardNumber}>{q.quoteNumber} v{q.version}</span>
+                <span className={styles.cardAge}>· {q.requiredApprovalBand}</span>
+              </div>
+              <span style={{ fontSize: 16, fontWeight: 800 }}>
+                ₹{Number(q.total || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <h3 className={styles.cardTitle}>
+              {q.installNumber || q.ticketNumber} — {q.customerName || ''}
+            </h3>
+            <p style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>
+              Status: <strong>{q.status}</strong> · Prepared by {q.preparedByName}
+            </p>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
@@ -647,56 +889,107 @@ function ResolveSheet({ ticket, onClose, onSubmit }) {
   );
 }
 
-/* ─── Assign sheet ──────────────────────────────────────── */
-function AssignSheet({ ticket, onClose, onSubmit }) {
-  const [engineerId, setEngineerId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
+/* ─── Dispatch sheet ──────────────────────────────────────── */
+function DispatchSheet({ ticket, engineers, onClose, onSubmit }) {
+  const [pickedId, setPickedId] = useState('');
+  const [mode, setMode]         = useState('DIRECT');
+  const [notes, setNotes]       = useState('');
+  const [saving, setSaving]     = useState(false);
 
   const handle = async () => {
-    if (!engineerId) return;
+    if (!pickedId) return;
     setSaving(true);
-    await onSubmit({ engineerId, notes: notes.trim() || null });
+    await onSubmit({ engineerId: pickedId, notes: notes.trim() || null, mode });
     setSaving(false);
   };
 
   return (
     <SheetWrap onClose={onClose}>
       <div className={styles.sheetHeader}>
-        <h3>Assign Engineer</h3>
+        <h3>Dispatch Engineer</h3>
         <button type="button" onClick={onClose} className={styles.iconBtn} aria-label="Close">
           <X size={18} />
         </button>
       </div>
       <p className={styles.sheetSub}>
-        For ticket <strong>{ticket.ticketNumber}</strong> — {ticket.customerName}.
+        Sending offer for <strong>{ticket.ticketNumber}</strong> — {ticket.customerName}.
+        Engineer has 10 minutes to accept.
       </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+        {(engineers || []).length === 0 && (
+          <div style={{ padding: 18, textAlign: 'center', color: 'var(--on-surface-variant)' }}>
+            Loading engineers…
+          </div>
+        )}
+        {(engineers || []).map((e) => {
+          const picked = e.userId === pickedId;
+          return (
+            <button key={e.userId} type="button"
+                    onClick={() => setPickedId(e.userId)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: 12, borderRadius: 12,
+                      border: `1.5px solid ${picked ? 'var(--secondary)' : 'var(--outline-variant)'}`,
+                      background: picked ? 'var(--secondary-soft)' : 'var(--surface-container-lowest)',
+                      textAlign: 'left', cursor: 'pointer',
+                    }}>
+              <span style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'var(--primary-container)', color: 'var(--on-primary-container)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 800,
+              }}>{(e.name || '?').split(/\s+/).map((p) => p[0]).slice(0, 2).join('')}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>
+                  {e.name}
+                  {!e.onShift && <span style={{ marginLeft: 6, fontSize: 9.5, padding: '2px 6px', background: 'var(--outline-variant)', borderRadius: 999, fontWeight: 700 }}>off-shift</span>}
+                  {e.overloaded && <span style={{ marginLeft: 6, fontSize: 9.5, padding: '2px 6px', background: 'var(--error-container)', color: 'var(--error)', borderRadius: 999, fontWeight: 700 }}>full</span>}
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                  Jobs {e.activeJobs} · Pending {e.pendingOffers}
+                  {e.csatScore != null && <> · CSAT {Number(e.csatScore).toFixed(1)}</>}
+                  {(e.skills || []).slice(0, 2).map((s) => ` · ${s}`)}
+                </div>
+              </div>
+              {picked && <Check size={18} color="var(--secondary)" />}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, padding: '12px 0 0' }}>
+        {['DIRECT', 'INVITE'].map((m) => (
+          <button key={m} type="button"
+                  onClick={() => setMode(m)}
+                  style={{
+                    padding: '6px 12px', borderRadius: 999, border: '1px solid var(--outline-variant)',
+                    background: mode === m ? 'var(--primary)' : 'var(--surface-container-lowest)',
+                    color: mode === m ? '#fff' : 'var(--on-surface)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}>
+            {m === 'DIRECT' ? 'Direct' : 'Invite (declinable)'}
+          </button>
+        ))}
+      </div>
       <label className="input-group">
-        <span>Engineer ID (UUID)</span>
-        <input
-          className="input"
-          placeholder="00000000-0000-0000-0000-000000000000"
-          value={engineerId}
-          onChange={(e) => setEngineerId(e.target.value.trim())}
-        />
-      </label>
-      <label className="input-group">
-        <span>Notes (optional)</span>
+        <span>Note (optional)</span>
         <textarea
           className="input textarea"
-          rows={3}
+          rows={2}
           maxLength={500}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          placeholder="VIP customer, prefer evening visit…"
         />
       </label>
       <button
         type="button"
         className="btn btn-primary btn-full btn-lg"
-        disabled={!engineerId || saving}
+        disabled={!pickedId || saving}
         onClick={handle}
       >
-        {saving ? <span className="spinner spinner-sm" /> : 'Assign Engineer'}
+        {saving ? <span className="spinner spinner-sm" /> : 'Send dispatch offer'}
       </button>
     </SheetWrap>
   );

@@ -52,6 +52,7 @@ public class ServiceTicketService {
     private final WebSocketService webSocketService;
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
+    private final UserRepository userRepository;
 
     /**
      * Create a new service ticket.
@@ -87,7 +88,16 @@ public class ServiceTicketService {
         OffsetDateTime slaDeadlineL1 = now.plusMinutes(appProperties.getEscalation().getL1TimeoutMinutes());
         OffsetDateTime slaDeadlineFinal = calculateFinalSla(now, priority);
 
-        User assignedAgent = assignmentService.getNextAvailableCrmAgent();
+        // ── Workflow re-design (PLAN.md §6 + FLOW.md C1) ──────────
+        // Two paths depending on app.workflow.ops-triage-enabled:
+        //
+        //   true  → Ops-Manager-first: ticket created with status=NEW and no owner.
+        //           All on-shift Ops Managers get notified to triage.
+        //   false → Legacy auto-assign: round-robin to a CRM agent (back-compat
+        //           so the V4/V6 demo continues to work until Phase 2 ships).
+        boolean opsTriage = appProperties.getWorkflow().isOpsTriageEnabled();
+
+        User assignedAgent = opsTriage ? null : assignmentService.getNextAvailableCrmAgent();
 
         ServiceTicket ticket = ServiceTicket.builder()
                 .ticketNumber(ticketNumber)
@@ -104,8 +114,8 @@ public class ServiceTicketService {
                 .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
                 .currentLevel(1)
                 .currentAssignee(assignedAgent)
-                .assignedAt(now)
-                .status(TicketStatus.OPEN)
+                .assignedAt(assignedAgent != null ? now : null)
+                .status(opsTriage ? TicketStatus.NEW : TicketStatus.OPEN)
                 .slaDeadlineL1(slaDeadlineL1)
                 .slaDeadlineFinal(slaDeadlineFinal)
                 .build();
@@ -114,27 +124,60 @@ public class ServiceTicketService {
 
         createActivity(ticket, customer, ActivityType.TICKET_RAISED,
                 "Ticket raised by customer");
-        createActivity(ticket, null, ActivityType.ASSIGNED,
-                "Assigned to CRM Level 1: " + assignedAgent.getName());
 
         int l1Minutes = appProperties.getEscalation().getL1TimeoutMinutes();
         notificationService.notifyUser(customerId,
                 "Ticket " + ticketNumber + " raised",
                 "Your service ticket " + ticketNumber + " has been raised. "
-                        + "Our CRM team will respond within " + l1Minutes + " minutes.",
+                        + "Our team will respond within " + l1Minutes + " minutes.",
                 NotificationType.TICKET_RAISED, ticket.getId());
 
-        notificationService.notifyUser(assignedAgent.getId(),
-                "New ticket assigned",
-                "Ticket " + ticketNumber + " has been assigned to you. Priority: " + priority.name(),
-                NotificationType.TICKET_ASSIGNED, ticket.getId());
+        if (opsTriage) {
+            // Send to the triage inbox of every active Ops Manager.
+            createActivity(ticket, null, ActivityType.STATUS_CHANGED,
+                    "Awaiting Ops Manager triage");
+            notifyOpsManagers(
+                    "New " + priority.name() + " ticket — needs triage",
+                    "Ticket " + ticketNumber + " from " + customer.getName()
+                            + " — assign a CRM agent.",
+                    ticket.getId());
+            webSocketService.broadcastNewTicketToCrm(ticketNumber, priority.name(), customer.getName());
 
-        webSocketService.broadcastNewTicketToCrm(ticketNumber, priority.name(), customer.getName());
+            log.info("Service ticket created: {} priority={} status=NEW (awaiting triage)",
+                    ticketNumber, priority);
+        } else {
+            createActivity(ticket, null, ActivityType.ASSIGNED,
+                    "Assigned to CRM Level 1: " + assignedAgent.getName());
 
-        log.info("Service ticket created: {} priority={} assignedTo={}",
-                ticketNumber, priority, assignedAgent.getName());
+            notificationService.notifyUser(assignedAgent.getId(),
+                    "New ticket assigned",
+                    "Ticket " + ticketNumber + " has been assigned to you. Priority: " + priority.name(),
+                    NotificationType.TICKET_ASSIGNED, ticket.getId());
+
+            webSocketService.broadcastNewTicketToCrm(ticketNumber, priority.name(), customer.getName());
+
+            log.info("Service ticket created: {} priority={} assignedTo={} (legacy auto-assign)",
+                    ticketNumber, priority, assignedAgent.getName());
+        }
 
         return toFullResponse(ticket);
+    }
+
+    /**
+     * Fan-out helper for "untriaged ticket" notifications.
+     * Skipped silently if there are no on-shift Ops Managers — the ticket
+     * stays in the triage queue and Admin can also see it.
+     */
+    private void notifyOpsManagers(String title, String body, UUID ticketId) {
+        List<User> ops = userRepository.findByRoleAndIsActiveTrue(UserRole.OPS_MANAGER);
+        if (ops.isEmpty()) {
+            log.warn("No active OPS_MANAGER to notify for ticket {}", ticketId);
+            return;
+        }
+        for (User mgr : ops) {
+            notificationService.notifyUser(mgr.getId(), title, body,
+                    NotificationType.TICKET_RAISED, ticketId);
+        }
     }
 
     private String serializePhotos(List<String> photoUrls) {
@@ -189,8 +232,10 @@ public class ServiceTicketService {
             return TicketStatus.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new BusinessException("INVALID_STATUS",
-                    "Unknown ticket status '" + value + "'. Valid values: OPEN, ACKNOWLEDGED, "
-                            + "ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED, CANCELLED.",
+                    "Unknown ticket status '" + value + "'. Valid values: NEW, OPEN, "
+                            + "OFFERED_CRM, ACKNOWLEDGED, ASSIGNED, ENGINEER_OFFERED, EN_ROUTE, "
+                            + "ON_SITE, IN_PROGRESS, WAITING_PART, WAITING_CUSTOMER_APPROVAL, "
+                            + "ESCALATED_BY_CUSTOMER, RESOLVED, REOPENED, CLOSED, CANCELLED.",
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -282,7 +327,8 @@ public class ServiceTicketService {
 
     private String generateTicketNumber() {
         Long seq = ticketRepository.getNextTicketSequence();
-        return String.format("TKT-%d-%04d", Year.now().getValue(), seq);
+        // FLOW.md C21 / PLAN.md F21 — runtime now matches the seeded demo prefix.
+        return String.format("AES-%d-%04d", Year.now().getValue(), seq);
     }
 
     void createActivity(ServiceTicket ticket, User user, ActivityType type, String description) {

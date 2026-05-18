@@ -17,9 +17,12 @@ const NO_CHROME_PREFIXES = [
   '/services/ticket',
   '/services/select',
   '/services/error-codes',
+  '/ops',
   '/crm',
+  '/engineer',
   '/admin',
   '/notifications',
+  '/quotes',
 ];
 
 /** /tickets is the list (chrome on); /tickets/{n} is detail (chrome off). */

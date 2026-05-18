@@ -6,7 +6,10 @@
   Goal:    short, scannable lines so the per-request log lines stand out and
            Hibernate/Security framework noise is silenced unless explicitly enabled.
 -->
-<configuration scan="true" scanPeriod="30 seconds">
+<!-- scan="true" is intentionally OFF: when the app runs from a Spring Boot
+     fat-jar logback can't file-watch inside the nested archive, which makes
+     it dump its full status table to the console at startup. -->
+<configuration>
 
     <property name="LOG_PATTERN_CONSOLE"
               value="%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%-15.15thread]) %magenta(%-32.32logger{0}) - %msg%n"/>

@@ -69,6 +69,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/dashboard/crm").hasAnyRole("CRM_AGENT", "ADMIN")
                 .requestMatchers("/api/v1/dashboard/escalation").hasAnyRole("SERVICE_MANAGER", "ADMIN")
 
+                // Workflow re-design — role-scoped surface area (PLAN.md §10).
+                // Phase 2/3 will add the controllers; route guards land here now so
+                // the moment they ship they are protected.
+                .requestMatchers("/api/v1/ops/**").hasAnyRole("OPS_MANAGER", "ADMIN")
+                .requestMatchers("/api/v1/engineer/**").hasAnyRole("SITE_ENGINEER", "ADMIN")
+                .requestMatchers("/api/v1/dashboard/ops").hasAnyRole("OPS_MANAGER", "ADMIN")
+                .requestMatchers("/api/v1/dashboard/engineer").hasAnyRole("SITE_ENGINEER", "ADMIN")
+
                 // Everything else requires authentication; ownership/role enforced at service layer.
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().permitAll()

@@ -6,5 +6,7 @@ public enum NotificationType {
     TICKET_ESCALATED,
     TICKET_RESOLVED,
     AMC_REMINDER,
-    INSTALLATION_UPDATE
+    INSTALLATION_UPDATE,
+    /** Quote / part-request / generic workflow notifications. */
+    GENERAL
 }

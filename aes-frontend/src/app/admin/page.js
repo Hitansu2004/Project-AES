@@ -12,10 +12,12 @@ import {
 
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-import { dashboard as dashboardApi, ticketActions } from '@/lib/api';
+import { dashboard as dashboardApi, ticketActions, parts as partsApi, quotes as quotesApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import useStompTopic from '@/hooks/useStompTopic';
 import PriorityBadge from '@/components/ui/PriorityBadge';
+import ShiftToggle from '@/components/ui/ShiftToggle';
+import { FileText, Package, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import styles from './admin.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -93,6 +95,9 @@ export default function AdminEscalationPage() {
   const [search, setSearch] = useState('');
   const [pulse, setPulse] = useState(0); // bumped to flash KPI cards on live update
   const [now, setNow] = useState(() => Date.now());
+  const [quoteQueue, setQuoteQueue] = useState([]);
+  const [partQueue, setPartQueue]   = useState([]);
+  const [busyId, setBusyId]         = useState(null);
 
   // Auth guard ----------------------------------------------------
   useEffect(() => {
@@ -107,8 +112,14 @@ export default function AdminEscalationPage() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
     try {
-      const res = await dashboardApi.escalation();
-      setData(res);
+      const [res, qq, pq] = await Promise.allSettled([
+        dashboardApi.escalation(),
+        quotesApi.queue().catch(() => []),
+        partsApi.queue().catch(() => []),
+      ]);
+      if (res.status === 'fulfilled') setData(res.value);
+      if (qq.status === 'fulfilled') setQuoteQueue(Array.isArray(qq.value) ? qq.value : []);
+      if (pq.status === 'fulfilled') setPartQueue(Array.isArray(pq.value) ? pq.value : []);
     } catch (err) {
       if (!silent) toast.error(err?.message || 'Could not refresh dashboard');
     } finally {
@@ -116,6 +127,42 @@ export default function AdminEscalationPage() {
       setRefreshing(false);
     }
   }, [toast]);
+
+  // Quote / part approval actions
+  const approveQuote = async (q) => {
+    setBusyId(q.id);
+    try { await quotesApi.approve(q.quoteNumber); toast.success(`Approved ${q.quoteNumber}`); fetchData(true); }
+    catch (err) { toast.error(err?.message || 'Could not approve'); }
+    finally { setBusyId(null); }
+  };
+  const rejectQuote = async (q) => {
+    const reason = prompt('Reason to send back to drafter?');
+    if (!reason) return;
+    setBusyId(q.id);
+    try { await quotesApi.reject(q.quoteNumber, reason); toast.success('Sent back'); fetchData(true); }
+    catch (err) { toast.error(err?.message || 'Could not reject'); }
+    finally { setBusyId(null); }
+  };
+  const sendQuote = async (q) => {
+    setBusyId(q.id);
+    try { await quotesApi.send(q.quoteNumber); toast.success('Sent to customer'); fetchData(true); }
+    catch (err) { toast.error(err?.message || 'Could not send'); }
+    finally { setBusyId(null); }
+  };
+  const approvePart = async (p) => {
+    setBusyId(p.id);
+    try { await partsApi.approve(p.id); toast.success('Part approved'); fetchData(true); }
+    catch (err) { toast.error(err?.message || 'Could not approve'); }
+    finally { setBusyId(null); }
+  };
+  const rejectPart = async (p) => {
+    const reason = prompt('Reason for rejection?');
+    if (!reason) return;
+    setBusyId(p.id);
+    try { await partsApi.reject(p.id, reason); toast.success('Rejected'); fetchData(true); }
+    catch (err) { toast.error(err?.message || 'Could not reject'); }
+    finally { setBusyId(null); }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -231,6 +278,7 @@ export default function AdminEscalationPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <ShiftToggle onShift={!!user?.onShift} compact onChange={() => fetchData(true)} />
           <button
             className={styles.iconBtn}
             onClick={() => fetchData()}
@@ -287,6 +335,27 @@ export default function AdminEscalationPage() {
             label="Resolved Today"
             value={data?.resolvedToday ?? 0}
             tone="success"
+          />
+        </section>
+
+        {/* Approval queues (Quotes + Parts) */}
+        <section className={styles.kpiRow} style={{ marginTop: 8 }}>
+          <ApprovalQueueTile
+            kind="quote"
+            count={quoteQueue.length}
+            items={quoteQueue}
+            busyId={busyId}
+            onApprove={approveQuote}
+            onReject={rejectQuote}
+            onSend={sendQuote}
+          />
+          <ApprovalQueueTile
+            kind="part"
+            count={partQueue.length}
+            items={partQueue}
+            busyId={busyId}
+            onApprove={approvePart}
+            onReject={rejectPart}
           />
         </section>
 
@@ -597,6 +666,87 @@ function TeamCard({ member, now }) {
         )}
       </div>
     </motion.div>
+  );
+}
+
+/* ─── Approval Queue Tile ───────────────────────────────── */
+function ApprovalQueueTile({ kind, count, items, busyId, onApprove, onReject, onSend }) {
+  const [open, setOpen] = useState(false);
+  const isQuote = kind === 'quote';
+  const Icon = isQuote ? FileText : Package;
+  const title = isQuote ? 'Quote approvals' : 'Part approvals';
+  const tone = count > 0 ? 'warn' : 'success';
+
+  return (
+    <div className={`${styles.kpi} ${styles[`kpi_${tone}`]}`}
+         style={{ gridColumn: 'span 2', minHeight: 110, flexDirection: 'column', alignItems: 'stretch', padding: 14 }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <Icon size={20} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>{title}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--on-surface)' }}>{count}</div>
+        </div>
+        {count > 0 && (
+          <button onClick={() => setOpen(!open)}
+                  style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid var(--outline-variant)',
+                           background: 'var(--surface-container-lowest)', color: 'var(--on-surface)',
+                           fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            {open ? 'Hide' : 'Review'}
+          </button>
+        )}
+      </header>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto', paddingTop: 6 }}>
+          {items.length === 0 && (
+            <div style={{ padding: 12, color: 'var(--on-surface-variant)', fontSize: 13 }}>
+              Nothing waiting.
+            </div>
+          )}
+          {items.map((it) => (
+            <div key={it.id}
+                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10,
+                          background: 'var(--surface-container-lowest)',
+                          border: '1px solid var(--outline-variant)', borderRadius: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>
+                  {isQuote
+                    ? `${it.quoteNumber} v${it.version} — ${it.installNumber || it.ticketNumber || ''}`
+                    : `${it.partName} ×${it.quantity} — ${it.ticketNumber}`}
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                  {isQuote
+                    ? <>₹{Number(it.total || 0).toLocaleString('en-IN')} · {it.requiredApprovalBand} · by {it.preparedByName}</>
+                    : <>₹{Number(it.totalCost || 0).toLocaleString('en-IN')} · {it.requiredApprovalBand} · {it.urgency || 'NORMAL'} · by {it.requestedByName}</>}
+                </div>
+              </div>
+              <button onClick={() => onReject(it)} disabled={busyId === it.id}
+                      title="Reject"
+                      style={{ width: 32, height: 32, borderRadius: 999, border: '1px solid var(--outline-variant)',
+                               background: 'var(--surface-container-lowest)', cursor: 'pointer',
+                               color: 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ThumbsDown size={14} />
+              </button>
+              <button onClick={() => onApprove(it)} disabled={busyId === it.id}
+                      title="Approve"
+                      style={{ width: 32, height: 32, borderRadius: 999, border: 'none',
+                               background: 'var(--success)', color: '#fff', cursor: 'pointer',
+                               display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ThumbsUp size={14} />
+              </button>
+              {isQuote && it.status === 'APPROVED' && onSend && (
+                <button onClick={() => onSend(it)} disabled={busyId === it.id}
+                        title="Send to customer"
+                        style={{ width: 32, height: 32, borderRadius: 999, border: 'none',
+                                 background: 'var(--primary)', color: '#fff', cursor: 'pointer',
+                                 display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Send size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 import {
   AlertCircle, Camera, Phone, Clock, History, Snowflake, MapPin,
   Star, CalendarDays, MoreHorizontal, X, CheckCircle2, Send,
+  ArrowUp, RefreshCw, RotateCcw, FileText, ThumbsUp, ThumbsDown,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
-import { tickets as ticketsApi, ticketActions } from '@/lib/api';
+import { tickets as ticketsApi, ticketActions, quotes as quotesApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import AppTopBar from '@/components/ui/AppTopBar';
 import PriorityBadge from '@/components/ui/PriorityBadge';
@@ -74,25 +76,34 @@ export default function TicketDetailPage({ params }) {
   const toast = useToast();
 
   const [ticket, setTicket] = useState(null);
+  const [ticketQuotes, setTicketQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showRate, setShowRate] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [showEscalate, setShowEscalate]     = useState(false);
+  const [showReopen, setShowReopen]         = useState(false);
+  const [openQuote, setOpenQuote]           = useState(null);
 
-  // Auth guard
+  // Auth guard — every authenticated role can open a ticket detail
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace(`/login?next=/tickets/${ticketNumber}`); return; }
-    if (user.role !== 'CUSTOMER') router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router, ticketNumber]);
 
   // Fetch + 30s soft refresh while open
   useEffect(() => {
-    if (!user || user.role !== 'CUSTOMER') return;
+    if (!user) return;
     let cancelled = false;
     const fetchTicket = async () => {
       try {
         const data = await ticketsApi.get(ticketNumber);
         if (cancelled) return;
         setTicket(data);
+        if (data?.id) {
+          quotesApi.forTicket(data.id)
+            .then((qs) => { if (!cancelled) setTicketQuotes(Array.isArray(qs) ? qs : []); })
+            .catch(() => {});
+        }
       } catch {
         if (!cancelled) toast.error('Could not load ticket.');
       } finally {
@@ -107,7 +118,7 @@ export default function TicketDetailPage({ params }) {
 
   // Live updates — refresh on any ticket-level WS event and toast meaningful ones
   useStompTopic(
-    user?.role === 'CUSTOMER' ? `/topic/tickets/${ticketNumber}` : null,
+    user ? `/topic/tickets/${ticketNumber}` : null,
     (msg) => {
       const text = TICKET_EVENT_TEXT[msg?.event];
       if (text) {
@@ -162,6 +173,51 @@ export default function TicketDetailPage({ params }) {
       toast.error(err.message || 'Could not submit rating.');
     }
   };
+
+  const reload = async () => {
+    try {
+      const fresh = await ticketsApi.get(ticket.ticketNumber);
+      setTicket(fresh);
+      if (fresh?.id) {
+        const qs = await quotesApi.forTicket(fresh.id).catch(() => []);
+        setTicketQuotes(Array.isArray(qs) ? qs : []);
+      }
+    } catch {}
+  };
+  const handleEscalate = async ({ reason, details }) => {
+    try {
+      await ticketActions.customerEscalate(ticket.ticketNumber, { reason, details });
+      toast.success('Escalation raised. Service Manager will be in touch.');
+      setShowEscalate(false); reload();
+    } catch (e) { toast.error(e?.message || 'Could not escalate'); }
+  };
+  const handleReschedule = async ({ scheduledDate, scheduledSlot, reason }) => {
+    try {
+      await ticketActions.reschedule(ticket.ticketNumber, { scheduledDate, scheduledSlot, reason });
+      toast.success('Visit rescheduled.');
+      setShowReschedule(false); reload();
+    } catch (e) { toast.error(e?.message || 'Could not reschedule'); }
+  };
+  const handleReopen = async ({ reason }) => {
+    try {
+      await ticketActions.reopen(ticket.ticketNumber, { reason });
+      toast.success('Ticket reopened. CRM is on it.');
+      setShowReopen(false); reload();
+    } catch (e) { toast.error(e?.message || 'Could not reopen'); }
+  };
+  const handleQuoteDecision = async (decision, comment) => {
+    if (!openQuote) return;
+    try {
+      await quotesApi.customerDecision(openQuote.quoteNumber, { decision, comment });
+      toast.success(`Quote ${decision.toLowerCase()}ed.`);
+      setOpenQuote(null); reload();
+    } catch (e) { toast.error(e?.message || 'Could not submit decision'); }
+  };
+
+  const isCustomer = user.role === 'CUSTOMER';
+  const canReopen  = isCustomer && ticket.status === 'CLOSED';
+  const canRequest = isCustomer && ['OPEN','ACKNOWLEDGED','ASSIGNED','EN_ROUTE','ON_SITE','IN_PROGRESS'].includes(ticket.status);
+  const pendingQuote = (ticketQuotes || []).find((q) => q.status === 'SENT_TO_CUSTOMER');
 
   return (
     <div className={styles.shell}>
@@ -294,15 +350,46 @@ export default function TicketDetailPage({ params }) {
           </motion.section>
         </div>
 
-        {/* ─── Action buttons ─── */}
-        {!resolved && (
+        {/* ─── Pending quote panel ─── */}
+        {pendingQuote && isCustomer && (
+          <motion.section className={styles.card}
+                          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            <h3 className={styles.cardTitle}><FileText size={16} /> Estimate awaiting your decision</h3>
+            <p style={{ marginTop: -4, marginBottom: 12, fontSize: 13, color: 'var(--on-surface-variant)' }}>
+              We've prepared a quote of <strong>₹{Number(pendingQuote.total || 0).toLocaleString('en-IN')}</strong>.
+              Tap below to review and accept, negotiate, or reject.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary btn-full" onClick={() => setOpenQuote(pendingQuote)}>
+                Review estimate
+              </button>
+            </div>
+          </motion.section>
+        )}
+
+        {/* ─── Customer action buttons ─── */}
+        {!resolved && isCustomer && canRequest && (
           <div className={styles.actionRow}>
-            <button type="button" className="btn btn-outline btn-full">
-              <Camera size={16} /> Add Note / Photo
+            <button type="button" className="btn btn-outline btn-full"
+                    onClick={() => setShowReschedule(true)}>
+              <CalendarDays size={16} /> Reschedule visit
+            </button>
+            <button type="button" className="btn btn-soft btn-full"
+                    onClick={() => setShowEscalate(true)}>
+              <ArrowUp size={16} /> Escalate to manager
             </button>
             <a href="tel:+914023540000" className="btn btn-danger btn-full">
               <Phone size={16} /> Emergency? Call us
             </a>
+          </div>
+        )}
+
+        {/* ─── Closed-ticket: reopen ─── */}
+        {canReopen && (
+          <div className={styles.actionRow}>
+            <button type="button" className="btn btn-primary btn-full" onClick={() => setShowReopen(true)}>
+              <RotateCcw size={16} /> Re-open this ticket
+            </button>
           </div>
         )}
 
@@ -344,6 +431,18 @@ export default function TicketDetailPage({ params }) {
       {showRate && (
         <RatingSheet ticket={ticket} onClose={() => setShowRate(false)} onSubmit={handleRate} />
       )}
+      {showReschedule && (
+        <RescheduleSheet ticket={ticket} onClose={() => setShowReschedule(false)} onSubmit={handleReschedule} />
+      )}
+      {showEscalate && (
+        <EscalateSheet ticket={ticket} onClose={() => setShowEscalate(false)} onSubmit={handleEscalate} />
+      )}
+      {showReopen && (
+        <ReopenSheet ticket={ticket} onClose={() => setShowReopen(false)} onSubmit={handleReopen} />
+      )}
+      {openQuote && (
+        <QuoteReviewSheet quote={openQuote} onClose={() => setOpenQuote(null)} onSubmit={handleQuoteDecision} />
+      )}
     </div>
   );
 }
@@ -381,6 +480,222 @@ function ActivityTimeline({ activities, createdAt }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function SheetFrame({ children, onClose }) {
+  return (
+    <motion.div
+      className={styles.sheetBackdrop}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className={styles.sheet}
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.sheetHandle} />
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function EscalateSheet({ ticket, onClose, onSubmit }) {
+  const [reason, setReason] = useState('');
+  const [details, setDetails] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!reason.trim()) return;
+    setSaving(true);
+    await onSubmit({ reason: reason.trim(), details: details.trim() || null });
+    setSaving(false);
+  };
+  return (
+    <SheetFrame onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>Escalate {ticket.ticketNumber}</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn}><X size={18} /></button>
+      </div>
+      <p className={styles.sheetSub}>
+        A Service Manager will be alerted. Use this when CRM hasn't responded or the issue is urgent.
+      </p>
+      <label className="input-group">
+        <span>What's wrong?*</span>
+        <input className="input" placeholder="No response for 30 min, urgent business need…"
+               value={reason} onChange={(e) => setReason(e.target.value)} />
+      </label>
+      <label className="input-group">
+        <span>Anything else (optional)</span>
+        <textarea className="input textarea" rows={3} maxLength={500}
+                  value={details} onChange={(e) => setDetails(e.target.value)} />
+      </label>
+      <button type="button" className="btn btn-primary btn-full btn-lg"
+              disabled={!reason.trim() || saving} onClick={submit}>
+        {saving ? <span className="spinner spinner-sm" /> : 'Escalate'}
+      </button>
+    </SheetFrame>
+  );
+}
+
+function RescheduleSheet({ ticket, onClose, onSubmit }) {
+  const [date, setDate] = useState(ticket.scheduledDate || '');
+  const [slot, setSlot] = useState(ticket.scheduledSlot || 'AFTERNOON');
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!date) return;
+    setSaving(true);
+    await onSubmit({ scheduledDate: date, scheduledSlot: slot, reason: reason.trim() || null });
+    setSaving(false);
+  };
+  return (
+    <SheetFrame onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>Reschedule visit</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn}><X size={18} /></button>
+      </div>
+      <p className={styles.sheetSub}>Pick a date and slot that works for you.</p>
+      <label className="input-group">
+        <span>New date*</span>
+        <input className="input" type="date" value={date}
+               min={new Date().toISOString().slice(0, 10)}
+               onChange={(e) => setDate(e.target.value)} />
+      </label>
+      <label className="input-group">
+        <span>Slot</span>
+        <select className="input" value={slot} onChange={(e) => setSlot(e.target.value)}>
+          <option value="MORNING">Morning (9 AM – 12 PM)</option>
+          <option value="AFTERNOON">Afternoon (12 PM – 3 PM)</option>
+          <option value="EVENING">Evening (3 PM – 6 PM)</option>
+        </select>
+      </label>
+      <label className="input-group">
+        <span>Reason (optional)</span>
+        <input className="input" placeholder="Will be out, prefer weekend, etc."
+               value={reason} onChange={(e) => setReason(e.target.value)} />
+      </label>
+      <button type="button" className="btn btn-primary btn-full btn-lg"
+              disabled={!date || saving} onClick={submit}>
+        {saving ? <span className="spinner spinner-sm" /> : 'Confirm reschedule'}
+      </button>
+    </SheetFrame>
+  );
+}
+
+function ReopenSheet({ ticket, onClose, onSubmit }) {
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    if (!reason.trim()) return;
+    setSaving(true);
+    await onSubmit({ reason: reason.trim() });
+    setSaving(false);
+  };
+  return (
+    <SheetFrame onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>Re-open {ticket.ticketNumber}</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn}><X size={18} /></button>
+      </div>
+      <p className={styles.sheetSub}>
+        Tell us what's still wrong. We'll re-open the ticket and assign it to a CRM right away.
+      </p>
+      <label className="input-group">
+        <span>What's still broken?*</span>
+        <textarea className="input textarea" rows={4} value={reason}
+                  onChange={(e) => setReason(e.target.value)} maxLength={1000}
+                  placeholder="Same issue came back yesterday, etc." />
+      </label>
+      <button type="button" className="btn btn-primary btn-full btn-lg"
+              disabled={!reason.trim() || saving} onClick={submit}>
+        {saving ? <span className="spinner spinner-sm" /> : 'Re-open ticket'}
+      </button>
+    </SheetFrame>
+  );
+}
+
+function QuoteReviewSheet({ quote, onClose, onSubmit }) {
+  const [decision, setDecision] = useState(null);
+  const [comment, setComment] = useState('');
+  const [saving, setSaving] = useState(false);
+  const submit = async (d) => {
+    if (!d) return;
+    setSaving(true);
+    await onSubmit(d, comment.trim() || null);
+    setSaving(false);
+  };
+
+  return (
+    <SheetFrame onClose={onClose}>
+      <div className={styles.sheetHeader}>
+        <h3>{quote.quoteNumber} · ₹{Number(quote.total || 0).toLocaleString('en-IN')}</h3>
+        <button type="button" onClick={onClose} className={styles.iconBtn}><X size={18} /></button>
+      </div>
+      <p className={styles.sheetSub}>
+        Estimate prepared by {quote.preparedByName || 'AES'} on{' '}
+        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('en-IN') : '—'}.
+      </p>
+
+      <div style={{ border: '1px solid var(--outline-variant)', borderRadius: 12, padding: '8px 0', marginBottom: 12 }}>
+        {(quote.items || []).map((it, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px',
+                                 borderBottom: i === quote.items.length - 1 ? 'none' : '1px solid var(--outline-variant)' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{it.description}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)' }}>
+                {it.quantity} × ₹{Number(it.unitPrice || 0).toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>
+              ₹{Number(it.lineTotal || (it.quantity * it.unitPrice) || 0).toLocaleString('en-IN')}
+            </div>
+          </div>
+        ))}
+        {(quote.gst != null || quote.discount != null) && (
+          <div style={{ padding: '8px 14px', fontSize: 12, color: 'var(--on-surface-variant)' }}>
+            Subtotal ₹{Number(quote.subtotal || 0).toLocaleString('en-IN')}
+            {quote.discount > 0 && <> · Discount −₹{Number(quote.discount).toLocaleString('en-IN')}</>}
+            {quote.gst > 0 && <> · GST ₹{Number(quote.gst).toLocaleString('en-IN')}</>}
+          </div>
+        )}
+        <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between',
+                       borderTop: '1px solid var(--outline-variant)', background: 'var(--surface-container-low)' }}>
+          <strong>Total</strong>
+          <strong>₹{Number(quote.total || 0).toLocaleString('en-IN')}</strong>
+        </div>
+      </div>
+
+      {quote.validUntil && (
+        <p style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginBottom: 12 }}>
+          Valid until {new Date(quote.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.
+        </p>
+      )}
+
+      <label className="input-group">
+        <span>Comment (required for negotiate / reject)</span>
+        <textarea className="input textarea" rows={3} maxLength={500}
+                  value={comment} onChange={(e) => setComment(e.target.value)}
+                  placeholder="What you'd like adjusted, or why you're declining" />
+      </label>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+        <button type="button" className="btn btn-outline" disabled={saving}
+                onClick={() => submit('REJECT')}>
+          <ThumbsDown size={14} /> Reject
+        </button>
+        <button type="button" className="btn btn-soft" disabled={saving}
+                onClick={() => submit('NEGOTIATE')}>
+          <MessageSquare size={14} /> Negotiate
+        </button>
+        <button type="button" className="btn btn-primary" disabled={saving}
+                onClick={() => submit('ACCEPT')}>
+          <ThumbsUp size={14} /> Accept
+        </button>
+      </div>
+    </SheetFrame>
   );
 }
 
