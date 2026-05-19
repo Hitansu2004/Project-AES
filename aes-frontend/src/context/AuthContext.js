@@ -75,14 +75,6 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const staffLogin = useCallback(async (phoneNumber, password) => {
-    const data = await authApi.staffLogin(phoneNumber, password);
-    persistTokens(data.accessToken, data.refreshToken);
-    setUser(data.user || null);
-    reconnectStompClient();
-    return data;
-  }, []);
-
   const logout = useCallback(async () => {
     if (typeof window === 'undefined') return;
     try {
@@ -96,7 +88,7 @@ export function AuthProvider({ children }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, fetchUser, sendOtp, loginWithOtp, staffLogin, logout }}>
+    <AuthContext.Provider value={{ user, loading, fetchUser, sendOtp, loginWithOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

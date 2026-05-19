@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Lock, ArrowRight, Sparkles, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import OtpInput from '@/components/ui/OtpInput';
@@ -11,7 +11,7 @@ import Logo from '@/components/ui/Logo';
 import styles from './login.module.css';
 
 const PHONE_REGEX = /^[6-9]\d{9}$/;
-const OTP_TTL_SECONDS = 600; // 10-minute validity per spec
+const OTP_TTL_SECONDS = 600;
 const RESEND_COOLDOWN = 60;
 
 export default function LoginPage() {
@@ -25,16 +25,13 @@ export default function LoginPage() {
 function LoginInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const { user, loading: authLoading, sendOtp, loginWithOtp, staffLogin } = useAuth();
+  const { user, loading: authLoading, sendOtp, loginWithOtp } = useAuth();
   const toast = useToast();
 
-  const [mode, setMode] = useState('customer');
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [demoOtp, setDemoOtp] = useState('');
-  const [staffPhone, setStaffPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [otpExpiresIn, setOtpExpiresIn] = useState(0);
@@ -47,7 +44,6 @@ function LoginInner() {
     router.replace(next);
   }, [user, authLoading, router, search]);
 
-  // Tick OTP and resend countdowns
   useEffect(() => {
     if (otpExpiresIn <= 0) return;
     const t = setInterval(() => setOtpExpiresIn((s) => Math.max(0, s - 1)), 1000);
@@ -100,32 +96,12 @@ function LoginInner() {
     try {
       const data = await loginWithOtp(`+91${phone}`, code);
       const next = search.get('next') || defaultRouteForRole(data.user?.role);
-      toast.success(`Welcome back${data.user?.name ? ', ' + data.user.name.split(' ')[0] : ''}.`);
+      const firstName = data.user?.name ? data.user.name.split(' ')[0] : '';
+      toast.success(`Welcome back${firstName ? ', ' + firstName : ''}.`);
       router.replace(next);
     } catch (err) {
       setError(err.message || 'OTP verification failed.');
       setOtp('');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleStaffLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!PHONE_REGEX.test(staffPhone)) {
-      setError('Enter a valid 10-digit phone number.');
-      return;
-    }
-    if (!password) { setError('Enter your password.'); return; }
-    setBusy(true);
-    try {
-      const data = await staffLogin(`+91${staffPhone}`, password);
-      const next = search.get('next') || defaultRouteForRole(data.user?.role);
-      toast.success(`Welcome, ${data.user?.name || 'Agent'}.`);
-      router.replace(next);
-    } catch (err) {
-      setError(err.message || 'Login failed.');
     } finally {
       setBusy(false);
     }
@@ -141,7 +117,6 @@ function LoginInner() {
 
   return (
     <div className={styles.page}>
-      {/* decorative gradient blob */}
       <div className={styles.blob} aria-hidden="true" />
 
       <div className={styles.shell}>
@@ -162,34 +137,8 @@ function LoginInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <div className={styles.tabs} role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'customer'}
-              className={`${styles.tab} ${mode === 'customer' ? styles.tabActive : ''}`}
-              onClick={() => { setMode('customer'); setStep('phone'); setError(''); }}
-            >
-              Customer
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'staff'}
-              className={`${styles.tab} ${mode === 'staff' ? styles.tabActive : ''}`}
-              onClick={() => { setMode('staff'); setError(''); }}
-            >
-              Staff
-            </button>
-            <span
-              className={styles.tabIndicator}
-              style={{ transform: `translateX(${mode === 'staff' ? '100%' : '0%'})` }}
-              aria-hidden="true"
-            />
-          </div>
-
           <AnimatePresence mode="wait">
-            {mode === 'customer' && step === 'phone' && (
+            {step === 'phone' && (
               <motion.form
                 key="phone"
                 onSubmit={handleSendOtp}
@@ -200,8 +149,10 @@ function LoginInner() {
                 transition={{ duration: 0.18 }}
               >
                 <div className={styles.heading}>
-                  <h2 className={styles.h2}>Welcome back</h2>
-                  <p className={styles.h2sub}>Sign in with your mobile number.</p>
+                  <h2 className={styles.h2}>Sign in</h2>
+                  <p className={styles.h2sub}>
+                    Customers and Arial staff sign in the same way — with your mobile number.
+                  </p>
                 </div>
 
                 <div className="input-group">
@@ -235,13 +186,18 @@ function LoginInner() {
                   {busy ? <span className="spinner spinner-sm" /> : <>Send OTP <ArrowRight size={18} /></>}
                 </button>
 
+                <div className={styles.secureNote}>
+                  <ShieldCheck size={14} />
+                  <span>Secure, password-free login. We send a one-time code to your phone.</span>
+                </div>
+
                 <p className={styles.helper}>
                   By continuing you agree to our service terms. SMS rates may apply.
                 </p>
               </motion.form>
             )}
 
-            {mode === 'customer' && step === 'otp' && (
+            {step === 'otp' && (
               <motion.form
                 key="otp"
                 onSubmit={(e) => { e.preventDefault(); handleVerify(); }}
@@ -305,70 +261,6 @@ function LoginInner() {
                   type="submit"
                 >
                   {busy ? <span className="spinner spinner-sm" /> : <>Verify &amp; Sign In <ArrowRight size={18} /></>}
-                </button>
-              </motion.form>
-            )}
-
-            {mode === 'staff' && (
-              <motion.form
-                key="staff"
-                onSubmit={handleStaffLogin}
-                className={styles.form}
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.18 }}
-              >
-                <div className={styles.heading}>
-                  <h2 className={styles.h2}>Staff sign in</h2>
-                  <p className={styles.h2sub}>For CRM agents, managers and admins.</p>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="staff-phone">Phone</label>
-                  <div className={styles.phoneRow}>
-                    <span className={styles.flag} aria-hidden="true">
-                      <Phone size={14} /> +91
-                    </span>
-                    <input
-                      id="staff-phone"
-                      className={`input ${styles.phoneInput}`}
-                      type="tel"
-                      inputMode="numeric"
-                      placeholder="98000 00001"
-                      value={staffPhone}
-                      onChange={(e) => setStaffPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      maxLength={10}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="staff-password">Password</label>
-                  <div className={styles.passwordRow}>
-                    <Lock size={14} className={styles.passwordIcon} />
-                    <input
-                      id="staff-password"
-                      className={`input ${styles.passwordInput}`}
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {error && <div className={styles.error}>{error}</div>}
-
-                <button
-                  className="btn btn-secondary btn-full btn-lg"
-                  disabled={busy}
-                  type="submit"
-                >
-                  {busy ? <span className="spinner spinner-sm" /> : <>Sign in <ArrowRight size={18} /></>}
                 </button>
               </motion.form>
             )}

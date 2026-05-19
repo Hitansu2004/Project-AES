@@ -12,12 +12,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Auth Controller — handles all authentication endpoints.
+ * Auth Controller — unified phone+OTP authentication for all roles.
+ *
+ * <p>Customers, ops managers, CRM agents, engineers, service managers and
+ * admins all sign in through {@code /verify-otp}. There is no separate staff
+ * password endpoint — staff users already exist in {@code users} with their
+ * role, and the OTP flow resolves them automatically.</p>
  *
  * Per Section 4.1 (lines 489-537):
- *   POST /api/v1/auth/send-otp     — Public, send OTP to customer phone
+ *   POST /api/v1/auth/send-otp     — Public, send OTP to any phone number
  *   POST /api/v1/auth/verify-otp   — Public, verify OTP and return JWT tokens
- *   POST /api/v1/auth/staff-login  — Public, staff password login
  *   POST /api/v1/auth/refresh      — Public, refresh access token
  *   POST /api/v1/auth/logout       — Auth required, invalidate refresh token
  */
@@ -31,7 +35,7 @@ public class AuthController {
 
     /**
      * POST /api/v1/auth/send-otp
-     * Send OTP to customer phone number (lines 493-504).
+     * Send OTP to a phone number (any role). Works for staff and customers alike.
      */
     @PostMapping("/send-otp")
     public ResponseEntity<ApiResponse<OtpResponse>> sendOtp(@Valid @RequestBody SendOtpRequest request) {
@@ -42,23 +46,12 @@ public class AuthController {
 
     /**
      * POST /api/v1/auth/verify-otp
-     * Verify OTP and return JWT tokens (lines 506-518).
+     * Verify OTP and return JWT tokens. Resolves the user (any role) by phone number.
      */
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<AuthResponse>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         log.info("OTP verification for phone: {}", request.getPhoneNumber().substring(0, 6) + "****");
         AuthResponse response = authService.verifyOtp(request.getPhoneNumber(), request.getOtp());
-        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
-    }
-
-    /**
-     * POST /api/v1/auth/staff-login
-     * Staff password-based login (lines 520-525).
-     */
-    @PostMapping("/staff-login")
-    public ResponseEntity<ApiResponse<AuthResponse>> staffLogin(@Valid @RequestBody StaffLoginRequest request) {
-        log.info("Staff login attempt for phone: {}", request.getPhoneNumber().substring(0, 6) + "****");
-        AuthResponse response = authService.staffLogin(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
     }
 

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 import styles from './Header.module.css';
 
 const navLinks = {
@@ -13,9 +14,19 @@ const navLinks = {
     { href: '/tickets', label: 'My Tickets' },
     { href: '/account', label: 'Account' },
   ],
+  OPS_MANAGER: [
+    { href: '/ops', label: 'Triage' },
+    { href: '/tickets', label: 'All Tickets' },
+    { href: '/account', label: 'Account' },
+  ],
   CRM_AGENT: [
     { href: '/crm', label: 'My Inbox' },
-    { href: '/crm/all', label: 'All Tickets' },
+    { href: '/tickets', label: 'All Tickets' },
+    { href: '/account', label: 'Account' },
+  ],
+  SITE_ENGINEER: [
+    { href: '/engineer', label: 'My Jobs' },
+    { href: '/tickets', label: 'All Tickets' },
     { href: '/account', label: 'Account' },
   ],
   SERVICE_MANAGER: [
@@ -40,7 +51,9 @@ export default function Header() {
   const links = navLinks[user.role] || navLinks.CUSTOMER;
   const roleLabel = {
     CUSTOMER: '',
+    OPS_MANAGER: 'Ops Triage',
     CRM_AGENT: 'CRM Dashboard — Level 1',
+    SITE_ENGINEER: 'Field Engineer',
     SERVICE_MANAGER: 'Escalation Management',
     ADMIN: 'Admin Console',
   }[user.role] || '';
@@ -71,6 +84,7 @@ export default function Header() {
         </nav>
 
         <div className={styles.right}>
+          <ThemeToggle />
           <Link href="/notifications" className={styles.bellBtn} aria-label="Notifications">
             <Bell size={18} />
             {unread > 0 && (

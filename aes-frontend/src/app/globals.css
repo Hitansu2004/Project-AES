@@ -4,10 +4,12 @@
    Tokens mirror the Stitch reference DESIGN.md.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@500;600;700;800&display=swap');
 
 /* ─── CSS Custom Properties (Design Tokens) ─────────────── */
 :root {
+  color-scheme: light;
+
   /* Primary navy palette */
   --primary: #003366;
   --primary-dark: #001e40;
@@ -32,6 +34,7 @@
 
   /* Surface scale */
   --surface: #f8f9ff;
+  --background: #f8f9ff;       /* alias used by some pages */
   --surface-dim: #cddbf0;
   --surface-container-lowest: #ffffff;
   --surface-container-low: #eef4ff;
@@ -40,6 +43,7 @@
   --surface-container-highest: #d6e4f9;
   --on-surface: #0f1c2c;
   --on-surface-variant: #43474f;
+  --on-surface-strong: #0a1320;
 
   /* Outlines */
   --outline: #737780;
@@ -72,8 +76,19 @@
   --sla-warning: #FF9500;
   --sla-critical: #FF3B30;
 
+  /* AMC banner uses literal colors — re-mapped per theme */
+  --amc-card-bg: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  --amc-card-border: #e9d5ff;
+  --header-glass: rgba(248, 249, 255, 0.92);
+
+  /* Faint blueprint grid for page backgrounds — gives engineering texture
+     without ever feeling busy. Tints itself per theme via the variable. */
+  --blueprint-line: rgba(0, 30, 64, 0.030);
+  --blueprint-line-strong: rgba(0, 30, 64, 0.050);
+
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Spacing — 4px baseline */
   --space-1: 4px;
@@ -141,6 +156,107 @@
   }
 }
 
+/* ─── Dark mode ──────────────────────────────────────────── */
+/*
+ * Theme is applied via `data-theme="dark"` on the <html> element by the
+ * ThemeProvider — set BEFORE first paint by an inline script in <head> so
+ * the user never sees a white flash. Brand colors (primary navy, accent
+ * teal, status badges) stay identical for instant recognition; only the
+ * surfaces, on-surface contrast, outlines and shadows change.
+ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --primary: #1f477b;
+  --primary-dark: #001e40;
+  --primary-light: #4a78b4;
+  --primary-container: #0e2647;
+
+  --secondary: #5bcaff;
+  --secondary-strong: #87daff;
+  --secondary-soft: rgba(91, 202, 255, 0.18);
+  --secondary-light: #b3e6ff;
+
+  --tertiary: #c89dff;
+  --tertiary-strong: #d9b8ff;
+  --tertiary-soft: rgba(193, 125, 255, 0.18);
+
+  /* Surfaces — true dark, gentle vertical lift between layers */
+  --surface: #0b1220;
+  --background: #0b1220;
+  --surface-dim: #060b15;
+  --surface-container-lowest: #11182a;
+  --surface-container-low: #161e34;
+  --surface-container: #1c2540;
+  --surface-container-high: #232e4e;
+  --surface-container-highest: #2a385d;
+
+  --on-surface: #e6ebf7;
+  --on-surface-variant: #a8b2c8;
+  --on-surface-strong: #f3f6fd;
+
+  --outline: #6b7591;
+  --outline-variant: #2f3a5a;
+  --border-light: #243055;
+
+  /* Status — slightly desaturated for dark-mode contrast */
+  --error: #ff6b6b;
+  --error-container: #4a1414;
+  --success: #4ade80;
+  --success-light: rgba(74, 222, 128, 0.16);
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.18);
+  --info: #5bcaff;
+  --info-light: rgba(91, 202, 255, 0.14);
+
+  --badge-amc: #d9b8ff;
+  --badge-amc-bg: rgba(193, 125, 255, 0.18);
+  --badge-warranty: #87daff;
+  --badge-warranty-bg: rgba(91, 202, 255, 0.16);
+  --badge-paid: #ff8b95;
+  --badge-paid-bg: rgba(230, 57, 70, 0.18);
+  --badge-escalated: #fbbf24;
+  --badge-escalated-bg: rgba(245, 158, 11, 0.18);
+  --badge-resolved: #4ade80;
+  --badge-resolved-bg: rgba(34, 197, 94, 0.16);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.55);
+  --shadow:    0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+  --shadow-glow: 0 8px 24px rgba(91, 202, 255, 0.25);
+
+  --amc-card-bg: linear-gradient(135deg, rgba(193, 125, 255, 0.12) 0%, rgba(193, 125, 255, 0.05) 100%);
+  --amc-card-border: rgba(193, 125, 255, 0.30);
+  --header-glass: rgba(11, 18, 32, 0.88);
+
+  --blueprint-line: rgba(91, 202, 255, 0.045);
+  --blueprint-line-strong: rgba(91, 202, 255, 0.080);
+}
+
+/* ─── Page backgrounds ───────────────────────────────────
+ * Apply `.bg-blueprint` to a full-viewport shell to get a faint
+ * engineering grid behind everything. Pure decoration — sits in a
+ * fixed pseudo-element so it never inherits scroll or transforms.
+ */
+.bg-blueprint {
+  position: relative;
+}
+.bg-blueprint::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--blueprint-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--blueprint-line) 1px, transparent 1px),
+    radial-gradient(circle at 100% 0%, var(--blueprint-line-strong) 0%, transparent 35%);
+  background-size: 32px 32px, 32px 32px, 100% 100%;
+}
+.bg-blueprint > * { position: relative; z-index: 1; }
+
 /* ─── Reset ──────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -162,6 +278,7 @@ body {
   line-height: 1.5;
   min-height: 100dvh;
   overscroll-behavior-y: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -323,12 +440,17 @@ input[type="number"] { -moz-appearance: textfield; }
   line-height: 1.5;
 }
 
-.select {
+.select,
+select.input {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737780' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
   padding-right: 40px;
+}
+[data-theme="dark"] .select,
+[data-theme="dark"] select.input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a8b2c8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 /* ─── Cards ──────────────────────────────────────────────── */

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronRight, ArrowRight, Phone, Sparkles, X, Check,
+  ArrowRight, Phone, X, Check,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import {
@@ -62,133 +62,140 @@ export default function ProductsCatalogPage() {
 
   return (
     <div className={styles.shell}>
-      <AppTopBar title="Our Products" showBack />
+      <AppTopBar title="Our Products" showBack width="content" />
 
-      {/* Hero */}
-      <section className={styles.hero}>
-        <div className={styles.heroText}>
-          <span className={styles.eyebrow}>
-            <Sparkles size={12} /> Authorised dealer
-          </span>
-          <h1 className={styles.heroTitle}>
-            Cooling &amp; air-distribution<br />for every kind of space.
-          </h1>
-          <p className={styles.heroSub}>
-            We design, supply, install and maintain Mitsubishi Electric, LG,
-            Hisense, Hitachi and O&apos;General systems across residential,
-            commercial, industrial and institutional projects since 2006.
-          </p>
-          <div className={styles.heroCtas}>
-            <Link href="/services/installation" className="btn btn-primary">
-              Plan an installation <ArrowRight size={16} />
-            </Link>
-            <a href="tel:+914066131555" className={styles.heroCall}>
-              <Phone size={14} /> +91 40-6613-1555
-            </a>
+      <main className={styles.main}>
+        {/* Hero */}
+        <section className={styles.hero}>
+          <div className={styles.heroText}>
+            <span className={styles.dealerBadge}>
+              <Check size={14} strokeWidth={3} /> Authorised dealer
+            </span>
+            <h1 className={styles.heroTitle}>
+              Cooling &amp; air-distribution for every kind of space.
+            </h1>
+            <p className={styles.heroSub}>
+              We design, supply, install and maintain Mitsubishi Electric, LG,
+              Hisense, Hitachi and O&apos;General systems across residential,
+              commercial, industrial and institutional projects since 2006.
+            </p>
+            <div className={styles.heroCtas}>
+              <Link href="/services/installation" className={styles.heroCta}>
+                Plan an installation <ArrowRight size={16} strokeWidth={2.4} />
+              </Link>
+              <a href="tel:+914066131555" className={styles.heroCall}>
+                <Phone size={14} /> +91 40-6613-1555
+              </a>
+            </div>
           </div>
-        </div>
-        <div className={styles.heroMosaic} aria-hidden="true">
-          {HERO_PHOTOS.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={src} src={src} alt="" loading="lazy" style={{ '--i': i }} />
-          ))}
-        </div>
-      </section>
 
-      {/* Filters */}
-      <section className={styles.filterBar}>
-        <div className={styles.filterScroll}>
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
+          <div className={styles.heroGrid} aria-hidden="true">
+            {HERO_PHOTOS.map((src) => (
+              <div key={src} className={styles.heroTile}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Filters */}
+        <section className={styles.filterBar}>
+          <div className={styles.filterGroup} role="tablist" aria-label="Filter by space">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                role="tab"
+                aria-selected={filter === f.value}
+                onClick={() => setFilter(f.value)}
+                className={`${styles.filterChip} ${filter === f.value ? styles.filterChipActive : ''}`}
+              >
+                {filter === f.value && <Check size={14} strokeWidth={3} />}
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Product family grid */}
+        <motion.section
+          className={styles.grid}
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          key={filter}
+        >
+          {filtered.map((fam) => (
+            <motion.button
+              key={fam.slug}
               type="button"
-              onClick={() => setFilter(f.value)}
-              className={`${styles.filterChip} ${filter === f.value ? styles.filterChipActive : ''}`}
+              variants={item}
+              onClick={() => setActive(fam)}
+              className={styles.card}
             >
-              {filter === f.value && <Check size={12} strokeWidth={3} />}
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Product family grid */}
-      <motion.section
-        className={styles.grid}
-        variants={stagger}
-        initial="hidden"
-        animate="show"
-        key={filter}
-      >
-        {filtered.map((fam) => (
-          <motion.button
-            key={fam.slug}
-            type="button"
-            variants={item}
-            whileHover={{ y: -3 }}
-            onClick={() => setActive(fam)}
-            className={styles.card}
-          >
-            <div className={styles.cardMedia}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={fam.cover} alt={fam.name} loading="lazy" />
-              <div className={styles.cardMediaShade} aria-hidden="true" />
-              <span className={styles.cardCount}>{fam.photos.length} photos</span>
-            </div>
-            <div className={styles.cardBody}>
-              <h3 className={styles.cardTitle}>{fam.name}</h3>
-              <p className={styles.cardTagline}>{fam.tagline}</p>
-              <div className={styles.cardChips}>
-                {fam.bestFor.slice(0, 3).map((t) => (
-                  <span key={t} className={styles.cardChip}>{t}</span>
-                ))}
+              <div className={styles.cardMedia}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={fam.cover} alt={fam.name} loading="lazy" />
+                <span className={styles.cardCount}>{fam.photos.length} photos</span>
               </div>
-              <span className={styles.cardArrow}>
-                Explore range <ChevronRight size={16} />
-              </span>
-            </div>
-          </motion.button>
-        ))}
+              <div className={styles.cardBody}>
+                <h3 className={styles.cardTitle}>{fam.name}</h3>
+                <p className={styles.cardTagline}>{fam.tagline}</p>
+                <div className={styles.cardChips}>
+                  {fam.bestFor.slice(0, 3).map((t) => (
+                    <span key={t} className={styles.cardChip}>{t}</span>
+                  ))}
+                </div>
+                <span className={styles.cardArrow}>
+                  Explore range <ArrowRight size={16} strokeWidth={2.4} />
+                </span>
+              </div>
+            </motion.button>
+          ))}
 
-        {filtered.length === 0 && (
-          <div className={styles.empty}>
-            <p>No families match this space — try another filter.</p>
+          {filtered.length === 0 && (
+            <div className={styles.empty}>
+              <p>No families match this space — try another filter.</p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* Brand strip */}
+        <section className={styles.brandSection}>
+          <h2 className={styles.sectionTitle}>Authorised dealer for</h2>
+          <div className={styles.brandRow}>
+            {AES_BRANDS.map((b) => (
+              <div key={b.name} className={styles.brandTile} title={b.name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={b.logo} alt={b.name} loading="lazy" />
+              </div>
+            ))}
           </div>
-        )}
-      </motion.section>
+        </section>
 
-      {/* Brand strip */}
-      <section className={styles.brandSection}>
-        <h2 className={styles.sectionTitle}>Authorised dealer for</h2>
-        <div className={styles.brandRow}>
-          {AES_BRANDS.map((b) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={b.name} src={b.logo} alt={b.name} title={b.name} loading="lazy" />
-          ))}
-        </div>
-      </section>
-
-      {/* Project showcase */}
-      <section className={styles.projects}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Trusted on projects like</h2>
-          <span className={styles.sectionSub}>
-            {filter === 'ALL' ? 'Across India' : `${filter[0] + filter.slice(1).toLowerCase()} portfolio`}
-          </span>
-        </div>
-        <div className={styles.projectGrid}>
-          {projectStrip.map((p) => (
-            <article key={p.name + p.city} className={styles.projectTile}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt={p.name} loading="lazy" />
-              <div className={styles.projectMeta}>
-                <h4>{p.name}</h4>
-                <span>{p.city}</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+        {/* Project showcase */}
+        <section className={styles.projects}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>Trusted on projects like</h2>
+            <span className={styles.sectionSub}>
+              {filter === 'ALL' ? 'Across India' : `${filter[0] + filter.slice(1).toLowerCase()} portfolio`}
+            </span>
+          </div>
+          <div className={styles.projectGrid}>
+            {projectStrip.map((p) => (
+              <article key={p.name + p.city} className={styles.projectTile}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.image} alt={p.name} loading="lazy" />
+                <div className={styles.projectMeta}>
+                  <h4>{p.name}</h4>
+                  <span>{p.city}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
 
       {/* Detail dialog */}
       <AnimatePresence>

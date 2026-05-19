@@ -44,6 +44,11 @@ public interface InstallationRequestRepository extends JpaRepository<Installatio
            "AND i.status NOT IN ('COMPLETED','CANCELLED')")
     long countActiveByOwner(UUID crmId);
 
+    /** Count of a customer's in-flight installation projects (used by customer dashboard). */
+    @Query("SELECT COUNT(i) FROM InstallationRequest i WHERE i.customer.id = :customerId " +
+           "AND i.status NOT IN ('COMPLETED','CANCELLED','QUOTE_REJECTED_INTERNAL')")
+    long countActiveByCustomer(UUID customerId);
+
     /** Full list (not just count) of active installs owned by a CRM — used by shift handoff. */
     @Query("SELECT i FROM InstallationRequest i WHERE i.ownerCrm.id = :crmId " +
            "AND i.status NOT IN ('COMPLETED','CANCELLED') ORDER BY i.createdAt DESC")

@@ -41,19 +41,24 @@ public class DashboardService {
     private final ServiceTicketService ticketService;
     private final PropertyService propertyService;
     private final UserRepository userRepository;
+    private final InstallationRequestRepository installationRequestRepository;
 
     /**
      * Customer dashboard (lines 856-866).
      */
     @Transactional(readOnly = true)
     public CustomerDashboardResponse getCustomerDashboard(UUID customerId) {
-        // Active projects = properties count
-        long activeProjects = propertyRepository.countByCustomerId(customerId);
+        // "Active projects" = in-flight installation requests (matches the
+        // "My Projects" rail on the customer home — properties alone are
+        // just static addresses and don't represent a piece of work).
+        long activeProjects = installationRequestRepository.countActiveByCustomer(customerId);
 
-        // Open tickets
-        long openTickets = ticketRepository.countByCustomerIdAndStatusIn(
-                customerId, List.of(TicketStatus.OPEN, TicketStatus.ACKNOWLEDGED,
-                        TicketStatus.ASSIGNED, TicketStatus.IN_PROGRESS));
+        // Open tickets — any non-terminal status counts (NEW/OPEN through WAITING_*).
+        long openTickets = ticketRepository.countByCustomerIdAndStatusIn(customerId,
+                List.of(TicketStatus.NEW, TicketStatus.OPEN, TicketStatus.ACKNOWLEDGED,
+                        TicketStatus.ASSIGNED, TicketStatus.EN_ROUTE, TicketStatus.ON_SITE,
+                        TicketStatus.IN_PROGRESS, TicketStatus.WAITING_PART,
+                        TicketStatus.WAITING_CUSTOMER_APPROVAL));
 
         // AMC status
         List<AmcContract> contracts = contractRepository.findByCustomerIdAndIsActiveTrue(customerId);

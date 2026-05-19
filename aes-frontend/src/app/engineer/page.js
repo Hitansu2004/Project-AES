@@ -157,7 +157,11 @@ export default function EngineerDashboardPage() {
           <ShiftToggle
             onShift={!!user?.onShift}
             compact
-            onChange={() => fetchUser()}
+            activeWork={{
+              tickets: data?.activeJobs ?? 0,
+              offers: data?.pendingOffers ?? 0,
+            }}
+            onChange={() => { fetchUser(); fetchAll(); }}
           />
           <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
             <Bell size={18} />

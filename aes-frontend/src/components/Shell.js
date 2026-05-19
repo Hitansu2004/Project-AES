@@ -12,7 +12,6 @@ import NotificationToastBridge from '@/components/NotificationToastBridge';
  */
 const NO_CHROME_PREFIXES = [
   '/login',
-  '/staff-login',
   '/services/installation',
   '/services/ticket',
   '/services/select',

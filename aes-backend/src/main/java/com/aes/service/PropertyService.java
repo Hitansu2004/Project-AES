@@ -42,14 +42,19 @@ public class PropertyService {
     private final UserRepository userRepository;
 
     /**
-     * List all properties for a customer with AC unit count (line 555-557).
+     * List all properties for a customer with their AC unit count <em>and</em>
+     * the embedded {@code acUnits} array (line 555-557).
+     *
+     * <p>The frontend dashboard / service-ticket wizard / installation flow all
+     * iterate {@code property.acUnits} directly to pick a unit — without the
+     * array the UI shows "0 AC units" even after a customer has added several.</p>
      */
     public List<PropertyResponse> getCustomerProperties(UUID customerId) {
         List<Property> properties = propertyRepository
                 .findByCustomerIdOrderByIsPrimaryDescCreatedAtDesc(customerId);
 
         return properties.stream()
-                .map(p -> toResponse(p, false))
+                .map(p -> toResponse(p, true))
                 .collect(Collectors.toList());
     }
 
@@ -81,7 +86,7 @@ public class PropertyService {
         property = propertyRepository.save(property);
         log.info("Property created: {} for customer {}", property.getId(), customerId);
 
-        return toResponse(property, false);
+        return toResponse(property, true);
     }
 
     /**

@@ -214,6 +214,20 @@ public class InstallationRequestService {
         return toResponse(request);
     }
 
+    @Transactional(readOnly = true)
+    public InstallationRequestResponse getByRequestNumber(String requestNumber, UUID requesterId,
+                                                          UserRole role) {
+        InstallationRequest request = installationRequestRepository.findByRequestNumber(requestNumber)
+                .orElseThrow(() -> new NotFoundException("InstallationRequest", requestNumber));
+
+        if (role == UserRole.CUSTOMER && !request.getCustomer().getId().equals(requesterId)) {
+            throw new BusinessException("FORBIDDEN", "You do not have access to this request",
+                    HttpStatus.FORBIDDEN);
+        }
+
+        return toResponse(request);
+    }
+
     /**
      * Generate request number: REQ-{YYYY}-{4-digit-seq} (line 609, 1664-1665).
      */

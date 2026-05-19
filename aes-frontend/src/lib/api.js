@@ -136,9 +136,6 @@ export const auth = {
   verifyOtp: (phoneNumber, otp) =>
     request('/auth/verify-otp', { method: 'POST', body: { phoneNumber, otp }, skipAuth: true }),
 
-  staffLogin: (phoneNumber, password) =>
-    request('/auth/staff-login', { method: 'POST', body: { phoneNumber, password }, skipAuth: true }),
-
   refresh: (refreshToken) =>
     request('/auth/refresh', { method: 'POST', body: { refreshToken }, skipAuth: true }),
 
@@ -177,6 +174,7 @@ export const installations = {
     return request(`/installation-requests${query ? `?${query}` : ''}`);
   },
   get: (id) => request(`/installation-requests/${id}`),
+  getByNumber: (requestNumber) => request(`/installation-requests/by-number/${requestNumber}`),
 };
 
 // ─── Service Tickets ────────────────────────────────────────
@@ -315,6 +313,14 @@ export const dashboard = {
   crm: () => request('/dashboard/crm'),
   ops: () => request('/dashboard/ops'),
   escalation: () => request('/dashboard/escalation'),
+};
+
+// ─── Workload boards ────────────────────────────────────────
+// Engineer availability is accessible to anyone with a dispatch
+// responsibility (CRM_AGENT, SERVICE_MANAGER, OPS_MANAGER, ADMIN).
+export const workload = {
+  engineers: () => request('/ops/workload/engineers'),
+  crm: () => request('/ops/workload/crm'),
 };
 
 // ─── Notifications ──────────────────────────────────────────

@@ -86,7 +86,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return path.startsWith("/api/v1/auth/send-otp")
                 || path.startsWith("/api/v1/auth/verify-otp")
-                || path.startsWith("/api/v1/auth/staff-login")
                 || path.startsWith("/api/v1/auth/refresh")
                 || path.startsWith("/ws")
                 || path.startsWith("/swagger-ui")

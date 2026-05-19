@@ -82,14 +82,27 @@ public class InstallationController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /** Lookup by human-readable request number (e.g. INS-2026-2201). */
+    @GetMapping("/by-number/{requestNumber}")
+    public ResponseEntity<ApiResponse<InstallationRequestResponse>> getByRequestNumber(
+            @PathVariable String requestNumber,
+            @AuthenticationPrincipal UUID userId) {
+        UserRole role = extractUserRole();
+        InstallationRequestResponse response = installationRequestService
+                .getByRequestNumber(requestNumber, userId, role);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     /**
      * Extract user role from SecurityContext.
      */
     private UserRole extractUserRole() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) return UserRole.ADMIN;
+        if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OPS_MANAGER"))) return UserRole.OPS_MANAGER;
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SERVICE_MANAGER"))) return UserRole.SERVICE_MANAGER;
         if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_CRM_AGENT"))) return UserRole.CRM_AGENT;
+        if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SITE_ENGINEER"))) return UserRole.SITE_ENGINEER;
         return UserRole.CUSTOMER;
     }
 }

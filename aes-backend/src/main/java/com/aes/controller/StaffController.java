@@ -30,8 +30,19 @@ public class StaffController {
     public ResponseEntity<ApiResponse<StaffProfile>> toggleShift(
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody ShiftToggleRequest req) {
-        var profile = shiftService.toggle(userId, req.getOnShift(), req.getNote());
-        return ResponseEntity.ok(ApiResponse.success(profile,
-                Boolean.TRUE.equals(req.getOnShift()) ? "On shift" : "Off shift — handoff complete"));
+        // Default to soft-pause on shift end — only explicit handoffWork=true
+        // resets active tickets back to the Ops triage queue.
+        boolean handoff = Boolean.TRUE.equals(req.getHandoffWork());
+        var profile = shiftService.toggle(
+                userId, req.getOnShift(), req.getNote(), handoff);
+        String msg;
+        if (Boolean.TRUE.equals(req.getOnShift())) {
+            msg = "On shift";
+        } else if (handoff) {
+            msg = "Off shift — open work handed back to Ops";
+        } else {
+            msg = "Off shift — your tickets are paused, not reassigned";
+        }
+        return ResponseEntity.ok(ApiResponse.success(profile, msg));
     }
 }

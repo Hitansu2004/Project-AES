@@ -1,6 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { ThemeProvider, themeBootScript } from '@/context/ThemeContext';
 import { ToastProvider } from '@/components/ui/Toast';
 import Shell from '@/components/Shell';
 
@@ -15,20 +16,26 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#003366',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Sets data-theme before first paint to avoid the white-flash on dark-mode reloads. */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <meta name="theme-color" content="#003366" />
+      </head>
       <body>
-        <AuthProvider>
-          <ToastProvider>
-            <NotificationProvider>
-              <Shell>{children}</Shell>
-            </NotificationProvider>
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <NotificationProvider>
+                <Shell>{children}</Shell>
+              </NotificationProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

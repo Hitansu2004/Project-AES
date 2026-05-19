@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Notification Service — persists in-app notifications, exposes read APIs
@@ -141,13 +143,46 @@ public class NotificationService {
                 .build();
     }
 
-    /** Best-effort deep-link the frontend can navigate to. */
+    /**
+     * Best-effort deep-link the frontend can navigate to.
+     *
+     * <p>We never need the entity from the DB: every notification we create
+     * already embeds the human-readable identifier inside the title or body
+     * (e.g. {@code "INS-2026-2201"} / {@code "AES-2026-0123"} / {@code "QUO-…"}),
+     * so a single regex over title+body produces a precise deep-link to the
+     * correct detail screen, falling back to the matching list page when the
+     * number cannot be parsed.</p>
+     */
+    private static final Pattern TICKET_NUMBER_RE  = Pattern.compile("(AES-\\d{4}-\\d{3,})");
+    private static final Pattern INSTALL_NUMBER_RE = Pattern.compile("(INS-\\d{4}-\\d{3,})");
+    private static final Pattern QUOTE_NUMBER_RE   = Pattern.compile("(QUO-\\d{4}-\\d{3,})");
+
     private static String deriveLink(Notification n) {
-        if (n.getReferenceType() == null || n.getReferenceId() == null) return null;
+        if (n.getReferenceType() == null) return null;
+        String haystack = (n.getTitle() == null ? "" : n.getTitle())
+                + " " + (n.getBody() == null ? "" : n.getBody());
+
         return switch (n.getReferenceType()) {
-            case "TICKET"       -> "/tickets";          // referenceId is the ticket UUID; the list page shows it
-            case "INSTALLATION" -> "/services/installation";
-            case "AMC"          -> "/services/amc";
+            case "TICKET" -> {
+                Matcher m = TICKET_NUMBER_RE.matcher(haystack);
+                yield m.find() ? "/tickets/" + m.group(1) : "/tickets";
+            }
+            case "INSTALLATION" -> {
+                Matcher m = INSTALL_NUMBER_RE.matcher(haystack);
+                yield m.find() ? "/installations/" + m.group(1) : "/installations";
+            }
+            case "QUOTE" -> {
+                // Quotes always live on a ticket — prefer that deep link if present.
+                Matcher t = TICKET_NUMBER_RE.matcher(haystack);
+                if (t.find()) yield "/tickets/" + t.group(1);
+                Matcher q = QUOTE_NUMBER_RE.matcher(haystack);
+                yield q.find() ? "/tickets" : "/tickets";
+            }
+            case "PART_REQUEST" -> {
+                Matcher m = TICKET_NUMBER_RE.matcher(haystack);
+                yield m.find() ? "/tickets/" + m.group(1) : "/tickets";
+            }
+            case "AMC" -> "/services/amc";
             default -> null;
         };
     }

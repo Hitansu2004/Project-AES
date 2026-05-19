@@ -15,6 +15,7 @@ import { useService, PRIORITY_INFO, priorityFromServiceStatus } from '@/store/se
 import { useToast } from '@/components/ui/Toast';
 import {
   properties as propertiesApi,
+  acUnits as acUnitsApi,
   tickets as ticketsApi,
 } from '@/lib/api';
 import { TIME_SLOTS, PROBLEM_CATEGORIES, slotLabel } from '@/lib/constants';
@@ -86,49 +87,88 @@ function ServiceTicketWizard() {
   }, [user, authLoading, router]);
 
   // Pre-fetch properties + AC units once
+  const reloadProperties = async ({ silent = false } = {}) => {
+    if (!user || user.role !== 'CUSTOMER') return [];
+    if (!silent) setPropertiesLoading(true);
+    try {
+      const list = await propertiesApi.list();
+      const arr = Array.isArray(list) ? list : [];
+      setPropertiesList(arr);
+      return arr;
+    } catch (e) {
+      toast.error(e?.message || 'Could not load your properties.');
+      return [];
+    } finally {
+      setPropertiesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user || user.role !== 'CUSTOMER') return;
     let cancelled = false;
     (async () => {
-      try {
-        const list = await propertiesApi.list();
-        const arr = Array.isArray(list) ? list : [];
-        // Each property already includes acUnits (PropertyResponse.acUnits)
-        if (cancelled) return;
-        setPropertiesList(arr);
-        // Default-active property: first one with AC units, else first.
-        const firstWithUnits = arr.find((p) => (p.acUnits?.length ?? 0) > 0);
-        const initial = firstWithUnits || arr[0];
-        if (initial) setActivePropertyId(initial.id);
-        // Re-hydrate cached AC unit metadata if our store holds an acUnitId
-        if (state.acUnitId) {
-          const found = arr.flatMap((p) => (p.acUnits || []).map((u) => ({ ...u, propertyLabel: p.label, propertyId: p.id })))
-            .find((u) => u.id === state.acUnitId);
-          if (found) {
-            set({
-              acUnitMeta: {
-                roomLabel: found.roomLabel,
-                brand: found.brand,
-                modelNumber: found.modelNumber,
-                acType: found.acType,
-                tonnage: found.tonnage,
-                serviceStatus: found.serviceStatus,
-                propertyId: found.propertyId,
-                propertyLabel: found.propertyLabel,
-              },
-            });
-            setActivePropertyId(found.propertyId);
-          }
+      const arr = await reloadProperties();
+      if (cancelled) return;
+      // Default-active property: first one with AC units, else first.
+      const firstWithUnits = arr.find((p) => (p.acUnits?.length ?? 0) > 0);
+      const initial = firstWithUnits || arr[0];
+      if (initial) setActivePropertyId(initial.id);
+      // Re-hydrate cached AC unit metadata if our store holds an acUnitId
+      if (state.acUnitId) {
+        const found = arr.flatMap((p) => (p.acUnits || []).map((u) => ({ ...u, propertyLabel: p.label, propertyId: p.id })))
+          .find((u) => u.id === state.acUnitId);
+        if (found) {
+          set({
+            acUnitMeta: {
+              roomLabel: found.roomLabel,
+              brand: found.brand,
+              modelNumber: found.modelNumber,
+              acType: found.acType,
+              tonnage: found.tonnage,
+              serviceStatus: found.serviceStatus,
+              propertyId: found.propertyId,
+              propertyLabel: found.propertyLabel,
+            },
+          });
+          setActivePropertyId(found.propertyId);
         }
-      } catch {
-        if (!cancelled) toast.error('Could not load your properties.');
-      } finally {
-        if (!cancelled) setPropertiesLoading(false);
       }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Create an AC unit inline (from the ticket-flow sheet) and select it.
+  const handleAddAcUnitInline = async ({ propertyId, payload, autoSelect }) => {
+    try {
+      const created = await acUnitsApi.create(propertyId, payload);
+      const arr = await reloadProperties({ silent: true });
+      const prop = arr.find((p) => p.id === propertyId);
+      const unit = (prop?.acUnits || []).find((u) => u.id === created.id) || created;
+      setActivePropertyId(propertyId);
+      if (autoSelect) {
+        set({
+          acUnitId: unit.id,
+          acUnitMeta: {
+            roomLabel: unit.roomLabel,
+            brand: unit.brand,
+            modelNumber: unit.modelNumber,
+            acType: unit.acType,
+            tonnage: unit.tonnage,
+            serviceStatus: unit.serviceStatus,
+            propertyId,
+            propertyLabel: prop?.label,
+          },
+          priorityHint: priorityFromServiceStatus(unit.serviceStatus) || state.priorityHint,
+        });
+      }
+      toast.success(`AC "${unit.roomLabel}" added.`);
+      return true;
+    } catch (e) {
+      toast.error(e?.message || 'Could not add AC unit.');
+      return false;
+    }
+  };
 
   // Honour ?step=N when returning from Error Code Reference
   useEffect(() => {
@@ -260,6 +300,7 @@ function ServiceTicketWizard() {
                 activeProperty={activeProperty}
                 acUnits={acUnitsForActiveProperty}
                 onPickProperty={setActivePropertyId}
+                onAddAcUnit={handleAddAcUnitInline}
                 selectedId={state.acUnitId}
                 onSelect={(unit) => {
                   set({
@@ -436,9 +477,10 @@ function PriorityCard({
 
 /* ─── Step 2 — Select AC unit ───────────────────────────── */
 function Step2SelectAc({
-  loading, properties, activeProperty, acUnits, onPickProperty, selectedId, onSelect,
+  loading, properties, activeProperty, acUnits, onPickProperty, onAddAcUnit, selectedId, onSelect,
 }) {
   const [showPropertySheet, setShowPropertySheet] = useState(false);
+  const [showAddAcSheet, setShowAddAcSheet]       = useState(false);
   if (loading) {
     return (
       <div className={styles.skeletonStack}>
@@ -454,9 +496,55 @@ function Step2SelectAc({
       <div className={styles.emptyState}>
         <Snowflake size={36} color="var(--secondary)" />
         <h3>No properties yet</h3>
-        <p>Add a property and an AC unit before raising a service request.</p>
-        <Link href="/dashboard" className="btn btn-primary">Back to Home</Link>
+        <p>You need a property and at least one AC unit before raising a service ticket. It takes 30 seconds.</p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link href="/account?tab=properties&new=1" className="btn btn-primary">
+            ＋ Add a property
+          </Link>
+          <Link href="/dashboard" className="btn btn-outline">Back to Home</Link>
+        </div>
       </div>
+    );
+  }
+
+  const noAcUnits = properties.every((p) => (p.acUnits?.length ?? 0) === 0);
+  if (noAcUnits) {
+    return (
+      <>
+        <div className={styles.emptyState}>
+          <Snowflake size={36} color="var(--secondary)" />
+          <h3>No AC units yet</h3>
+          <p>
+            Add an AC unit to {properties.length === 1 ? `"${properties[0].label}"` : 'one of your properties'} so we know what needs servicing.
+            It takes 20 seconds and we&apos;ll select it for you automatically.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button type="button" className="btn btn-primary" onClick={() => setShowAddAcSheet(true)}>
+              <Plus size={16} /> Add AC unit
+            </button>
+            <Link href="/account?tab=properties" className="btn btn-outline">
+              Manage in account
+            </Link>
+          </div>
+        </div>
+        <AnimatePresence>
+          {showAddAcSheet && (
+            <AddAcUnitSheet
+              properties={properties}
+              defaultPropertyId={activeProperty?.id || properties[0]?.id}
+              onClose={() => setShowAddAcSheet(false)}
+              onSubmit={async (payload) => {
+                const ok = await onAddAcUnit({
+                  propertyId: payload.propertyId,
+                  payload: payload.unit,
+                  autoSelect: true,
+                });
+                if (ok) setShowAddAcSheet(false);
+              }}
+            />
+          )}
+        </AnimatePresence>
+      </>
     );
   }
 
@@ -522,9 +610,9 @@ function Step2SelectAc({
         )}
       </div>
 
-      <Link href="/dashboard" className={styles.outlineBtn}>
+      <button type="button" className={styles.outlineBtn} onClick={() => setShowAddAcSheet(true)}>
         <Plus size={16} /> Add a new AC unit
-      </Link>
+      </button>
 
       <AnimatePresence>
         {showPropertySheet && (
@@ -535,8 +623,164 @@ function Step2SelectAc({
             onClose={() => setShowPropertySheet(false)}
           />
         )}
+        {showAddAcSheet && (
+          <AddAcUnitSheet
+            properties={properties}
+            defaultPropertyId={activeProperty?.id || properties[0]?.id}
+            onClose={() => setShowAddAcSheet(false)}
+            onSubmit={async (payload) => {
+              const ok = await onAddAcUnit({
+                propertyId: payload.propertyId,
+                payload: payload.unit,
+                autoSelect: true,
+              });
+              if (ok) setShowAddAcSheet(false);
+            }}
+          />
+        )}
       </AnimatePresence>
     </>
+  );
+}
+
+function AddAcUnitSheet({ properties, defaultPropertyId, onClose, onSubmit }) {
+  const [propertyId, setPropertyId] = useState(defaultPropertyId || properties[0]?.id || '');
+  const [roomLabel,  setRoomLabel]  = useState('');
+  const [acType,     setAcType]     = useState('SPLIT');
+  const [brand,      setBrand]      = useState('');
+  const [modelNumber,setModelNumber]= useState('');
+  const [tonnage,    setTonnage]    = useState('1.5');
+  const [starRating, setStarRating] = useState(3);
+  const [saving,     setSaving]     = useState(false);
+  const toast = useToast();
+
+  const submit = async (e) => {
+    e?.preventDefault?.();
+    if (!propertyId) { toast.warning('Pick a property.'); return; }
+    if (!roomLabel.trim()) { toast.warning('Room label is required.'); return; }
+    if (!brand.trim())     { toast.warning('Brand is required.'); return; }
+    const tonNum = Number(tonnage);
+    if (!Number.isFinite(tonNum) || tonNum < 0.5 || tonNum > 20) {
+      toast.warning('Tonnage must be between 0.5 and 20.'); return;
+    }
+    setSaving(true);
+    try {
+      await onSubmit({
+        propertyId,
+        unit: {
+          roomLabel: roomLabel.trim(),
+          acType,
+          brand: brand.trim(),
+          modelNumber: modelNumber.trim() || undefined,
+          tonnage: tonNum,
+          energyStarRating: Number(starRating) || undefined,
+        },
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectedProp = properties.find((p) => p.id === propertyId);
+
+  return (
+    <motion.div
+      className={styles.sheetBackdrop}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className={styles.sheet}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxHeight: '92dvh', overflowY: 'auto' }}
+      >
+        <div className={styles.sheetHandle} />
+        <h3 className={styles.sheetTitle}>Add AC unit</h3>
+        <p style={{ color: 'var(--on-surface-variant)', fontSize: 13, margin: '0 0 14px' }}>
+          We&apos;ll add this unit to your property and pre-select it for this service request.
+        </p>
+
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {properties.length > 1 && (
+            <div className="input-group">
+              <label>Property</label>
+              <select className="input" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {properties.length === 1 && selectedProp && (
+            <div style={{
+              padding: '10px 12px', background: 'var(--surface-container-low)',
+              borderRadius: 10, fontSize: 13, color: 'var(--on-surface-variant)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <MapPin size={14} /> Adding to <strong style={{ color: 'var(--on-surface)' }}>{selectedProp.label}</strong>
+            </div>
+          )}
+
+          <div className="input-group">
+            <label>Room label*</label>
+            <input className="input" placeholder="Living Room / Master Bedroom" value={roomLabel}
+                   onChange={(e) => setRoomLabel(e.target.value)} autoFocus />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="input-group">
+              <label>AC type</label>
+              <select className="input" value={acType} onChange={(e) => setAcType(e.target.value)}>
+                <option value="SPLIT">Split</option>
+                <option value="WINDOW">Window</option>
+                <option value="CASSETTE">Cassette</option>
+                <option value="CENTRAL">Central</option>
+                <option value="VRF_VRV">VRF / VRV</option>
+              </select>
+            </div>
+            <div className="input-group">
+              <label>Tonnage*</label>
+              <input className="input" type="number" min="0.5" max="20" step="0.5"
+                     value={tonnage} onChange={(e) => setTonnage(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label>Brand*</label>
+            <input className="input" placeholder="Daikin / LG / Voltas / Blue Star…" value={brand}
+                   onChange={(e) => setBrand(e.target.value)} />
+          </div>
+
+          <div className="input-group">
+            <label>Model number</label>
+            <input className="input" placeholder="FTKM50UV (optional)" value={modelNumber}
+                   onChange={(e) => setModelNumber(e.target.value)} />
+          </div>
+
+          <div className="input-group">
+            <label>Energy star rating</label>
+            <select className="input" value={starRating} onChange={(e) => setStarRating(Number(e.target.value))}>
+              {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} star</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+            <button type="button" className="btn btn-ghost" disabled={saving} onClick={onClose} style={{ flex: 1 }}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving} style={{ flex: 2 }}>
+              {saving ? 'Adding…' : 'Add & continue'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
   );
 }
 

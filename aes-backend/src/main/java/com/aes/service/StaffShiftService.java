@@ -48,8 +48,27 @@ public class StaffShiftService {
     private final ServiceTicketService ticketService;
     private final NotificationService notificationService;
 
+    /**
+     * Backwards-compatible single-arg overload — legacy callers (no
+     * {@code handoffWork} flag) get the destructive hand-off so SLAs
+     * aren't silently held by an offline owner.
+     */
     @Transactional
     public StaffProfile toggle(UUID userId, boolean onShift, String note) {
+        return toggle(userId, onShift, note, true);
+    }
+
+    /**
+     * Toggle the shift flag.
+     *
+     * @param handoffWork when going off-shift: {@code true} → push every
+     *                    open ticket/install/offer back to Ops (destructive,
+     *                    end-of-day mode); {@code false} → soft pause that
+     *                    keeps ownership intact so a quick break doesn't
+     *                    lose the user's inbox.
+     */
+    @Transactional
+    public StaffProfile toggle(UUID userId, boolean onShift, String note, boolean handoffWork) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User", userId.toString()));
         StaffProfile profile = profileRepo.findById(userId)
@@ -67,11 +86,12 @@ public class StaffShiftService {
         profile.setLastSeenAt(OffsetDateTime.now());
         profile = profileRepo.save(profile);
 
-        if (wasOnShift && !onShift) {
+        if (wasOnShift && !onShift && handoffWork) {
             handOff(user, note);
         }
-        log.info("Staff {} ({}) shift toggled {} → {}", user.getName(), user.getRole(),
-                wasOnShift ? "ON" : "OFF", onShift ? "ON" : "OFF");
+        log.info("Staff {} ({}) shift toggled {} → {} (handoffWork={})",
+                user.getName(), user.getRole(),
+                wasOnShift ? "ON" : "OFF", onShift ? "ON" : "OFF", handoffWork);
         return profile;
     }
 

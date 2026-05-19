@@ -1,57 +1,115 @@
 # AES Customer Portal — Demo Credentials
 
 > **Heads-up:** these are demo logins seeded by Flyway migration
-> `V4__demo_reset.sql`. They only exist in your local / staging DB —
-> never push real secrets to git.
+> `V4__demo_reset.sql` and refreshed by `V10__phase3to7_demo.sql`.
+> They only exist in your local / staging DB — never push real secrets to git.
 
-## Customers (login by phone + OTP)
-
-Customers use the OTP flow on `/login`.
-While `app.demo-mode=true` (default in `application-dev.properties`),
-the OTP is also returned in the API response *and* the universal bypass
-code **`000000`** always works — so you don't need an SMS gateway.
-
-| #  | Display name              | Phone                | OTP                  |
-|----|---------------------------|----------------------|----------------------|
-| 1  | User 1 — Aarav Reddy       | **+91 91234 56789**  | `000000` (bypass)    |
-| 2  | User 2 — Priya Sharma      | **+91 92234 56789**  | `000000` (bypass)    |
-| 3  | User 3 — Karan Patel       | **+91 93234 56789**  | `000000` (bypass)    |
-| 4  | User 4 — Sneha Iyer        | **+91 94234 56789**  | `000000` (bypass)    |
-| 5  | User 5 — Vikram Singh      | **+91 95234 56789**  | `000000` (bypass)    |
-
-> ℹ️  The phone numbers are the digits you supplied (`123456789`,
-> `223456789`, …) prefixed with a leading `9` so they pass the Indian
-> mobile-number validation (`^\+91[6-9]\d{9}$`).
-
-### How the customer login works on the UI
-
-1. Open the app → **Login**.
-2. Enter the **10-digit phone** (e.g. `9123456789` for User 1).
-3. Tap **Send OTP**.
-4. Enter `000000` → **Verify**.
-5. You land on the customer dashboard.
+> **Unified login:** every account — customer, ops manager, CRM agent,
+> engineer, service manager, admin — signs in the same way: enter your
+> 10-digit phone, tap **Send OTP**, type **`000000`**, done. There is no
+> password field anywhere. The `users.password_hash` column was dropped in
+> migration `V11__drop_password_hash.sql`.
 
 ---
 
-## Staff (login by phone + password)
+## Customers (login by phone + OTP)
 
-All staff log in on the **/login → Staff** tab. Same password for everyone:
+Customers log in via the OTP flow on `/login`.
+While `app.demo-mode=true` (default in `application-dev.properties`) the
+universal bypass code **`000000`** always works — no SMS gateway needed.
+
+| #  | Display name              | Phone (10-digit form) | OTP                  | Has data                              |
+|----|---------------------------|-----------------------|----------------------|---------------------------------------|
+| 1  | Aarav Reddy               | **`9123456789`**      | `000000` (bypass)    | 1 property · 5 tickets · 2 installs   |
+| 2  | Priya Sharma              | **`9223456789`**      | `000000` (bypass)    | 1 property · 0 tickets · 1 install    |
+| 3  | Karan Patel               | **`9323456789`**      | `000000` (bypass)    | 1 property · 2 tickets · 1 install    |
+| 4  | Sneha Iyer                | **`9423456789`**      | `000000` (bypass)    | 1 property · 4 tickets · 0 installs   |
+| 5  | Vikram Singh              | **`9523456789`**      | `000000` (bypass)    | 1 property · 3 tickets · 2 installs   |
+
+### How the customer login works
+
+1. Open `/login` → enter the **10-digit phone** (e.g. `9123456789`).
+2. Tap **Send OTP**.
+3. Enter `000000` → **Verify**.
+4. You land on `/dashboard` (customer home).
+
+---
+
+## Staff (login by phone + OTP — same flow as customers)
+
+There's no longer a separate staff tab. Staff sign in at `/login` exactly
+the way customers do — enter the 10-digit phone, tap **Send OTP**, then
+type **`000000`** (demo bypass). The JWT that comes back already carries
+the staff role, so they're redirected to their own dashboard automatically.
+
+| Role               | Display name     | Phone               | Branch     | On-shift | Default dashboard | What they do                                                                                  |
+|--------------------|------------------|---------------------|------------|----------|-------------------|-----------------------------------------------------------------------------------------------|
+| OPS_MANAGER        | **Meera Nair**   | **+91 90000 66666** | Hyderabad  | ✅        | `/ops`            | Triages every new ticket / install. Assigns CRM owners and watches workload across the floor. |
+| CRM_AGENT (L1)     | **Ravi Kumar**   | **+91 90000 11111** | Hyderabad  | ✅        | `/crm`            | Accepts/declines offers, talks to customer, dispatches engineers, drafts quotes, raises parts.|
+| CRM_AGENT (L1)     | **Lakshmi Nair** | **+91 90000 22222** | Hyderabad  | ⛔ off    | `/crm`            | Currently off-shift — useful for testing the shift toggle and auto-handoff.                   |
+| SERVICE_MANAGER L2 | **Suresh Babu**  | **+91 90000 33333** | Hyderabad  | ✅        | `/admin`          | Approves mid-band quotes, reviews part orders, takes Stage-C escalations.                     |
+| SERVICE_MANAGER L2 | **Deepa Iyer**   | **+91 90000 44444** | Hyderabad  | ✅        | `/admin`          | Second L2 — receives live escalations during the demo (Stage-B → Stage-C jump).               |
+| ADMIN (L3)         | **Anand Rao**    | **+91 90000 55555** | Hyderabad  | ✅        | `/admin`          | High-band quote approval, KPI dashboard, last-resort escalations.                             |
+| SITE_ENGINEER      | **Rajesh Verma** | **+91 90000 77777** | Hyderabad  | ✅        | `/engineer`       | Mobile-first dispatch dashboard. Accept job → en-route → on-site → in-progress → resolved.    |
+| SITE_ENGINEER      | **Imran Khan**   | **+91 90000 88888** | Hyderabad  | ✅        | `/engineer`       | Second engineer for testing parallel dispatch + workload balancing.                           |
+| SITE_ENGINEER      | **Sandeep Rao**  | **+91 90000 99999** | Hyderabad  | ✅        | `/engineer`       | Third engineer — try **"Cannot attend"** / **"Need help"** flows here.                        |
+
+> **Demo tip:** the easiest way to switch roles during a demo is to log
+> out, type the next staff phone number, and use `000000`. You're in the
+> new role's dashboard in under five seconds.
+
+### Demo personas at a glance
 
 ```
-password123
+                       ┌──────────────────────┐
+                       │     OPS_MANAGER      │  Meera Nair          /ops
+                       │   (triage inbox)     │  +91 90000 66666
+                       └──────────┬───────────┘
+                                  │ assigns to
+                                  ▼
+                       ┌──────────────────────┐
+                       │     CRM_AGENT (L1)   │  Ravi, Lakshmi       /crm
+                       │  owns the customer    │  +91 90000 11111 / 22222
+                       └──┬──────────────┬────┘
+                          │ dispatches   │ escalates
+                          ▼              ▼
+            ┌─────────────────────┐  ┌────────────────────────┐
+            │   SITE_ENGINEER     │  │  SERVICE_MANAGER (L2)  │
+            │ Rajesh / Imran /    │  │     Suresh / Deepa     │
+            │      Sandeep        │  │   approves & assists   │
+            │  /engineer          │  │       /admin           │
+            └─────────────────────┘  └───────────┬────────────┘
+                                                 │ escalates
+                                                 ▼
+                                       ┌────────────────────┐
+                                       │     ADMIN (L3)     │  Anand Rao
+                                       │   /admin (KPIs)    │  +91 90000 55555
+                                       └────────────────────┘
 ```
 
-| Role               | Display name   | Phone               | Demo focus                                    |
-|--------------------|----------------|---------------------|-----------------------------------------------|
-| L1 — CRM Agent     | **Ravi Kumar**  | **+91 90000 11111** | Owns AES-2026-1102 (Karan's open ticket).     |
-| L1 — CRM Agent     | **Lakshmi Nair**| **+91 90000 22222** | Owns AES-2026-1105 (Vikram's open ticket).    |
-| L2 — Service Mgr   | **Suresh Babu** | **+91 90000 33333** | Owns AES-2026-1103 (Sneha — ICU escalation).  |
-| L2 — Service Mgr   | **Deepa Iyer**  | **+91 90000 44444** | Empty inbox — receives the **live escalation** during the demo. |
-| L3 — Admin / Mgmt  | **Anand Rao**   | **+91 90000 55555** | KPI / escalation dashboard at `/admin`.       |
+---
 
-> The BCrypt hash for `password123` (`$2a$12$n6ENFiPC2ZFGvdMWaR7PKeZAsITBfHPvyfcKDoFQWZ9mVMgm80akO`)
-> is the same one V3 used for the original Mahesh / Suresh / Anand seeds —
-> we re-use it here so the existing Spring Security setup keeps working.
+## Routes you'll use during the demo
+
+| Route                                | Audience                          | Notes                                                          |
+|--------------------------------------|-----------------------------------|----------------------------------------------------------------|
+| `/login`                             | Everyone                          | Single phone-+-OTP flow for customers **and** staff            |
+| `/dashboard`                         | Customer                          | Hero counters, projects, recent tickets, AMC banner            |
+| `/services`                          | Customer                          | Choose **Installation** vs **Service request**                 |
+| `/services/installation`             | Customer                          | New AC installation wizard                                     |
+| `/services/products`                 | Customer                          | Product catalogue                                              |
+| `/services/ticket`                   | Customer                          | 4-step service ticket wizard with inline AC-unit add           |
+| `/services/amc`                      | Customer                          | AMC contracts                                                  |
+| `/installations`                     | Customer                          | List of customer's installation requests                       |
+| `/installations/[requestNumber]`     | Customer                          | Installation detail (e.g. `/installations/INS-2026-2201`)      |
+| `/tickets`                           | Customer / Staff                  | Ticket list                                                    |
+| `/tickets/[ticketNumber]`            | Customer / Staff                  | Ticket detail (e.g. `/tickets/AES-2026-1202`)                  |
+| `/notifications`                     | Both                              | Deep-links to the right detail page now                        |
+| `/account`                           | Customer                          | Profile · Properties (+ AC units) · AMC                        |
+| `/ops`                               | OPS_MANAGER                       | Triage inbox · workload · engineer board                       |
+| `/crm`                               | CRM_AGENT                         | Offer inbox · my tickets · dispatch · approvals · quotes       |
+| `/engineer`                          | SITE_ENGINEER                     | Mobile-first dispatch dashboard                                |
+| `/admin`                             | ADMIN · SERVICE_MANAGER           | KPIs · escalations · quote queue · part queue                  |
 
 ---
 
@@ -61,22 +119,6 @@ password123
 |-------------|-------------------------|
 | Local dev   | `http://localhost:8080` |
 
-Swagger UI lives at `http://localhost:8080/swagger-ui.html` if you want
-to drive the demo through the raw API.
+Swagger UI: `http://localhost:8080/swagger-ui.html`.
 
----
-
-## Routes you'll use during the demo
-
-| Route                                | Audience          |
-|--------------------------------------|-------------------|
-| `/login`                             | Both              |
-| `/dashboard`                         | Customer          |
-| `/services` · `/services/installation` · `/services/products` · `/services/ticket` · `/services/amc` | Customer          |
-| `/tickets` · `/tickets/<ticket-no>`  | Customer / Staff  |
-| `/notifications`                     | Both              |
-| `/crm`                               | CRM_AGENT (L1)    |
-| `/admin`                             | ADMIN (L3) / SERVICE_MANAGER (L2) |
-| `/account`                           | Customer          |
-
-See [`DEMO_GUIDE.md`](./DEMO_GUIDE.md) for the recommended click-through.
+See [`DEMO_GUIDE.md`](./DEMO_GUIDE.md) for the recommended end-to-end click-through.

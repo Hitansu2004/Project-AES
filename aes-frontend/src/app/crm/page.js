@@ -19,6 +19,7 @@ import {
   offers as offersApi,
   parts as partsApi,
   quotes as quotesApi,
+  workload as workloadApi,
 } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
@@ -104,13 +105,13 @@ export default function CrmDashboard() {
   // Fetch tickets + stats + offers + parts queue + my quotes + engineer board
   const fetchAll = async () => {
     try {
-      const [list, dash, mine, queue, qs, opsDash] = await Promise.allSettled([
+      const [list, dash, mine, queue, qs, engs] = await Promise.allSettled([
         ticketsApi.list(),
         dashboardApi.crm(),
         offersApi.mine(),
         partsApi.queue(),
-        quotesApi.queue().catch(() => []), // CRM may not have queue rights
-        dashboardApi.ops().catch(() => null), // for engineer board (optional)
+        quotesApi.queue().catch(() => []),     // CRM may not have queue rights
+        workloadApi.engineers().catch(() => []), // engineer availability for dispatch
       ]);
       if (list.status === 'fulfilled') {
         const arr = Array.isArray(list.value) ? list.value : list.value?.content || [];
@@ -120,8 +121,9 @@ export default function CrmDashboard() {
       if (mine.status === 'fulfilled') setOffers(Array.isArray(mine.value) ? mine.value : []);
       if (queue.status === 'fulfilled') setPartsQueue(Array.isArray(queue.value) ? queue.value : []);
       if (qs.status === 'fulfilled')   setMyQuotes(Array.isArray(qs.value) ? qs.value : []);
-      if (opsDash.status === 'fulfilled' && opsDash.value)
-        setOpsEngineers(Array.isArray(opsDash.value.engineers) ? opsDash.value.engineers : []);
+      if (engs.status === 'fulfilled') {
+        setOpsEngineers(Array.isArray(engs.value) ? engs.value : []);
+      }
     } finally {
       setLoading(false);
     }
@@ -301,8 +303,12 @@ export default function CrmDashboard() {
     setBusyFor(`offer-${o.id}`, 'accept');
     try {
       await offersApi.accept(o.id);
-      toast.success(`Accepted ${o.ticketNumber || o.installRequestNumber}`);
+      const ref = o.ticketNumber || o.installRequestNumber;
+      toast.success(`${ref} accepted — moved to My Tickets.`);
       await fetchAll();
+      // Jump to My Tickets / My Installations so the user immediately
+      // sees where the accepted item landed.
+      setView(o.ticketNumber ? 'inbox' : 'inbox');
     } catch (err) { toast.error(err?.message || 'Could not accept'); }
     finally { clearBusy(`offer-${o.id}`); }
   };
@@ -405,7 +411,11 @@ export default function CrmDashboard() {
           })}
           <div className={styles.sideFooter}>
             <div style={{ padding: '8px 12px' }}>
-              <ShiftToggle onShift={!!user?.onShift} onChange={() => fetchUser()} />
+              <ShiftToggle
+                onShift={!!user?.onShift}
+                activeWork={{ tickets: counts.inbox, offers: counts.offers }}
+                onChange={() => { fetchUser(); fetchAll(); }}
+              />
             </div>
           </div>
         </aside>
@@ -918,11 +928,29 @@ function DispatchSheet({ ticket, engineers, onClose, onSubmit }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
         {(engineers || []).length === 0 && (
-          <div style={{ padding: 18, textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-            Loading engineers…
+          <div style={{
+            padding: 18, textAlign: 'center',
+            color: 'var(--on-surface-variant)',
+            border: '1px dashed var(--outline-variant)',
+            borderRadius: 12, fontSize: 13,
+          }}>
+            <Wrench size={20} style={{ opacity: 0.5, marginBottom: 6 }} />
+            <div>No engineers available right now.</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>
+              Try escalating to L2 so a Service Manager can re-route.
+            </div>
           </div>
         )}
-        {(engineers || []).map((e) => {
+        {(engineers || []).slice()
+          .sort((a, b) => {
+            // On-shift first, then by current load (active+pending), then by csat
+            if ((b.onShift ? 1 : 0) !== (a.onShift ? 1 : 0)) return (b.onShift ? 1 : 0) - (a.onShift ? 1 : 0);
+            const la = (a.activeJobs || 0) + (a.pendingOffers || 0);
+            const lb = (b.activeJobs || 0) + (b.pendingOffers || 0);
+            if (la !== lb) return la - lb;
+            return (b.csatScore || 0) - (a.csatScore || 0);
+          })
+          .map((e) => {
           const picked = e.userId === pickedId;
           return (
             <button key={e.userId} type="button"

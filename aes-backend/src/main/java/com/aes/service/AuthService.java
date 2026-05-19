@@ -2,7 +2,6 @@ package com.aes.service;
 
 import com.aes.config.AppProperties;
 import com.aes.config.JwtConfig;
-import com.aes.dto.request.StaffLoginRequest;
 import com.aes.dto.response.AuthResponse;
 import com.aes.dto.response.OtpResponse;
 import com.aes.dto.response.UserResponse;
@@ -17,7 +16,6 @@ import com.aes.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +23,19 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Auth Service — orchestrates the OTP flow, staff password login,
- * token refresh and logout.
+ * Auth Service — orchestrates the unified OTP flow, token refresh and logout.
+ *
+ * <p>Every role — customer, ops manager, CRM agent, engineer, service manager
+ * and admin — authenticates via {@link #verifyOtp(String, String)}. Staff
+ * records already exist in the {@code users} table with their role; the OTP
+ * resolution looks the phone number up, finds the matching user and mints
+ * tokens against that role. The auto-create branch only fires for unknown
+ * numbers, which become customers.</p>
  *
  * <p>Per Section 4.1 (lines 493-537):</p>
  * <ul>
  *   <li>{@link #sendOtp(String)} — generate OTP, dispatch SMS, return demo echo when applicable.</li>
  *   <li>{@link #verifyOtp(String, String)} — validate OTP, find/create user, mint tokens.</li>
- *   <li>{@link #staffLogin(StaffLoginRequest)} — BCrypt password verification.</li>
  *   <li>{@link #refreshAccessToken(String)} — exchange refresh token for a new access token.</li>
  *   <li>{@link #logout(String)} — invalidate refresh token.</li>
  * </ul>
@@ -49,7 +52,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final StaffProfileRepository staffProfileRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AppProperties appProperties;
     private final JwtConfig jwtConfig;
 
@@ -86,32 +88,6 @@ public class AuthService {
         if (Boolean.FALSE.equals(user.getIsActive())) {
             throw new BusinessException("USER_INACTIVE",
                     "Account is deactivated. Please contact support.",
-                    HttpStatus.FORBIDDEN);
-        }
-
-        return generateAuthResponse(user);
-    }
-
-    /**
-     * Staff password login (CRM agents, service managers, admins).
-     */
-    @Transactional
-    public AuthResponse staffLogin(StaffLoginRequest request) {
-        User user = userRepository.findByPhoneNumber(request.getPhoneNumber())
-                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
-
-        if (user.getRole() == UserRole.CUSTOMER) {
-            throw new UnauthorizedException("This login is for staff only. Customers must use OTP login.");
-        }
-
-        if (user.getPasswordHash() == null
-                || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid credentials");
-        }
-
-        if (Boolean.FALSE.equals(user.getIsActive())) {
-            throw new BusinessException("USER_INACTIVE",
-                    "Account is deactivated. Please contact admin.",
                     HttpStatus.FORBIDDEN);
         }
 

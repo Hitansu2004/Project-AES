@@ -6,31 +6,38 @@ import { staff } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 
 /**
- * Single-button shift toggle for CRM agents and site engineers.
+ * Shift toggle for CRM agents and site engineers.
  *
- * When the user goes OFF shift, the backend automatically hands off
- * any open tickets / pending offers (see StaffShiftService). The button
- * is purposely chunky and red-when-off so it never gets clicked twice
- * by accident.
+ * End-shift is ALWAYS a soft pause: the user stops receiving new offers
+ * and ticket pings, but every active ticket / install assignment stays
+ * with them so the moment they come back on shift their inbox is intact.
+ *
+ * If a true work hand-off is ever needed (vacation, leave, role change),
+ * that's an Ops Manager re-assignment task — never a single button click
+ * on the agent's own toolbar.
  *
  * Props:
- *   onShift      — current value (boolean, from /users/me .staff?.onShift)
- *   onChange     — callback(newValue)
- *   compact      — render as a small pill (top-bar version)
+ *   onShift     — current value (boolean)
+ *   onChange    — callback(newValue) after a successful toggle
+ *   compact     — render as a small pill (top-bar version)
+ *   activeWork  — { tickets, offers } counts shown next to the status text
  */
-export default function ShiftToggle({ onShift, onChange, compact = false }) {
+export default function ShiftToggle({ onShift, onChange, compact = false, activeWork }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [value, setValue] = useState(!!onShift);
 
   const toggle = async () => {
     const next = !value;
-    if (!next && !confirm('End your shift?\n\nOpen tickets and offers will be handed back to the Ops Manager.')) return;
     setBusy(true);
     try {
-      await staff.toggleShift({ onShift: next });
+      await staff.toggleShift({ onShift: next, handoffWork: false });
       setValue(next);
-      toast.success(next ? 'You are now on shift.' : 'Shift ended. Handoff complete.');
+      toast.success(
+        next
+          ? 'You are now on shift.'
+          : 'You are off shift. Your tickets are paused, not reassigned.'
+      );
       onChange?.(next);
     } catch (err) {
       toast.error(err?.message || 'Could not toggle shift.');
@@ -39,13 +46,21 @@ export default function ShiftToggle({ onShift, onChange, compact = false }) {
     }
   };
 
+  const ticketCount = activeWork?.tickets ?? 0;
+  const offerCount = activeWork?.offers ?? 0;
+  const hasWork = ticketCount + offerCount > 0;
+
   if (compact) {
     return (
       <button
         type="button"
         onClick={toggle}
         disabled={busy}
-        title={value ? 'You are on shift — click to end shift' : 'You are off shift — click to start shift'}
+        title={
+          value
+            ? 'You are on shift — click to pause (your tickets stay yours)'
+            : 'You are off shift — click to come back on'
+        }
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -81,14 +96,28 @@ export default function ShiftToggle({ onShift, onChange, compact = false }) {
         borderRadius: 12,
       }}
     >
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--on-surface)' }}>
           {value ? 'You are on shift' : 'You are off shift'}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2 }}>
-          {value
-            ? 'You will receive new offers and ticket pings.'
-            : 'No new offers will be routed to you.'}
+        <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2, lineHeight: 1.4 }}>
+          {value ? (
+            <>
+              You will receive new offers and ticket pings.
+              {hasWork && (
+                <>
+                  {' '}Currently holding <strong>{ticketCount}</strong>{' '}
+                  ticket{ticketCount === 1 ? '' : 's'} ·{' '}
+                  <strong>{offerCount}</strong> pending offer{offerCount === 1 ? '' : 's'}.
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              No new offers will be routed to you. Existing tickets are{' '}
+              <strong>still yours</strong> — toggle on to resume.
+            </>
+          )}
         </div>
       </div>
       <button
@@ -99,7 +128,7 @@ export default function ShiftToggle({ onShift, onChange, compact = false }) {
           padding: '10px 18px',
           borderRadius: 999,
           border: 'none',
-          background: value ? 'var(--error)' : 'var(--success)',
+          background: value ? 'var(--on-surface-variant)' : 'var(--success)',
           color: '#fff',
           fontSize: 13,
           fontWeight: 700,
@@ -108,7 +137,7 @@ export default function ShiftToggle({ onShift, onChange, compact = false }) {
           minWidth: 110,
         }}
       >
-        {value ? 'End shift' : 'Start shift'}
+        {value ? 'Pause shift' : 'Start shift'}
       </button>
     </div>
   );

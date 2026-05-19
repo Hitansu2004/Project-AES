@@ -1,3 +1,11 @@
+/* ============================================================
+   Customer dashboard — Precision Engineering layout.
+   Mobile: scroll-friendly flex column.
+   Tablet: 2-col grid.
+   Desktop: 6-col fixed grid (hero 4 / amc 2 · cta 4 · proj 3 / tic 3),
+            mirroring `ui reference/Home page`.
+   ============================================================ */
+
 /* ─── Shell ─────────────────────────────────────────────── */
 .shell {
   min-height: 100dvh;
@@ -8,7 +16,41 @@
   position: relative;
 }
 
-/* ─── Top bar ───────────────────────────────────────────── */
+/* Apply blueprint grid (defined in globals.css) to the whole page
+   so the dashboard never feels like a blank canvas. */
+.shell.blueprint {
+  background: transparent;
+}
+.shell.blueprint::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 0%, var(--blueprint-line-strong) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, var(--blueprint-line-strong) 0%, transparent 40%);
+}
+.shell.blueprint::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--blueprint-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--blueprint-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.shell.blueprint > * { position: relative; z-index: 1; }
+
+/* On desktop the dashboard becomes a wide canvas (1280px) instead of
+   the narrow content column used elsewhere. */
+@media (min-width: 1024px) {
+  .shell { max-width: 1280px; }
+}
+
+/* ─── Top bar (mobile only) ─────────────────────────────── */
 .topBar {
   position: sticky;
   top: 0;
@@ -17,15 +59,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(248, 249, 255, 0.92);
+  background: var(--header-glass);
   backdrop-filter: saturate(180%) blur(10px);
   -webkit-backdrop-filter: saturate(180%) blur(10px);
   border-bottom: 1px solid var(--border-light);
 }
-/* On tablet+ the global Header takes over nav — hide the page top bar. */
-@media (min-width: 768px) {
-  .topBar { display: none; }
-}
+@media (min-width: 768px) { .topBar { display: none; } }
 
 .brandRow { display: flex; align-items: center; gap: 10px; }
 .brandIcon {
@@ -41,8 +80,7 @@
   color: var(--primary-dark);
   letter-spacing: -0.01em;
 }
-
-.topRight { display: flex; align-items: center; gap: 10px; }
+.topRight { display: flex; align-items: center; gap: 8px; }
 
 .bellButton {
   width: 40px; height: 40px;
@@ -67,7 +105,6 @@
   display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--surface);
 }
-
 .avatar {
   width: 34px; height: 34px;
   border-radius: 50%;
@@ -78,325 +115,613 @@
   font-size: 14px;
 }
 
-/* ─── Main column ───────────────────────────────────────── */
+/* ─── Main canvas grid ─────────────────────────────────── */
 .main {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 20px var(--page-pad-x) calc(var(--nav-height) + 32px);
+  gap: 18px;
+  padding: 18px var(--page-pad-x) calc(var(--nav-height) + 32px);
 }
 
-/* Tablet — slightly more breathing room */
 @media (min-width: 768px) {
-  .main { gap: 28px; padding-top: 28px; padding-bottom: calc(var(--nav-height) + 48px); }
-}
-
-/* Desktop — two-column layout: hero+ctas full-width on top,
-   then projects/tickets side by side underneath. */
-@media (min-width: 1024px) {
   .main {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "hero hero"
       "cta  cta"
-      "projects amc"
+      "projects projects"
       "tickets  amc";
-    gap: 24px 28px;
-    padding-top: 32px;
+    gap: 22px 22px;
+    padding-top: 28px;
+    padding-bottom: calc(var(--nav-height) + 48px);
   }
-  .hero      { grid-area: hero; }
-  .ctaGrid   { grid-area: cta; }
+  .hero            { grid-area: hero; }
+  .ctaGrid         { grid-area: cta; }
   .projectsSection { grid-area: projects; }
   .ticketsSection  { grid-area: tickets; }
   .amcSection      { grid-area: amc; }
 }
 
-/* ─── Hero card ─────────────────────────────────────────── */
-.hero {
-  position: relative;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(91, 202, 255, 0.18) 0%, transparent 60%),
-    linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--secondary-strong) 100%);
-  color: var(--on-primary);
-  border-radius: 18px;
-  padding: 22px 22px 20px;
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-}
-.heroDeco {
-  position: absolute;
-  right: -28px; top: -28px;
-  color: rgba(255,255,255,0.08);
-  pointer-events: none;
-}
-.heroBody { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; }
-.greeting {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.greeting strong { font-weight: 800; }
-.heroSubtitle {
-  font-size: 14px;
-  color: rgba(255,255,255,0.75);
-}
-.heroChips {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  margin-top: 4px;
+/*
+ * Desktop (1024px+) — 6-column fixed grid mirroring the reference,
+ * but every cell is used (no floating empty column):
+ *
+ *   [hero       hero       hero       hero       amc    amc    ]   ← row 1
+ *   [cta-grid   cta-grid   cta-grid   cta-grid   help   help   ]   ← row 2
+ *   [projects   projects   projects   tickets    tickets tickets]   ← row 3
+ */
+@media (min-width: 1024px) {
+  .main {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-areas:
+      "hero hero hero hero amc amc"
+      "cta cta cta cta help help"
+      "projects projects projects tickets tickets tickets";
+    gap: 22px 22px;
+    padding: 32px 40px 72px;
+  }
+  .helpSection { grid-area: help; }
 }
 
+/* ─── Hero greeting card ───────────────────────────────── */
+.hero {
+  position: relative;
+  background: var(--primary-dark);
+  color: var(--on-primary);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  min-height: 180px;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--primary-dark);
+}
+@media (min-width: 1024px) {
+  .hero {
+    padding: 32px;
+    min-height: 220px;
+    border-radius: 18px;
+  }
+}
+
+/* Subtle blueprint-style radial in top-right corner, matches the
+   reference's `radial-gradient(circle at 100% 0%, #ffffff 0%, transparent 50%)` */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(91, 202, 255, 0.18) 0%, transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.heroDeco {
+  position: absolute;
+  right: -32px; top: -32px;
+  color: rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+
+.heroBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.greeting {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+.greeting strong { font-weight: 700; }
+
+.heroSubtitle {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: -2px;
+}
+
+.heroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;       /* push chips to the bottom of the card */
+  padding-top: 10px;
+}
+
+/* Reference-style button chips on the navy hero. Transparent body
+   with a thin light border, hover deepens the body. */
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(255,255,255,0.14);
+  gap: 7px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  border-radius: var(--radius-full);
-  font-size: 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  border: 1px solid rgba(255,255,255,0.10);
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease,
+              transform 180ms ease;
+}
+.chip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.40);
+  transform: translateY(-1px);
 }
 .chipAmc {
-  background: rgba(193, 125, 255, 0.20);
-  border-color: rgba(193, 125, 255, 0.30);
+  background: rgba(193, 125, 255, 0.18);
+  border-color: rgba(193, 125, 255, 0.35);
 }
 
-/* ─── CTA grid ──────────────────────────────────────────── */
+/* ─── CTA grid ─────────────────────────────────────────── */
 .ctaGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 14px;
 }
-@media (min-width: 380px) {
-  .ctaGrid { grid-template-columns: 1fr 1fr; }
+@media (min-width: 480px) {
+  .ctaGrid { grid-template-columns: 1fr 1fr; gap: 16px; }
 }
 @media (min-width: 1024px) {
-  .ctaGrid { gap: 20px; }
-  .cta { min-height: 220px; padding: 22px; }
-  .ctaTitle { font-size: 19px; }
+  .ctaGrid { gap: 24px; }
 }
 
 .cta {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 18px;
+  gap: 10px;
+  padding: 20px;
   border-radius: 16px;
   overflow: hidden;
   color: #fff;
   min-height: 200px;
   text-decoration: none;
+  background: var(--primary-dark);
+  border: 1px solid var(--primary-dark);
   transition: transform 250ms ease, box-shadow 250ms ease;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 .cta:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
 }
-.ctaInstall {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+@media (min-width: 1024px) {
+  .cta {
+    padding: 24px;
+    min-height: 220px;
+    border-radius: 18px;
+  }
 }
+
+/* Match the navy on both light and dark themes — the hero/CTA bg is
+   always the brand's deep navy. The other surfaces flip with theme. */
+.ctaInstall,
 .ctaService {
-  background: linear-gradient(135deg, var(--secondary-strong) 0%, var(--secondary) 100%);
+  background: var(--primary-dark);
 }
+
 .ctaDeco {
   position: absolute;
-  right: -28px; bottom: -28px;
-  color: rgba(255,255,255,0.10);
+  right: -32px; bottom: -32px;
+  color: rgba(255, 255, 255, 0.10);
   pointer-events: none;
 }
+
 .ctaIcon {
-  width: 40px; height: 40px;
-  background: rgba(255,255,255,0.16);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+  z-index: 1;
 }
-.ctaBody { display: flex; flex-direction: column; gap: 4px; }
+
+.ctaBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
 .ctaEyebrow {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.65);
   font-weight: 700;
 }
+
 .ctaTitle {
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   line-height: 1.2;
 }
+
 .ctaDesc {
-  font-size: 12px;
-  color: rgba(255,255,255,0.78);
-  line-height: 1.4;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
 }
+
 .ctaTags {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
 }
 .ctaTags span {
-  padding: 3px 8px;
-  background: rgba(255,255,255,0.14);
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
+
 .ctaPill {
   margin-top: auto;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   padding: 8px 14px;
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.10);
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.10);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  position: relative;
+  z-index: 1;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.cta:hover .ctaPill {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.40);
 }
 
-/* ─── Section header ────────────────────────────────────── */
-.section { display: flex; flex-direction: column; gap: 12px; }
+/* ─── Section header (shared by Projects / Tickets) ────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .sectionHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 12px;
 }
 .sectionTitle {
-  font-size: 16px;
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 700;
-  color: var(--on-surface);
-  letter-spacing: -0.01em;
+  color: var(--primary-dark);
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+  text-transform: uppercase;
 }
+[data-theme="dark"] .sectionTitle { color: var(--on-surface-strong); }
+
 .sectionLink {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
   color: var(--secondary);
+  text-decoration: none;
+  transition: color 180ms ease, gap 180ms ease;
+  text-transform: uppercase;
+}
+.sectionLink:hover {
+  color: var(--secondary-strong);
+  gap: 6px;
 }
 
-/* ─── Project horizontal scroller ───────────────────────── */
+/* ─── Project rows ─────────────────────────────────────── */
 .scrollRow {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  margin: 0 -16px;
-  padding: 0 16px 4px;
+  padding: 2px 0 6px;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
 }
 .scrollRow::-webkit-scrollbar { display: none; }
+.singleRow {
+  display: block;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+@media (min-width: 768px) {
+  .scrollRow,
+  .singleRow {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+}
 
 .projectCard {
-  flex: 0 0 260px;
-  display: flex;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+
+  display: grid;
+  grid-template-columns: 4px 52px 1fr auto;
   align-items: center;
-  gap: 12px;
-  padding: 14px 14px 14px 18px;
+  column-gap: 14px;
+
+  padding: 16px 18px 16px 0;
   background: var(--surface-container-lowest);
   border-radius: 14px;
   border: 1px solid var(--border-light);
   position: relative;
   overflow: hidden;
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 200ms ease, box-shadow 200ms ease,
+              border-color 200ms ease;
 }
 .projectCard:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 28px rgba(0, 30, 64, 0.08);
+  border-color: var(--secondary-soft);
 }
+[data-theme="dark"] .projectCard:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  border-color: var(--secondary-soft);
+}
+
+.singleRow .projectCard {
+  flex: none;
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 480px) {
+  .scrollRow .projectCard { flex: 0 0 calc(100% - 24px); max-width: 340px; }
+}
+
+@media (min-width: 768px) {
+  .projectCard {
+    flex: none;
+    width: 100%;
+    max-width: none;
+    min-height: 96px;
+    padding: 18px 22px 18px 0;
+  }
+}
+
 .projectAccent {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: linear-gradient(180deg, var(--secondary) 0%, var(--primary) 100%);
+  grid-column: 1;
+  align-self: stretch;
+  background: var(--primary-dark);
+  border-radius: 0;
 }
-.projectBody { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+.projectIcon {
+  grid-column: 2;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-container);
+  color: var(--primary-dark);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .projectIcon {
+  background: rgba(91, 202, 255, 0.14);
+  color: var(--secondary-strong);
+}
+
+.projectBody {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 .projectNumber {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--secondary);
+  letter-spacing: 0.12em;
+  color: var(--primary);
   text-transform: uppercase;
 }
+[data-theme="dark"] .projectNumber { color: var(--secondary-strong); }
+
 .projectTitle {
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--on-surface);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .projectMeta {
   font-size: 12px;
   color: var(--on-surface-variant);
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* Right aside: chevron at the top, "Visit tomorrow" chip at the bottom,
+   exactly like the reference. */
+.projectAside {
+  grid-column: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  align-self: stretch;
+  padding: 4px 0;
+}
+.projectChevron {
+  color: var(--outline);
+  transition: transform 200ms ease, color 200ms ease;
+}
+.projectCard:hover .projectChevron {
+  color: var(--secondary);
+  transform: translateX(3px);
 }
 .projectChip {
   display: inline-flex;
-  align-self: flex-start;
-  margin-top: 4px;
-  padding: 3px 8px;
-  background: var(--surface-container);
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  background: var(--primary-container);
   color: var(--primary-dark);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
-.projectChevron { color: var(--outline); }
+[data-theme="dark"] .projectChip {
+  background: rgba(91, 202, 255, 0.14);
+  color: var(--secondary-strong);
+}
 
-/* ─── Tickets ───────────────────────────────────────────── */
-.tickets { display: flex; flex-direction: column; gap: 10px; }
+/* On very narrow phones, drop the aside under the body so nothing
+   gets crushed. */
+@media (max-width: 380px) {
+  .projectCard {
+    grid-template-columns: 4px 48px 1fr;
+    row-gap: 8px;
+  }
+  .projectAside {
+    grid-column: 2 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+  }
+}
+
+/* ─── Tickets ──────────────────────────────────────────── */
+.tickets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .ticketRow {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 14px 14px 18px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
   background: var(--surface-container-lowest);
   border-radius: 14px;
   border: 1px solid var(--border-light);
   position: relative;
   overflow: hidden;
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 200ms ease, box-shadow 200ms ease,
+              border-color 200ms ease;
+  text-decoration: none;
+  color: inherit;
 }
 .ticketRow:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 30, 64, 0.06);
+  border-color: var(--secondary-soft);
 }
-.ticketRowAlert { border-color: var(--badge-paid); }
-.ticketAccent {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: var(--secondary);
+/* SLA breached: alarming red border, no left accent (matches reference) */
+.ticketRowAlert {
+  border-color: var(--error);
 }
-.ticketRowAlert .ticketAccent { background: var(--badge-paid); }
-
-.ticketBody { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.ticketRowAlert:hover {
+  border-color: var(--error);
+  box-shadow: 0 10px 28px rgba(186, 26, 26, 0.15);
+}
 
 .ticketTopRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
 }
+.ticketTopLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.ticketNumber {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--on-surface-variant);
+}
+.ticketChevron {
+  color: var(--outline);
+  flex-shrink: 0;
+  transition: transform 200ms ease, color 200ms ease;
+}
+.ticketRow:hover .ticketChevron {
+  transform: translateX(3px);
+  color: var(--secondary);
+}
+
 .ticketTitle {
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--on-surface);
-  text-transform: capitalize;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  margin-top: 2px;
+  /* sentence case — match project titles for visual consistency */
+  text-transform: none;
 }
+
 .ticketMeta {
   font-size: 12px;
   color: var(--on-surface-variant);
+  line-height: 1.4;
 }
+
 .ticketSla {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: 5px;
+  padding: 5px 11px;
   background: var(--warning-light);
   color: #92400e;
   border-radius: 999px;
@@ -405,109 +730,284 @@
   align-self: flex-start;
   margin-top: 4px;
 }
+[data-theme="dark"] .ticketSla {
+  color: var(--warning);
+}
 .ticketSlaBreached {
   background: var(--error-container);
   color: #93000a;
 }
-.ticketChevron { color: var(--outline); flex-shrink: 0; }
+[data-theme="dark"] .ticketSlaBreached {
+  background: rgba(255, 107, 107, 0.18);
+  color: var(--error);
+}
 
-/* ─── Empty state ───────────────────────────────────────── */
+/* ─── Empty state ──────────────────────────────────────── */
 .empty {
   background: var(--surface-container-lowest);
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px dashed var(--outline-variant);
-  padding: 24px 18px;
+  padding: 28px 22px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   align-items: flex-start;
 }
 .emptyTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--on-surface);
-}
-.emptyBody {
-  font-size: 13px;
-  color: var(--on-surface-variant);
-}
-.emptyCta { margin-top: 4px; }
-
-/* ─── AMC card ──────────────────────────────────────────── */
-.amcCard,
-.amcCardEmpty {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 16px 16px 18px;
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border: 1px solid #e9d5ff;
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-  text-decoration: none;
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.amcCard:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-.amcIcon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  background: var(--badge-amc);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.amcIconEmpty {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  background: rgba(123, 47, 190, 0.15);
-  color: var(--badge-amc);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
-.amcBody { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.amcEyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--badge-amc);
-}
-.amcTitle {
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
   color: var(--on-surface);
 }
+.emptyBody {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+}
+.emptyCta { margin-top: 6px; }
+
+/* ─── AMC card — full-height vertical card on desktop ──── */
+.amcCard,
+.amcCardEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 200ms ease, box-shadow 200ms ease,
+              border-color 200ms ease;
+  min-height: 200px;
+}
+.amcCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--secondary-soft);
+}
+@media (min-width: 1024px) {
+  .amcCard,
+  .amcCardEmpty {
+    padding: 24px;
+    min-height: 220px;          /* matches hero height in row 1 */
+    border-radius: 18px;
+  }
+}
+
+.amcIcon,
+.amcIconEmpty {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.amcIcon {
+  background: var(--badge-amc-bg);
+  color: var(--badge-amc);
+}
+.amcIconEmpty {
+  background: var(--secondary-soft);
+  color: var(--secondary-strong);
+}
+[data-theme="dark"] .amcIconEmpty {
+  background: rgba(91, 202, 255, 0.16);
+  color: var(--secondary-strong);
+}
+
+.amcBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.amcEyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--badge-amc);
+}
+.amcTitle {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+[data-theme="dark"] .amcTitle { color: var(--on-surface-strong); }
+
 .amcMeta {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--on-surface-variant);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  margin-top: 2px;
 }
 .amcMeta span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 .amcMeta strong { color: var(--primary-dark); }
+[data-theme="dark"] .amcMeta strong { color: var(--on-surface); }
+
 .amcDesc {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--on-surface-variant);
-  line-height: 1.45;
+  line-height: 1.5;
 }
-.amcChevron { color: var(--badge-amc); flex-shrink: 0; }
+
+/* Solid blue action button at the bottom of the AMC card — exactly
+   like the reference's "Contact us" CTA. */
 .amcCta {
-  padding: 8px 14px;
-  background: var(--badge-amc);
-  color: #fff;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: var(--on-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  align-self: flex-start;
   text-decoration: none;
+  transition: background 180ms ease, box-shadow 180ms ease,
+              transform 150ms ease;
+  box-shadow: 0 2px 6px rgba(0, 102, 137, 0.20);
+}
+.amcCta:hover {
+  background: var(--secondary-strong);
+  box-shadow: var(--shadow-glow);
+}
+.amcCta:active { transform: scale(0.98); }
+
+.amcChevron {
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+  align-self: flex-end;
+  transition: transform 200ms ease, color 200ms ease;
+}
+.amcCard:hover .amcChevron {
+  color: var(--secondary);
+  transform: translateX(3px);
+}
+
+/* ─── Help / Talk-to-us card (row 2 right column on desktop) ──── */
+.helpSection {
+  display: none;        /* hidden on small screens; CTAs fill row */
+}
+@media (min-width: 1024px) {
+  .helpSection { display: flex; }
+}
+
+.helpCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  width: 100%;
+  flex: 1;
+}
+.helpCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 100%, var(--secondary-soft) 0%, transparent 45%);
+  opacity: 0.55;
+}
+[data-theme="dark"] .helpCard::after { opacity: 0.20; }
+
+.helpEyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--secondary-strong);
+  position: relative;
+  z-index: 1;
+}
+.helpTitle {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--primary-dark);
+  letter-spacing: -0.005em;
+  position: relative;
+  z-index: 1;
+}
+[data-theme="dark"] .helpTitle { color: var(--on-surface-strong); }
+
+.helpDesc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+  position: relative;
+  z-index: 1;
+}
+
+.helpActions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.helpAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--on-surface);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 180ms ease, border-color 180ms ease,
+              transform 150ms ease;
+}
+.helpAction:hover {
+  background: var(--surface-container-low);
+  border-color: var(--secondary-soft);
+  transform: translateY(-1px);
+}
+.helpAction strong {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+[data-theme="dark"] .helpAction strong { color: var(--on-surface-strong); }
+.helpActionIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--secondary-soft);
+  color: var(--secondary-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .helpActionIcon {
+  background: rgba(91, 202, 255, 0.16);
 }

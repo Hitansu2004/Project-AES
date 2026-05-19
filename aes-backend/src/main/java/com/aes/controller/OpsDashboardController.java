@@ -45,8 +45,7 @@ public class OpsDashboardController {
         return ResponseEntity.ok(ApiResponse.success(workloadService.getCrmWorkload()));
     }
 
-    @GetMapping("/api/v1/ops/workload/engineers")
-    public ResponseEntity<ApiResponse<List<EngineerAvailabilityDto>>> engineers() {
-        return ResponseEntity.ok(ApiResponse.success(workloadService.getEngineerAvailability()));
-    }
+    // ── Engineer availability moved to EngineerAvailabilityController ──
+    // so we can keep this class's class-level @PreAuthorize tight while
+    // letting CRM/SM also read the engineer board (needed for dispatch).
 }
