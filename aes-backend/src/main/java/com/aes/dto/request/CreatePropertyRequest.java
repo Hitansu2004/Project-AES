@@ -42,4 +42,13 @@ public class CreatePropertyRequest {
 
     @Builder.Default
     private Boolean isPrimary = false;
+
+    // ── V12: optional Google Maps pin ───────────────────────────
+    private Double latitude;
+    private Double longitude;
+    @Size(max = 500) private String formattedAddress;
+    @Size(max = 200) private String landmark;
+    @Size(max = 150) private String googlePlaceId;
+    @Pattern(regexp = "^\\+?\\d{10,15}$|^$", message = "Secondary phone must be 10–15 digits")
+    private String secondaryPhone;
 }

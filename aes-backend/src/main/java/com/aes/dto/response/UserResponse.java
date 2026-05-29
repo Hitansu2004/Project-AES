@@ -26,4 +26,7 @@ public class UserResponse {
     /** Staff-only: present on CRM / SM / engineer / ops / admin payloads. */
     private Boolean onShift;
     private String branch;
+    // V14
+    private String  teamName;
+    private Boolean isTeamLead;
 }

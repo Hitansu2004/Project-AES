@@ -101,7 +101,8 @@ async function rawRequest(endpoint, options = {}, attempt = 0) {
     throw new ApiError('NETWORK_ERROR', 'Cannot reach the server. Check your connection.', 0);
   }
 
-  // Try refresh on 401 once
+  // Try refresh on 401 once. The backend now returns 401 (not 403) when the
+  // JWT is expired or missing, thanks to the custom AuthenticationEntryPoint.
   if (res.status === 401 && !options.skipAuth && attempt === 0) {
     const newToken = await refreshAccessToken();
     if (newToken) {
@@ -235,7 +236,39 @@ export const offers = {
     request(`/offers/${offerId}/withdraw`, { method: 'POST' }),
 };
 
-// ─── Site Engineer (mobile dashboard) ───────────────────────
+// ─── V14 — CRM Dispatch Pool ────────────────────────────────
+export const crmPool = {
+  list: () => request('/crm/pool'),
+  pick: (ticketNumber) =>
+    request(`/crm/pool/${ticketNumber}/pick`, { method: 'POST' }),
+  assignTeam: (ticketNumber, teamName) =>
+    request(`/crm/tickets/${ticketNumber}/assign-team`, {
+      method: 'POST',
+      body: { teamName },
+    }),
+  assignEngineer: (ticketNumber, engineerId) =>
+    request(`/crm/tickets/${ticketNumber}/assign-engineer`, {
+      method: 'POST',
+      body: { engineerId },
+    }),
+  teams: () => request('/crm/teams'),
+  searchCustomers: (q) =>
+    request(`/crm/customers/search?q=${encodeURIComponent(q)}`),
+  customerProperties: (customerId) =>
+    request(`/crm/customers/${customerId}/properties`),
+  createOnBehalf: (customerId, body) =>
+    request(`/crm/tickets/on-behalf/${customerId}`, {
+      method: 'POST',
+      body,
+    }),
+};
+
+// ─── V14 — Super Admin / Revenue ────────────────────────────
+export const adminRevenue = {
+  fetch: () => request('/admin/revenue'),
+};
+
+// ─── Service Engineer (mobile dashboard) ────────────────────
 export const engineer = {
   dashboard: () => request('/engineer/dashboard'),
   myJobs: () => request('/engineer/my-jobs'),
@@ -321,6 +354,55 @@ export const dashboard = {
 export const workload = {
   engineers: () => request('/ops/workload/engineers'),
   crm: () => request('/ops/workload/crm'),
+};
+
+// ─── Maps (route helper, etc.) ──────────────────────────────
+export const maps = {
+  route: (ticketNumber) => request(`/maps/route/${ticketNumber}`),
+};
+
+// ─── Slot availability (BookMyShow-style day / slot picker feed) ─
+export const slots = {
+  availability: ({ from, days = 14 } = {}) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    params.set('days', String(days));
+    return request(`/slots/availability?${params.toString()}`);
+  },
+};
+
+// ─── Pricing (dynamic service charge calculator) ────────────
+export const pricing = {
+  quote: ({ acType, lat, lng, couponCode } = {}) => {
+    const params = new URLSearchParams({ acType, lat, lng });
+    if (couponCode) params.set('couponCode', couponCode);
+    return request(`/pricing/quote?${params.toString()}`);
+  },
+};
+
+// ─── Payments (mock gateway today, real later) ──────────────
+export const payments = {
+  createIntent: (body) => request('/payments/intent', { method: 'POST', body }),
+  confirm: (paymentId, body) => request(`/payments/${paymentId}/confirm`, { method: 'POST', body }),
+  get: (paymentId) => request(`/payments/${paymentId}`),
+};
+
+// ─── Discount Coupons (admin) ───────────────────────────────
+export const coupons = {
+  list: () => request('/admin/coupons'),
+  create: (body) => request('/admin/coupons', { method: 'POST', body }),
+  toggle: (id) => request(`/admin/coupons/${id}/toggle`, { method: 'POST' }),
+  remove: (id) => request(`/admin/coupons/${id}`, { method: 'DELETE' }),
+};
+
+// ─── AMC Upgrade Requests ───────────────────────────────────
+export const amcUpgrades = {
+  create: (body) => request('/amc-upgrades', { method: 'POST', body }),
+  mine:   () => request('/amc-upgrades/mine'),
+  open:   () => request('/amc-upgrades/open'),
+  assign: (id, crmId) => request(`/amc-upgrades/${id}/assign`, { method: 'POST', body: { crmId } }),
+  contacted: (id) => request(`/amc-upgrades/${id}/contacted`, { method: 'POST' }),
+  cancel: (id, reason) => request(`/amc-upgrades/${id}/cancel`, { method: 'POST', body: { reason } }),
 };
 
 // ─── Notifications ──────────────────────────────────────────

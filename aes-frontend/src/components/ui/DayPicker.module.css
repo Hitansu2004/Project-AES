@@ -16,17 +16,19 @@
 
 .day {
   flex-shrink: 0;
-  width: 64px;
-  padding: 12px 8px;
+  width: 72px;
+  padding: 12px 8px 8px;
   border-radius: 14px;
   background: var(--surface-container-lowest);
   border: 1.5px solid var(--border-light);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   transition: all 200ms ease;
   scroll-snap-align: center;
+  position: relative;
+  overflow: hidden;
 }
 .day:hover:not(.disabled):not(.selected) {
   border-color: var(--secondary-light);
@@ -41,11 +43,34 @@
   box-shadow: var(--shadow-glow);
 }
 .day.selected .weekday,
-.day.selected .month { color: rgba(255,255,255,0.85); }
+.day.selected .month,
+.day.selected .remaining { color: rgba(255,255,255,0.85); }
 
 .day.disabled {
-  opacity: 0.35;
+  opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* "Only a few slots left" — amber tint */
+.day.fewLeft {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+.day.fewLeft .remaining {
+  color: #b45309;
+  font-weight: 700;
+}
+
+/* Fully booked — red border + strike-through styling */
+.day.full {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.day.full .dayNum { text-decoration: line-through; }
+.day.full .remaining {
+  color: #b91c1c;
+  font-weight: 700;
 }
 
 .weekday {
@@ -67,6 +92,43 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+}
+
+/* Capacity bar — thin coloured strip at the very bottom of the card */
+.capacityBar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg,
+      var(--secondary) 0,
+      var(--secondary) var(--fill, 0%),
+      var(--border-light) var(--fill, 0%),
+      var(--border-light) 100%);
+}
+.day.fewLeft .capacityBar {
+  background:
+    linear-gradient(90deg,
+      #f59e0b 0,
+      #f59e0b var(--fill, 0%),
+      #fde68a var(--fill, 0%),
+      #fde68a 100%);
+}
+.day.full .capacityBar {
+  background: #ef4444;
+}
+.day.selected .capacityBar {
+  background: rgba(255,255,255,0.8);
+}
+
+.remaining {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--on-surface-variant);
   text-transform: uppercase;
 }

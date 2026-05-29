@@ -20,7 +20,13 @@ public enum UserRole {
     CUSTOMER,
     OPS_MANAGER,
     CRM_AGENT,
-    SITE_ENGINEER,
+    SITE_ENGINEER,        // legacy enum name; user-facing label is "Service Engineer"
     SERVICE_MANAGER,
-    ADMIN
+    ADMIN,
+    /**
+     * Company owner.  Sees everything ADMIN sees + the live revenue
+     * dashboard, every transaction, and team / engineer status across
+     * the org.  Added in V14.
+     */
+    SUPER_ADMIN
 }

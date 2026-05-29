@@ -51,6 +51,25 @@ public class Property {
     @Builder.Default
     private Boolean isPrimary = false;
 
+    // ── V12: Maps location + secondary contact ───────────────────
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "formatted_address", columnDefinition = "TEXT")
+    private String formattedAddress;
+
+    @Column(length = 200)
+    private String landmark;
+
+    @Column(name = "google_place_id", length = 150)
+    private String googlePlaceId;
+
+    @Column(name = "secondary_phone", length = 15)
+    private String secondaryPhone;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

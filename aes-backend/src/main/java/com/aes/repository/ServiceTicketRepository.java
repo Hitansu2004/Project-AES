@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,18 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     // CRM agent queries (Level 1)
     Page<ServiceTicket> findByCurrentLevelAndCurrentAssigneeIdOrderByCreatedAtDesc(
             int level, UUID assigneeId, Pageable pageable);
+
+    /**
+     * CRM "My Tickets" view, sorted with carry-overs first so the
+     * agent works yesterday's unfinished tickets before today's
+     * fresh bookings.  Replaces the createdAt-only sort for the
+     * dashboard inbox queries.
+     */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.currentLevel = :level " +
+           "AND t.currentAssignee.id = :assigneeId " +
+           "ORDER BY t.carriedForward DESC, t.priority ASC, t.createdAt DESC")
+    List<ServiceTicket> findActiveForCrmAgentOrdered(@Param("level") int level,
+                                                      @Param("assigneeId") UUID assigneeId);
 
     // Level-based queries
     Page<ServiceTicket> findByCurrentLevelOrderByCreatedAtDesc(int level, Pageable pageable);
@@ -141,10 +154,16 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     long countActiveByEngineer(@Param("engineerId") UUID engineerId);
 
     // ── Engineer mobile dashboard (Phase 3 — PLAN.md §9.3, FLOW.md C12) ─────────
-    /** All active jobs for a given site engineer, newest first. */
+    /**
+     * Active jobs for a given engineer, sorted with carry-overs first so
+     * yesterday's unfinished work is what they see at the top of the list
+     * the next morning.  Within the carry-over group (and within the
+     * fresh-work group) we sort by priority and then by scheduled date.
+     */
     @Query("SELECT t FROM ServiceTicket t WHERE t.engineer.id = :engineerId " +
            "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +
-           "ORDER BY t.priority ASC, t.scheduledDate ASC, t.assignedAt DESC")
+           "ORDER BY t.carriedForward DESC, t.priority ASC, " +
+           "         t.scheduledDate ASC, t.assignedAt DESC")
     List<ServiceTicket> findActiveByEngineerOrdered(@Param("engineerId") UUID engineerId);
 
     /** Tickets the engineer has resolved since a given timestamp (today's done list). */
@@ -166,4 +185,64 @@ public interface ServiceTicketRepository extends JpaRepository<ServiceTicket, UU
     // Ticket sequence
     @Query(value = "SELECT nextval('ticket_seq')", nativeQuery = true)
     Long getNextTicketSequence();
+
+    // ── V14 — CRM "today's pool" (FIFO, one-click pick) ─────────────────────
+    /**
+     * Unassigned tickets the CRM agent can pick up.
+     *
+     * <p>A ticket is "in the pool" when it has no {@code current_assignee_id}
+     * and its status is one of {@code NEW}, {@code OPEN}, or
+     * {@code OFFERED_CRM}.  Sort by {@code created_at} ASC so the
+     * earliest-booked customer rises to the top — FIFO fairness.</p>
+     */
+    @Query("SELECT t FROM ServiceTicket t " +
+           "WHERE t.currentAssignee IS NULL " +
+           "AND t.status IN ('NEW','OPEN','OFFERED_CRM','ESCALATED_BY_CUSTOMER') " +
+           "ORDER BY t.priority ASC, t.createdAt ASC")
+    List<ServiceTicket> findPool();
+
+    /** Count of tickets the CRM agent currently owns (used for 30/day cap). */
+    @Query("SELECT COUNT(t) FROM ServiceTicket t " +
+           "WHERE t.currentAssignee.id = :assigneeId " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    long countOwnedByAssignee(@Param("assigneeId") UUID assigneeId);
+
+    /** All active tickets belonging to a named team (for super-admin view). */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.assignedTeamName = :team " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED') " +
+           "ORDER BY t.priority ASC, t.createdAt ASC")
+    List<ServiceTicket> findActiveByTeam(@Param("team") String teamName);
+
+    // ── V13 — slot capacity / carry-forward ─────────────────────────────────
+    /**
+     * Per-day, per-slot booking counts in one shot.
+     *
+     * <p>The aggregate skips terminal statuses so cancelled work
+     * frees up its slot.  We bucket NULL slots into {@code MORNING}
+     * at the service layer — they're historic data from before V13.</p>
+     *
+     * <p>Returned shape: {@code [scheduled_date, scheduled_slot, count]}
+     * — service code maps that to a typed structure.</p>
+     */
+    @Query(value = """
+            SELECT scheduled_date AS d,
+                   COALESCE(scheduled_slot, 'MORNING') AS slot,
+                   COUNT(*) AS used
+            FROM service_tickets
+            WHERE scheduled_date BETWEEN :from AND :to
+              AND status NOT IN ('RESOLVED','CLOSED','CANCELLED')
+            GROUP BY scheduled_date, COALESCE(scheduled_slot, 'MORNING')
+            """, nativeQuery = true)
+    List<Object[]> findSlotUsageBetween(@Param("from") LocalDate from,
+                                         @Param("to")   LocalDate to);
+
+    /**
+     * Every non-terminal ticket whose {@code scheduled_date} is
+     * strictly before today — these are the carry-forward candidates
+     * the nightly job rolls into today's EARLY slot.
+     */
+    @Query("SELECT t FROM ServiceTicket t WHERE t.scheduledDate IS NOT NULL " +
+           "AND t.scheduledDate < :today " +
+           "AND t.status NOT IN ('RESOLVED','CLOSED','CANCELLED')")
+    List<ServiceTicket> findCarryForwardCandidates(@Param("today") LocalDate today);
 }

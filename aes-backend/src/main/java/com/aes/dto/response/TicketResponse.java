@@ -46,11 +46,22 @@ public class TicketResponse {
     private LocalDate scheduledDate;
     private String scheduledSlot;
 
+    /** V13 — set when the nightly carry-forward job moved this ticket. */
+    private boolean carriedForward;
+    /** V13 — the date originally chosen by the customer (pre-rollover). */
+    private LocalDate originalScheduledDate;
+
+    /** V14 — name of the dispatch team this ticket has been assigned to. */
+    private String assignedTeamName;
+
     // Assignment
     private Integer currentLevel;
     private UUID currentAssigneeId;
     private String currentAssigneeName;
     private OffsetDateTime assignedAt;
+    /** V14 — engineer FK (separate from CRM assignee). */
+    private UUID engineerId;
+    private String engineerName;
 
     // Status
     private String status;

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,16 +8,45 @@ import {
   ArrowLeft, ArrowRight, Check, ShieldCheck, Award, Wrench, Snowflake,
   Volume2, Droplet, PowerOff, Wind, Settings, MoreHorizontal, Camera, X,
   Pencil, MapPin, AlertTriangle, Plus, ChevronDown, CalendarDays, Sun,
-  CloudSun, Moon, Phone, MessageCircle, Sparkles, Info,
+  CloudSun, Moon, Phone, MessageCircle, Sparkles, Info, Tag, IndianRupee,
+  CreditCard, Loader2, MapPinned, Clock, Flame, History,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useService, PRIORITY_INFO, priorityFromServiceStatus } from '@/store/serviceStore';
 import { useToast } from '@/components/ui/Toast';
+import PaymentModal from '@/components/ui/PaymentModal';
+import LocationPicker from '@/components/ui/LocationPicker';
 import {
   properties as propertiesApi,
   acUnits as acUnitsApi,
   tickets as ticketsApi,
+  pricing as pricingApi,
+  slots as slotsApi,
 } from '@/lib/api';
+
+// AES head office — used to detect "placeholder coords" so we can
+// nudge the customer to pick a real address.
+const AES_OFFICE_LAT = 17.4156;
+const AES_OFFICE_LNG = 78.4347;
+
+/**
+ * Returns true when the property hasn't been pinned to a real
+ * location yet — either it has no lat/lng, the lat/lng equal the
+ * default AES office fallback inserted by V12, or the address line
+ * is the placeholder text we've seen in the demo data.
+ */
+function isPlaceholderAddress(p) {
+  if (!p) return true;
+  const lat = p.latitude;
+  const lng = p.longitude;
+  if (lat == null || lng == null) return true;
+  const isOfficeDefault =
+    Math.abs(lat - AES_OFFICE_LAT) < 0.0001 &&
+    Math.abs(lng - AES_OFFICE_LNG) < 0.0001;
+  const addr = (p.formattedAddress || p.addressLine1 || '').trim().toLowerCase();
+  const looksPlaceholder = !addr || addr === 'address' || addr.startsWith('address,');
+  return isOfficeDefault || looksPlaceholder;
+}
 import { TIME_SLOTS, PROBLEM_CATEGORIES, slotLabel } from '@/lib/constants';
 import { lookupErrorCode } from '@/lib/errorCodes';
 import AppTopBar from '@/components/ui/AppTopBar';
@@ -27,16 +56,17 @@ import PriorityBadge from '@/components/ui/PriorityBadge';
 import styles from './ticket.module.css';
 
 const TOTAL_STEPS = 4;
-const SLOT_ICONS = { MORNING: Sun, AFTERNOON: CloudSun, EVENING: Moon };
+const SLOT_ICONS = { EARLY: Clock, MORNING: Sun, AFTERNOON: CloudSun, EVENING: Moon };
 
 const PROBLEM_ICON = {
-  NOT_COOLING: Snowflake,
-  NOISE: Volume2,
-  LEAKING: Droplet,
+  NOT_COOLING:    Snowflake,
+  NOISE:          Volume2,
+  LEAKING:        Droplet,
   NOT_TURNING_ON: PowerOff,
-  NO_AIRFLOW: Wind,
-  REMOTE_WIFI: Settings,
-  OTHER: MoreHorizontal,
+  NO_AIRFLOW:     Wind,
+  SMELL_BURNING:  Flame,
+  REMOTE_WIFI:    Settings,
+  OTHER:          MoreHorizontal,
 };
 
 const DURATIONS = ['Today', '2-3 Days', 'This Week', 'Over a Week'];
@@ -78,6 +108,19 @@ function ServiceTicketWizard() {
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [activePropertyId, setActivePropertyId] = useState(null);
   const [submittedTicket, setSubmittedTicket] = useState(null);
+
+  // V12: dynamic pricing + payment
+  const [priceQuote, setPriceQuote] = useState(null);   // { baseCharge, distanceCharge, total, distanceKm, couponMessage, ... }
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
+  const [pendingTicketPayload, setPendingTicketPayload] = useState(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
+  // V13 — BookMyShow-style slot availability fetched from the backend.
+  // Keyed by ISO date so DayPicker can look up each card in O(1).
+  const [slotAvailability, setSlotAvailability] = useState({});
+  const [dayCapacity, setDayCapacity] = useState(30);
 
   // Auth guard
   useEffect(() => {
@@ -222,6 +265,26 @@ function ServiceTicketWizard() {
     return out;
   }, [propertiesList]);
 
+  // Shared "I picked an AC unit" helper — used by Step 2's tile grid AND
+  // the Step 4 dropdown so both paths set the wizard state identically.
+  const selectAcUnit = useCallback((unit) => {
+    if (!unit) return;
+    set({
+      acUnitId: unit.id,
+      acUnitMeta: {
+        brand: unit.brand,
+        modelNumber: unit.modelNumber,
+        tonnage: unit.tonnage,
+        acType: unit.acType,
+        roomLabel: unit.roomLabel,
+        propertyLabel: unit.propertyLabel,
+        propertyId: unit.propertyId,
+        serviceStatus: unit.serviceStatus,
+      },
+    });
+    setActivePropertyId(unit.propertyId);
+  }, [set]);
+
   const acUnitsForActiveProperty = useMemo(() => {
     if (!activePropertyId) return [];
     return allACs.filter((u) => u.propertyId === activePropertyId);
@@ -232,32 +295,165 @@ function ServiceTicketWizard() {
     [propertiesList, activePropertyId]
   );
 
-  // Submit
-  const handleSubmit = async () => {
-    if (!step4Valid || !state.acUnitId) return;
+  // Property the chosen AC unit actually belongs to (might differ from activeProperty)
+  const ticketProperty = useMemo(() => {
+    if (!state.acUnitMeta?.propertyId) return activeProperty;
+    return propertiesList.find((p) => p.id === state.acUnitMeta.propertyId) || activeProperty;
+  }, [propertiesList, state.acUnitMeta, activeProperty]);
+
+  // V13 — fetch BookMyShow-style slot availability for the next 14 days
+  // whenever the customer arrives on the schedule step.  We re-fetch on
+  // step entry rather than every render so the picker stays in sync if
+  // someone else just booked while this wizard was open.
+  useEffect(() => {
+    if (step !== 4) return;
+    let cancelled = false;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    slotsApi.availability({ from: `${yyyy}-${mm}-${dd}`, days: 14 })
+      .then((resp) => {
+        if (cancelled) return;
+        const lookup = {};
+        (resp?.days || []).forEach((d) => { lookup[d.date] = d; });
+        setSlotAvailability(lookup);
+        if (resp?.dayCapacity) setDayCapacity(resp.dayCapacity);
+      })
+      .catch(() => { /* silent — picker degrades to unrestricted mode */ });
+    return () => { cancelled = true; };
+  }, [step]);
+
+  // Re-quote whenever we have the inputs needed for a P3 paid ticket.
+  //
+  // We deliberately bail out when the property still has placeholder /
+  // office-default coordinates — otherwise the API would happily return
+  // "0.0 km · Free" which is exactly the confusing UX the customer
+  // reported.  The wizard shows a "Set your visit address" CTA instead.
+  useEffect(() => {
+    if (effectivePriority !== 'P3') { setPriceQuote(null); return; }
+    if (!state.acUnitMeta?.acType) return;
+    if (!ticketProperty || isPlaceholderAddress(ticketProperty)) { setPriceQuote(null); return; }
+    let cancelled = false;
+    setPricingLoading(true);
+    pricingApi.quote({
+      acType: state.acUnitMeta.acType,
+      lat: ticketProperty.latitude,
+      lng: ticketProperty.longitude,
+      couponCode: couponInput?.trim() ? couponInput.trim() : undefined,
+    })
+      .then((q) => { if (!cancelled) setPriceQuote(q); })
+      .catch(() => { if (!cancelled) setPriceQuote(null); })
+      .finally(() => { if (!cancelled) setPricingLoading(false); });
+    return () => { cancelled = true; };
+  }, [effectivePriority, state.acUnitMeta, ticketProperty, couponInput]);
+
+  // Build the payload that the backend expects.  Same shape for both
+  // free (AMC / In Warranty) and paid (P3) tickets — the wizard just
+  // attaches the pricing + paymentId fields when a payment was made.
+  const buildPayload = (paymentId = null) => {
+    const description = [
+      state.duration ? `Duration: ${state.duration}` : null,
+      state.description?.trim() ? state.description.trim() : null,
+    ].filter(Boolean).join('\n');
+    return {
+      acUnitId: state.acUnitId,
+      problemCategory: state.problemCategory,
+      errorCode: state.errorCode?.trim() ? state.errorCode.trim().toUpperCase() : null,
+      problemDescription: description || null,
+      photoUrls: state.photoUrls?.length ? state.photoUrls : [],
+      scheduledDate: state.scheduledDate,
+      scheduledSlot: state.scheduledSlot,
+      // V12 — location captured from the chosen property
+      serviceLat:     ticketProperty?.latitude  ?? null,
+      serviceLng:     ticketProperty?.longitude ?? null,
+      serviceAddress: ticketProperty?.formattedAddress
+                   ?? [ticketProperty?.addressLine1, ticketProperty?.city].filter(Boolean).join(', '),
+      landmark:       ticketProperty?.landmark  ?? null,
+      secondaryPhone: ticketProperty?.secondaryPhone ?? null,
+      // V12 — pricing + payment
+      discountCode:   priceQuote?.couponCode ?? (couponInput?.trim() || null),
+      paymentId,
+    };
+  };
+
+  const createTicketWithPayload = async (payload) => {
     setSubmitting(true);
     try {
-      const description = [
-        state.duration ? `Duration: ${state.duration}` : null,
-        state.description?.trim() ? state.description.trim() : null,
-      ].filter(Boolean).join('\n');
-      const payload = {
-        acUnitId: state.acUnitId,
-        problemCategory: state.problemCategory,
-        errorCode: state.errorCode?.trim() ? state.errorCode.trim().toUpperCase() : null,
-        problemDescription: description || null,
-        photoUrls: state.photoUrls?.length ? state.photoUrls : [],
-        scheduledDate: state.scheduledDate,
-        scheduledSlot: state.scheduledSlot,
-      };
       const res = await ticketsApi.create(payload);
       setSubmittedTicket(res);
       reset();
+      setShowPayment(false);
+      setPriceQuote(null);
+      setCouponInput('');
       toast.success('Service ticket raised.');
     } catch (err) {
       toast.error(err.message || 'Could not raise ticket. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Submit — pops the payment modal for P3, raises directly otherwise.
+  const handleSubmit = async () => {
+    if (!step4Valid || !state.acUnitId) return;
+    if (effectivePriority === 'P3') {
+      if (isPlaceholderAddress(ticketProperty)) {
+        toast.error('Please set your visit address first — distance affects the price.');
+        setShowLocationPicker(true);
+        return;
+      }
+      if (!priceQuote || pricingLoading) {
+        toast.error('We are still calculating the price — try again in a moment.');
+        return;
+      }
+      setPendingTicketPayload(buildPayload(null));
+      setShowPayment(true);
+      return;
+    }
+    await createTicketWithPayload(buildPayload(null));
+  };
+
+  // Callback fired from PaymentModal after a successful demo payment.
+  const handlePaymentSuccess = async ({ paymentId }) => {
+    if (!pendingTicketPayload) return;
+    await createTicketWithPayload({ ...pendingTicketPayload, paymentId });
+    setPendingTicketPayload(null);
+  };
+
+  // Persist the picked address back to the property so the price card
+  // re-calculates AND the customer's account page shows the same pin
+  // next time they raise a ticket.
+  const handleLocationSave = async (loc) => {
+    if (!ticketProperty?.id) return;
+    setSavingLocation(true);
+    try {
+      const updated = await propertiesApi.update(ticketProperty.id, {
+        latitude:         loc.lat,
+        longitude:        loc.lng,
+        formattedAddress: loc.formattedAddress,
+        googlePlaceId:    loc.googlePlaceId,
+        landmark:         loc.landmark,
+        secondaryPhone:   loc.secondaryPhone,
+        // Also overwrite the legacy text address line with the real one
+        // so /account stops showing "address, city".  When Google gave
+        // us a proper locality / postal code, persist those too so the
+        // record stays in sync with whatever was just confirmed.
+        addressLine1:     loc.formattedAddress,
+        ...(loc.city    ? { city:    loc.city }    : {}),
+        ...(loc.pincode ? { pincode: loc.pincode } : {}),
+      });
+      // Replace the property in our local list so the UI re-renders +
+      // the price effect re-runs against the new lat/lng.
+      setPropertiesList((prev) => prev.map((p) =>
+        p.id === ticketProperty.id ? { ...p, ...updated } : p
+      ));
+      setShowLocationPicker(false);
+      toast.success('Address saved — recalculating price…');
+    } catch (e) {
+      toast.error(e?.message || 'Could not save address');
+    } finally {
+      setSavingLocation(false);
     }
   };
 
@@ -343,9 +539,36 @@ function ServiceTicketWizard() {
                 acMeta={state.acUnitMeta}
                 state={state}
                 set={set}
-                onEdit={(target) => {
-                  if (target === 'ac') goToStep(2);
-                  if (target === 'problem') goToStep(3);
+                priceQuote={priceQuote}
+                pricingLoading={pricingLoading}
+                couponInput={couponInput}
+                onCouponChange={setCouponInput}
+                ticketProperty={ticketProperty}
+                addressMissing={isPlaceholderAddress(ticketProperty)}
+                onPickAddress={() => setShowLocationPicker(true)}
+                // V12 — inline editors instead of bouncing back to step 2/3
+                propertiesList={propertiesList}
+                acUnitsForActiveProperty={acUnitsForActiveProperty}
+                activePropertyId={activePropertyId}
+                // V13 — slot availability + day capacity for the picker
+                slotAvailability={slotAvailability}
+                dayCapacity={dayCapacity}
+                onChangeProperty={(propertyId) => {
+                  setActivePropertyId(propertyId);
+                  // If the unit we'd been carrying belongs to a different
+                  // property, swap it for the first AC of the new one — or
+                  // clear it if the new property is empty so the AC dropdown
+                  // forces the customer to pick one.
+                  const acsInNewProp = allACs.filter((u) => u.propertyId === propertyId);
+                  const currentStillValid = state.acUnitMeta?.propertyId === propertyId;
+                  if (!currentStillValid) {
+                    if (acsInNewProp.length > 0) selectAcUnit(acsInNewProp[0]);
+                    else set({ acUnitId: null, acUnitMeta: null });
+                  }
+                }}
+                onChangeAcUnit={(acUnitId) => {
+                  const unit = allACs.find((u) => u.id === acUnitId);
+                  if (unit) selectAcUnit(unit);
                 }}
               />
             </motion.section>
@@ -353,16 +576,47 @@ function ServiceTicketWizard() {
         </AnimatePresence>
       </div>
 
+      <PaymentModal
+        open={showPayment}
+        amount={priceQuote?.total ?? 0}
+        description={state.acUnitMeta ? `${labelForAcType(state.acUnitMeta.acType)} service · ${state.acUnitMeta.roomLabel}` : 'AES service charge'}
+        customerName={user?.name}
+        customerPhone={user?.phoneNumber}
+        onClose={() => { if (!submitting) setShowPayment(false); }}
+        onSuccess={handlePaymentSuccess}
+      />
+
+      <LocationPicker
+        open={showLocationPicker}
+        initial={ticketProperty ? {
+          lat: isPlaceholderAddress(ticketProperty) ? null : ticketProperty.latitude,
+          lng: isPlaceholderAddress(ticketProperty) ? null : ticketProperty.longitude,
+          formattedAddress: isPlaceholderAddress(ticketProperty) ? '' : (ticketProperty.formattedAddress || ''),
+          landmark: ticketProperty.landmark || '',
+          secondaryPhone: ticketProperty.secondaryPhone || user?.phoneNumber || '',
+        } : null}
+        onClose={() => setShowLocationPicker(false)}
+        onSave={handleLocationSave}
+        saving={savingLocation}
+      />
+
       <div className={styles.actionBar}>
         <div className={styles.actionInner}>
           {step === 4 ? (
             <button
               className="btn btn-primary btn-full btn-lg"
-              disabled={!step4Valid || submitting}
+              disabled={
+                !step4Valid || submitting ||
+                (effectivePriority === 'P3' && (pricingLoading || isPlaceholderAddress(ticketProperty)))
+              }
               onClick={handleSubmit}
             >
               {submitting ? <span className="spinner spinner-sm" /> : (
-                <>Raise Service Ticket <ArrowRight size={18} /></>
+                effectivePriority === 'P3'
+                  ? (isPlaceholderAddress(ticketProperty)
+                      ? <>Add your address to continue <ArrowRight size={18} /></>
+                      : <>Continue to Payment {priceQuote ? `· ₹${priceQuote.total.toLocaleString('en-IN')}` : ''} <ArrowRight size={18} /></>)
+                  : <>Raise Service Ticket <ArrowRight size={18} /></>
               )}
             </button>
           ) : step === 2 ? (
@@ -994,8 +1248,18 @@ function Step3Problem({ priority, acMeta, value, onChange }) {
 }
 
 /* ─── Step 4 — Schedule & Confirm ───────────────────────── */
-function Step4Schedule({ priority, acMeta, state, set, onEdit }) {
+function Step4Schedule({
+  priority, acMeta, state, set,
+  priceQuote, pricingLoading, couponInput, onCouponChange, ticketProperty,
+  addressMissing, onPickAddress,
+  // V12 — inline edit support
+  propertiesList = [], acUnitsForActiveProperty = [],
+  activePropertyId, onChangeProperty, onChangeAcUnit,
+  // V13 — slot availability
+  slotAvailability = {}, dayCapacity = 30,
+}) {
   const info = priority ? PRIORITY_INFO[priority] : null;
+  const todaysSlots = state.scheduledDate ? slotAvailability[state.scheduledDate]?.slots : null;
 
   return (
     <>
@@ -1013,56 +1277,122 @@ function Step4Schedule({ priority, acMeta, state, set, onEdit }) {
         </div>
       )}
 
+      {priority === 'P3' && (
+        <PriceCard
+          quote={priceQuote}
+          loading={pricingLoading}
+          couponInput={couponInput}
+          onCouponChange={onCouponChange}
+          property={ticketProperty}
+          acMeta={acMeta}
+          addressMissing={addressMissing}
+          onPickAddress={onPickAddress}
+        />
+      )}
+
       <section className={styles.summaryCard}>
         <div className={styles.summaryHead}>
           <h3>Service Summary</h3>
         </div>
-        <SummaryRow
+
+        <SummarySelect
           icon={<MapPin size={18} />}
           label="Property"
-          value={acMeta?.propertyLabel || '—'}
-          onEdit={() => onEdit('ac')}
+          value={activePropertyId || acMeta?.propertyId || ''}
+          onChange={onChangeProperty}
+          options={propertiesList.map((p) => ({
+            value: p.id,
+            label: p.label,
+          }))}
+          placeholder="Select a property"
         />
-        <SummaryRow
+
+        <SummarySelect
           icon={<Snowflake size={18} />}
           label="AC Unit"
-          value={acMeta ? `${acMeta.brand} ${acMeta.modelNumber || ''} · ${acMeta.roomLabel}` : '—'}
-          onEdit={() => onEdit('ac')}
+          value={state.acUnitId || ''}
+          onChange={onChangeAcUnit}
+          options={acUnitsForActiveProperty.map((u) => ({
+            value: u.id,
+            label: `${u.brand} ${u.modelNumber || ''} · ${u.roomLabel} · ${labelForAcType(u.acType)}`
+              .replace(/\s+/g, ' ').trim(),
+          }))}
+          placeholder="Select an AC unit"
+          hint={acUnitsForActiveProperty.length === 0
+            ? 'No AC units on this property — add one from the Account page first.'
+            : null}
         />
-        <SummaryRow
+
+        <SummarySelect
           icon={<AlertTriangle size={18} />}
           label="Problem"
-          value={[
-            problemLabel(state.problemCategory),
-            state.errorCode ? `Code ${state.errorCode}` : null,
-          ].filter(Boolean).join(' + ') || 'Not set'}
-          onEdit={() => onEdit('problem')}
+          value={state.problemCategory || ''}
+          onChange={(v) => set({ problemCategory: v })}
+          options={PROBLEM_CATEGORIES.map((p) => ({ value: p.value, label: p.label }))}
+          placeholder="Select a problem"
+          hint={state.errorCode ? `Reported error code · ${state.errorCode}` : null}
         />
       </section>
 
       <section className={styles.scheduleSection}>
-        <h3 className={styles.sectionHeading}>Select Date &amp; Time</h3>
+        <h3 className={styles.sectionHeading}>
+          Select Date &amp; Time
+          <span className={styles.capacityHint}>
+            <History size={12} /> Booked like BookMyShow — {dayCapacity} slots / day
+          </span>
+        </h3>
         <DayPicker
           value={state.scheduledDate}
-          onChange={(iso) => set({ scheduledDate: iso })}
+          onChange={(iso) => {
+            // If the customer switches to a different date and the
+            // slot they had picked is already full there, clear it
+            // so the slot grid forces them to choose again.
+            const newSlotsForDay = slotAvailability[iso]?.slots;
+            const stillOk = state.scheduledSlot && newSlotsForDay
+              ? !newSlotsForDay[state.scheduledSlot]?.full
+              : true;
+            set({ scheduledDate: iso, scheduledSlot: stillOk ? state.scheduledSlot : '' });
+          }}
           days={14}
+          availability={slotAvailability}
+          dayCapacity={dayCapacity}
         />
+        {state.scheduledDate && slotAvailability[state.scheduledDate]?.busyReason && (
+          <p className={styles.busyBanner}>
+            <AlertTriangle size={13} /> {slotAvailability[state.scheduledDate].busyReason}
+          </p>
+        )}
         <div className={styles.slotGrid}>
           {TIME_SLOTS.map(({ value: v, label, range, tag }) => {
             const Icon = SLOT_ICONS[v];
             const selected = state.scheduledSlot === v;
+            const slotInfo = todaysSlots?.[v];
+            const slotFull = !!slotInfo?.full;
+            const slotLeft = slotInfo?.available;
+            const disabled = !state.scheduledDate || slotFull;
             return (
               <motion.button
                 key={v}
                 type="button"
-                whileTap={{ scale: 0.97 }}
-                onClick={() => set({ scheduledSlot: v })}
-                className={`${styles.slotCard} ${selected ? styles.slotCardSelected : ''}`}
+                whileTap={{ scale: disabled ? 1 : 0.97 }}
+                onClick={() => !disabled && set({ scheduledSlot: v })}
+                disabled={disabled}
+                className={[
+                  styles.slotCard,
+                  selected && styles.slotCardSelected,
+                  slotFull && styles.slotCardFull,
+                  disabled && styles.slotCardDisabled,
+                ].filter(Boolean).join(' ')}
+                title={!state.scheduledDate
+                  ? 'Pick a date first'
+                  : (slotFull ? 'This slot is full' : `${slotLeft ?? '—'} slots left`)}
               >
                 <Icon size={18} />
                 <span className={styles.slotLabel}>{label}</span>
                 <span className={styles.slotRange}>{range}</span>
-                {tag && <span className={styles.slotTag}>{tag}</span>}
+                {slotInfo
+                  ? <span className={styles.slotTag}>{slotFull ? 'Full' : `${slotLeft} left`}</span>
+                  : (tag && <span className={styles.slotTag}>{tag}</span>)}
               </motion.button>
             );
           })}
@@ -1091,6 +1421,164 @@ function Step4Schedule({ priority, acMeta, state, set, onEdit }) {
   );
 }
 
+/* ─── Dynamic Pricing card for P3 ───────────────────────── */
+function PriceCard({ quote, loading, couponInput, onCouponChange, property, acMeta, addressMissing, onPickAddress }) {
+  const distance = quote?.distanceKm != null ? Number(quote.distanceKm).toFixed(1) : null;
+  const total    = quote?.total ?? 0;
+  const inr      = (n) => '₹' + Number(n).toLocaleString('en-IN');
+  const couponApplied = quote?.couponCode && quote?.discountAmount > 0;
+  const couponError   = quote?.couponMessage && !couponApplied;
+
+  return (
+    <section style={{
+      borderRadius: 16, padding: '16px 18px',
+      background: 'linear-gradient(135deg, var(--surface-container-low, #f8fafc), var(--surface, #fff))',
+      border: '1px solid var(--border-light, #e2e8f0)',
+      display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12,
+    }}>
+      {/* Address — either picker CTA (missing) or saved-card with Edit */}
+      {addressMissing ? (
+        <button
+          type="button"
+          onClick={onPickAddress}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            width: '100%', textAlign: 'left', cursor: 'pointer',
+            padding: '12px 14px', borderRadius: 12,
+            background: 'linear-gradient(135deg, #fef3c7, #fde68a40)',
+            border: '1px dashed #f59e0b',
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: '#f59e0b', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <MapPin size={18} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#78350f' }}>
+              Set your visit address
+            </div>
+            <div style={{ fontSize: 11, color: '#92400e', marginTop: 2 }}>
+              We&rsquo;ll calculate the exact service charge based on the distance from our office.
+            </div>
+          </div>
+          <ArrowRight size={16} color="#92400e" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onPickAddress}
+          style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            width: '100%', textAlign: 'left', cursor: 'pointer',
+            padding: '10px 12px', borderRadius: 10,
+            background: 'var(--surface-container-low, #f8fafc)',
+            border: '1px solid var(--border-light, #e2e8f0)',
+          }}
+        >
+          <MapPinned size={16} color="var(--secondary, #0ea5e9)" style={{ marginTop: 2, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+              Visit address
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--on-surface)', marginTop: 2, lineHeight: 1.4 }}>
+              {property?.formattedAddress || [property?.addressLine1, property?.city].filter(Boolean).join(', ')}
+            </div>
+            {property?.landmark && (
+              <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                Landmark: {property.landmark}
+              </div>
+            )}
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary, #0ea5e9)' }}>Change</span>
+        </button>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <IndianRupee size={16} color="var(--secondary)" />
+        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--on-surface)' }}>
+          Service charge breakdown
+        </h3>
+      </div>
+
+      {loading && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--on-surface-variant)' }}>
+          <Loader2 size={14} className="spin" /> Calculating based on AC type and distance…
+        </div>
+      )}
+
+      {!loading && quote && !addressMissing && (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
+            <Row label={`Base — ${labelForAcType(acMeta?.acType)}`} value={inr(quote.baseCharge)} />
+            <Row label={`Distance — ${distance} km from AES office`} value={quote.distanceCharge ? `+${inr(quote.distanceCharge)}` : 'Free'} />
+            {couponApplied && (
+              <Row
+                label={`Coupon ${quote.couponCode} (${quote.discountPct}% off)`}
+                value={`− ${inr(quote.discountAmount)}`}
+                tone="positive"
+              />
+            )}
+            <div style={{ height: 1, background: 'var(--border-light, #e2e8f0)', margin: '4px 0' }} />
+            <Row label="You pay now" value={inr(total)} bold />
+          </div>
+
+          {/* Coupon input */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Tag size={14} color="var(--on-surface-variant)" style={{ position: 'absolute', top: 12, left: 10 }} />
+              <input
+                placeholder="Apply discount code"
+                value={couponInput}
+                onChange={(e) => onCouponChange(e.target.value.toUpperCase())}
+                className="input"
+                style={{ paddingLeft: 30, textTransform: 'uppercase' }}
+              />
+            </div>
+            {couponInput && (
+              <button type="button" className="btn btn-ghost" onClick={() => onCouponChange('')}>
+                Clear
+              </button>
+            )}
+          </div>
+          {couponError && (
+            <p style={{ margin: 0, fontSize: 12, color: '#ef4444' }}>{quote.couponMessage}</p>
+          )}
+          {couponApplied && (
+            <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>{quote.couponMessage}</p>
+          )}
+        </>
+      )}
+
+      {!loading && addressMissing && (
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--on-surface-variant)' }}>
+          Once you set your address, we&rsquo;ll show the final amount (base + distance band).
+        </p>
+      )}
+
+      <style jsx>{`
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </section>
+  );
+}
+
+function Row({ label, value, bold = false, tone = '' }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ color: 'var(--on-surface-variant)', flex: 1 }}>{label}</span>
+      <span style={{
+        fontWeight: bold ? 800 : 600,
+        color: tone === 'positive' ? '#16a34a' : 'var(--on-surface)',
+        fontSize: bold ? 16 : 13,
+      }}>{value}</span>
+    </div>
+  );
+}
+
 function SummaryRow({ icon, label, value, onEdit }) {
   return (
     <div className={styles.summaryRow}>
@@ -1102,6 +1590,37 @@ function SummaryRow({ icon, label, value, onEdit }) {
       <button type="button" className={styles.summaryEdit} onClick={onEdit} aria-label={`Edit ${label}`}>
         <Pencil size={14} />
       </button>
+    </div>
+  );
+}
+
+/**
+ * Editable summary row — same anatomy as SummaryRow but renders a
+ * native <select> in place of the value + pencil.  Used on Step 4 so
+ * the customer can swap Property / AC Unit / Problem without bouncing
+ * back through the wizard.
+ */
+function SummarySelect({ icon, label, value, onChange, options, placeholder, hint }) {
+  const disabled = !options || options.length === 0;
+  return (
+    <div className={styles.summaryRowEditable}>
+      <span className={styles.summaryIcon}>{icon}</span>
+      <div>
+        <span className={styles.summaryLabel}>{label}</span>
+        <select
+          className={`${styles.summarySelect} ${!value ? styles.summarySelectEmpty : ''}`}
+          value={value || ''}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={disabled}
+          aria-label={label}
+        >
+          <option value="" disabled>{placeholder || `Select ${label.toLowerCase()}`}</option>
+          {(options || []).map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        {hint && <span className={styles.summarySelectHint}>{hint}</span>}
+      </div>
     </div>
   );
 }

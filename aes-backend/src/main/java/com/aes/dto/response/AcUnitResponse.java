@@ -35,4 +35,15 @@ public class AcUnitResponse {
     private String warrantyStatus;
     private String serviceStatus;
     private OffsetDateTime createdAt;
+
+    // ── V12: warranty provenance + UX helpers ───────────────────
+    private Boolean purchasedFromAes;
+    private LocalDate warrantyStartDate;
+    private Integer warrantyMonths;
+    private String purchaseInvoiceNo;
+    private Integer soldPrice;
+    /** Server-computed convenience field: days until warranty expiry (negative if expired). */
+    private Long warrantyDaysLeft;
+    /** "In Warranty" / "Expiring soon" / "Expired" / "No Warranty" — display-ready badge. */
+    private String warrantyBadge;
 }

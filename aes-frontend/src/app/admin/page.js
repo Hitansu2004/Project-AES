@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Timer, CheckCircle2, ShieldAlert, ChevronRight, ArrowUp,
   Clock, Bell, RefreshCw, Search, LogOut, Snowflake, FileSpreadsheet, Activity,
-  Users, UserCheck, Headset, Wrench, Crown,
+  Users, UserCheck, Headset, Wrench, Crown, Tag,
 } from 'lucide-react';
 
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
@@ -288,6 +288,9 @@ export default function AdminEscalationPage() {
           >
             <RefreshCw size={18} className={refreshing ? styles.spin : ''} />
           </button>
+          <Link href="/admin/coupons" className={styles.iconBtn} aria-label="Discount coupons" title="Discount coupons">
+            <Tag size={18} />
+          </Link>
           <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
             <Bell size={18} />
             {unread > 0 && (

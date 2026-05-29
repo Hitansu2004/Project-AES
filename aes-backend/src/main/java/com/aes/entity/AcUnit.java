@@ -82,6 +82,24 @@ public class AcUnit {
     @Builder.Default
     private Boolean isActive = true;
 
+    // ── V12: explicit warranty metadata + provenance ─────────────
+    @Column(name = "purchased_from_aes", nullable = false)
+    @Builder.Default
+    private Boolean purchasedFromAes = false;
+
+    @Column(name = "warranty_start_date")
+    private LocalDate warrantyStartDate;
+
+    @Column(name = "warranty_months", nullable = false)
+    @Builder.Default
+    private Integer warrantyMonths = 12;
+
+    @Column(name = "purchase_invoice_no", length = 50)
+    private String purchaseInvoiceNo;
+
+    @Column(name = "sold_price")
+    private Integer soldPrice;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

@@ -81,6 +81,13 @@ public class PropertyService {
                 .propertyType(request.getPropertyType() != null
                         ? request.getPropertyType() : PropertyType.RESIDENTIAL)
                 .isPrimary(Boolean.TRUE.equals(request.getIsPrimary()))
+                // V12: Google Maps pin + secondary contact (all optional)
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .formattedAddress(request.getFormattedAddress())
+                .landmark(request.getLandmark())
+                .googlePlaceId(request.getGooglePlaceId())
+                .secondaryPhone(request.getSecondaryPhone())
                 .build();
 
         property = propertyRepository.save(property);
@@ -131,6 +138,13 @@ public class PropertyService {
             }
             property.setIsPrimary(request.getIsPrimary());
         }
+        // V12 — Maps pin + secondary contact
+        if (request.getLatitude()  != null) property.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) property.setLongitude(request.getLongitude());
+        if (request.getFormattedAddress() != null) property.setFormattedAddress(request.getFormattedAddress());
+        if (request.getLandmark()  != null) property.setLandmark(request.getLandmark());
+        if (request.getGooglePlaceId() != null) property.setGooglePlaceId(request.getGooglePlaceId());
+        if (request.getSecondaryPhone() != null) property.setSecondaryPhone(request.getSecondaryPhone());
 
         propertyRepository.save(property);
         return toResponse(property, false);
@@ -164,6 +178,12 @@ public class PropertyService {
                 .propertyType(property.getPropertyType().name())
                 .isPrimary(property.getIsPrimary())
                 .acUnitsCount(acUnitRepository.countByPropertyId(property.getId()))
+                .latitude(property.getLatitude())
+                .longitude(property.getLongitude())
+                .formattedAddress(property.getFormattedAddress())
+                .landmark(property.getLandmark())
+                .googlePlaceId(property.getGooglePlaceId())
+                .secondaryPhone(property.getSecondaryPhone())
                 .createdAt(property.getCreatedAt());
 
         if (includeAcUnits) {
@@ -175,6 +195,17 @@ public class PropertyService {
     }
 
     private AcUnitResponse toAcUnitResponse(AcUnit unit) {
+        // Compute warranty badge + days-left so the UI doesn't have to.
+        Long daysLeft = null;
+        String badge = "No Warranty";
+        if (unit.getWarrantyExpiry() != null) {
+            daysLeft = java.time.temporal.ChronoUnit.DAYS.between(
+                    java.time.LocalDate.now(), unit.getWarrantyExpiry());
+            if (daysLeft < 0)        badge = "Expired";
+            else if (daysLeft <= 30) badge = "Expiring soon";
+            else                     badge = "In Warranty";
+        }
+
         return AcUnitResponse.builder()
                 .id(unit.getId())
                 .propertyId(unit.getProperty().getId())
@@ -189,6 +220,13 @@ public class PropertyService {
                 .warrantyStatus(unit.getWarrantyStatus().name())
                 .serviceStatus(unit.getServiceStatus().name())
                 .createdAt(unit.getCreatedAt())
+                .purchasedFromAes(unit.getPurchasedFromAes())
+                .warrantyStartDate(unit.getWarrantyStartDate())
+                .warrantyMonths(unit.getWarrantyMonths())
+                .purchaseInvoiceNo(unit.getPurchaseInvoiceNo())
+                .soldPrice(unit.getSoldPrice())
+                .warrantyDaysLeft(daysLeft)
+                .warrantyBadge(badge)
                 .build();
     }
 }

@@ -419,6 +419,268 @@
 .escalateLink:hover { color: var(--on-surface); }
 .escalateLink:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ─── Parts approval card ───────────────────────────────── */
+.partCard {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+.partCard:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--secondary-soft, #b3dff0);
+}
+
+.partAccent { width: 4px; }
+
+.partBody {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.partHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.partHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.partIconWrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-container);
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.partBand {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.urgencyChip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+}
+
+.partCost {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--on-surface);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.partName {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.4;
+}
+.partQty {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+}
+
+.partNote {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  line-height: 1.45;
+}
+.partRequester {
+  font-weight: 700;
+  color: var(--on-surface);
+}
+.partNoteText { font-style: italic; }
+
+.partActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--surface-container);
+  margin-top: 2px;
+}
+.rejectBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low, var(--surface-container));
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.rejectBtn:hover:not(:disabled) {
+  background: var(--error-container, #fef2f2);
+  color: var(--error);
+  border-color: var(--error);
+}
+.rejectBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.approveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--primary, #003366);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: 0 1px 4px rgba(0, 51, 102, 0.25);
+}
+.approveBtn:hover:not(:disabled) {
+  background: var(--primary-dark, #001f3f);
+  box-shadow: 0 3px 8px rgba(0, 51, 102, 0.35);
+}
+.approveBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.detailsToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.detailsToggleBtn:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+/* ── Expandable details panel ─────────────────────────────── */
+.partDetails {
+  background: var(--surface-container);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin: 4px 0 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--outline-variant);
+}
+
+.partDetailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .partDetailsGrid { grid-template-columns: 1fr; }
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detailSectionLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--on-surface-variant);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--outline-variant);
+  margin-bottom: 2px;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+.detailRowIcon {
+  color: var(--outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.detailRowLabel {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+.detailRowValue {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-surface);
+  text-align: right;
+  word-break: break-word;
+}
+.detailRowHighlight {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--primary, #003366);
+}
+.detailLink {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.detailLink:hover { text-decoration: underline; }
+
+.partNotesBlock {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  border-left: 3px solid var(--outline-variant);
+}
+.partNotesBody {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
 /* ─── Bottom sheet ──────────────────────────────────────── */
 .sheetBackdrop {
   position: fixed;

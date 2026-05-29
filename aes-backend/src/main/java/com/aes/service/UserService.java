@@ -52,6 +52,8 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .teamName(user.getTeamName())
+                .isTeamLead(Boolean.TRUE.equals(user.getIsTeamLead()))
                 .propertiesCount(propertiesCount)
                 .acUnitsCount(acUnitsCount);
 

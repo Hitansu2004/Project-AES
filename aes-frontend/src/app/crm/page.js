@@ -8,7 +8,9 @@ import {
   Inbox, ListChecks, AlertTriangle, CheckCircle2, Settings, LogOut,
   Bell, Phone, Check, ArrowUp, Wrench, Filter, Search,
   X, MapPin, User, Send, PackageSearch, Package, Clock, Timer,
-  FileText, ThumbsUp, ThumbsDown,
+  FileText, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp,
+  Hash, Layers, AlertCircle, DollarSign, ClipboardList, RefreshCw,
+  Sparkles, UserPlus, Users, TrendingUp,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
@@ -20,6 +22,7 @@ import {
   parts as partsApi,
   quotes as quotesApi,
   workload as workloadApi,
+  crmPool as crmPoolApi,
 } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
@@ -31,8 +34,9 @@ import ShiftToggle from '@/components/ui/ShiftToggle';
 import styles from './crm.module.css';
 
 const VIEWS = [
-  { key: 'offers',    label: 'Offers',         icon: Send },
+  { key: 'pool',      label: "Today's Pool",   icon: Sparkles },
   { key: 'inbox',     label: 'My Tickets',     icon: Inbox },
+  { key: 'create',    label: 'Create Ticket',  icon: UserPlus },
   { key: 'parts',     label: 'Parts Approval', icon: PackageSearch },
   { key: 'quotes',    label: 'My Quotes',      icon: FileText },
   { key: 'all',       label: 'All Tickets',    icon: ListChecks },
@@ -79,7 +83,10 @@ export default function CrmDashboard() {
   const { unread } = useNotifications();
   const toast = useToast();
 
-  const [view, setView] = useState('offers');
+  // V14: default to the live Pool (stockbroker view). Agents pick from
+  // here first, then click "My Tickets" once they've claimed work.
+  const [view, setView] = useState('pool');
+  const [hasAutoSwitched, setHasAutoSwitched] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [sortBy, setSortBy] = useState('sla');
   const [tickets, setTickets] = useState([]);
@@ -94,24 +101,31 @@ export default function CrmDashboard() {
   const [showAssign, setShowAssign] = useState(null);   // ticket
   const [search, setSearch] = useState('');
 
-  // Auth guard
+  // V14 — Pool, teams, on-behalf customer search
+  const [pool, setPool] = useState([]);
+  const [poolMeta, setPoolMeta] = useState({ currentLoad: 0, cap: 30, remaining: 30 });
+  const [teams, setTeams] = useState([]);          // [{teamName, members, engineers, lead}]
+
+  // Auth guard — Ops Manager + Super Admin can also use the pool view.
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace('/login?next=/crm'); return; }
-    const allowed = ['CRM_AGENT', 'ADMIN', 'SERVICE_MANAGER'];
+    const allowed = ['CRM_AGENT', 'ADMIN', 'SERVICE_MANAGER', 'OPS_MANAGER', 'SUPER_ADMIN'];
     if (!allowed.includes(user.role)) router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router]);
 
-  // Fetch tickets + stats + offers + parts queue + my quotes + engineer board
+  // Fetch tickets + stats + offers + parts queue + my quotes + engineer board + pool + teams
   const fetchAll = async () => {
     try {
-      const [list, dash, mine, queue, qs, engs] = await Promise.allSettled([
+      const [list, dash, mine, queue, qs, engs, poolRes, teamRes] = await Promise.allSettled([
         ticketsApi.list(),
         dashboardApi.crm(),
         offersApi.mine(),
         partsApi.queue(),
-        quotesApi.queue().catch(() => []),     // CRM may not have queue rights
-        workloadApi.engineers().catch(() => []), // engineer availability for dispatch
+        quotesApi.queue().catch(() => []),
+        workloadApi.engineers().catch(() => []),
+        crmPoolApi.list(),
+        crmPoolApi.teams(),
       ]);
       if (list.status === 'fulfilled') {
         const arr = Array.isArray(list.value) ? list.value : list.value?.content || [];
@@ -124,6 +138,16 @@ export default function CrmDashboard() {
       if (engs.status === 'fulfilled') {
         setOpsEngineers(Array.isArray(engs.value) ? engs.value : []);
       }
+      if (poolRes.status === 'fulfilled') {
+        const v = poolRes.value || {};
+        setPool(Array.isArray(v.tickets) ? v.tickets : []);
+        setPoolMeta({
+          currentLoad: Number(v.currentLoad || 0),
+          cap:         Number(v.cap || 30),
+          remaining:   Number(v.remaining ?? 30),
+        });
+      }
+      if (teamRes.status === 'fulfilled') setTeams(Array.isArray(teamRes.value) ? teamRes.value : []);
     } finally {
       setLoading(false);
     }
@@ -136,6 +160,14 @@ export default function CrmDashboard() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // V14 — Pool is the new home page; no auto-switch needed.
+  // (Legacy offers tab removed from sidebar; if a tenant still has open
+  //  offers we surface them as a soft banner on the Pool view.)
+  useEffect(() => {
+    if (loading || hasAutoSwitched) return;
+    setHasAutoSwitched(true);
+  }, [loading, hasAutoSwitched]);
 
   // Live: new tickets land in the inbox immediately
   useStompTopic(
@@ -153,10 +185,14 @@ export default function CrmDashboard() {
     let list = tickets.slice();
     // View filter
     if (view === 'inbox') {
-      // My owned tickets (CRM agent is currentAssignee).
-      list = list.filter((t) => (t.currentLevel || 1) === 1
+      // The backend already scopes the list to the current CRM agent's tickets,
+      // so we only need to exclude terminal statuses here. No need to re-check
+      // currentAssigneeId — that redundant comparison was causing tickets to
+      // disappear whenever user.id was null during initial auth context load.
+      list = list.filter((t) =>
+        (t.currentLevel || 1) === 1
         && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status)
-        && (!user || (t.currentAssignee?.id ?? t.currentAssigneeId) === user.id));
+      );
     } else if (view === 'escalated') {
       list = list.filter((t) => (t.currentLevel || 1) > 1
         && !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status));
@@ -232,8 +268,52 @@ export default function CrmDashboard() {
       offers: offers.length,
       parts: partsQueue.length,
       quotes: myQuotes.length,
+      pool: pool.length,
     };
-  }, [tickets, offers, partsQueue, myQuotes]);
+  }, [tickets, offers, partsQueue, myQuotes, pool]);
+
+  // ─── V14 Pool actions ───────────────────────────────────
+  const pickTicket = async (t) => {
+    setBusyFor(t.ticketNumber, 'pick');
+    try {
+      await crmPoolApi.pick(t.ticketNumber);
+      toast.success(`Picked ${t.ticketNumber} — moved to My Tickets.`);
+      await fetchAll();
+      setView('inbox');
+    } catch (err) {
+      toast.error(err?.message || 'Could not pick ticket');
+    } finally {
+      clearBusy(t.ticketNumber);
+    }
+  };
+
+  const assignTeam = async (t, teamName) => {
+    if (!teamName || teamName === t.assignedTeamName) return;
+    setBusyFor(t.ticketNumber, 'team');
+    try {
+      await crmPoolApi.assignTeam(t.ticketNumber, teamName);
+      toast.success(`${t.ticketNumber} → ${teamName}`);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err?.message || 'Could not assign team');
+    } finally {
+      clearBusy(t.ticketNumber);
+    }
+  };
+
+  const assignEngineerDirect = async (t, engineerId) => {
+    if (!engineerId) return;
+    setBusyFor(t.ticketNumber, 'engineer');
+    try {
+      await crmPoolApi.assignEngineer(t.ticketNumber, engineerId);
+      toast.success(`Engineer assigned to ${t.ticketNumber}.`);
+      await fetchAll();
+    } catch (err) {
+      toast.error(err?.message || 'Could not assign engineer');
+    } finally {
+      clearBusy(t.ticketNumber);
+    }
+  };
 
   // Actions
   const setBusyFor = (number, label) => setBusy((b) => ({ ...b, [number]: label }));
@@ -383,7 +463,7 @@ export default function CrmDashboard() {
         {/* ─── Sidebar ─── */}
         <aside className={styles.sidebar}>
           {VIEWS.map(({ key, label, icon: Icon }) => {
-            const count = key === 'offers'    ? counts.offers
+            const count = key === 'pool'      ? counts.pool
                         : key === 'inbox'     ? counts.inbox
                         : key === 'parts'     ? counts.parts
                         : key === 'quotes'    ? counts.quotes
@@ -391,7 +471,7 @@ export default function CrmDashboard() {
                         : key === 'resolved'  ? counts.resolvedToday
                         : null;
             const active = view === key;
-            const isAlert = key === 'escalated' || key === 'offers';
+            const isAlert = key === 'escalated' || key === 'pool';
             return (
               <button
                 key={key}
@@ -486,13 +566,37 @@ export default function CrmDashboard() {
             </div>
           </div>
 
-          {/* ─── Offers view ─── */}
+          {/* ─── V14 Pool view (stockbroker-style FIFO) ─── */}
+          {view === 'pool' && (
+            <PoolPanel
+              pool={pool}
+              meta={poolMeta}
+              busyMap={busy}
+              onPick={pickTicket}
+              loading={loading}
+            />
+          )}
+
+          {/* ─── V14 Create-on-behalf view ─── */}
+          {view === 'create' && (
+            <CreateOnBehalfPanel
+              onCreated={(ticketNumber) => {
+                toast.success(`Created ${ticketNumber} on behalf of customer.`);
+                fetchAll();
+                setView('inbox');
+              }}
+            />
+          )}
+
+          {/* ─── Legacy Offers view (kept for tenants on the older flow) ─── */}
           {view === 'offers' && (
             <OfferInboxPanel
               offers={offers}
               busyMap={busy}
               onAccept={acceptOffer}
               onDecline={declineOffer}
+              inboxCount={counts.inbox}
+              onGoToInbox={() => setView('inbox')}
             />
           )}
 
@@ -540,6 +644,9 @@ export default function CrmDashboard() {
                     <CrmTicketCard
                       ticket={t}
                       busyAction={busy[t.ticketNumber]}
+                      teams={teams}
+                      onTeamChange={(name) => assignTeam(t, name)}
+                      onEngineerChange={(id) => assignEngineerDirect(t, id)}
                       onAcknowledge={() => handleAcknowledge(t)}
                       onEscalate={() => handleEscalate(t)}
                       onAssign={() => setShowAssign(t)}
@@ -576,13 +683,23 @@ export default function CrmDashboard() {
 
 /* ─── New panels ──────────────────────────────────────────── */
 
-function OfferInboxPanel({ offers, busyMap, onAccept, onDecline }) {
+function OfferInboxPanel({ offers, busyMap, onAccept, onDecline, inboxCount, onGoToInbox }) {
   if (!offers.length) {
     return (
       <div className={styles.empty}>
         <Send size={28} />
         <h3>No offers right now</h3>
         <p>When the Ops Manager pushes a ticket to you, it will appear here. You have 15 minutes to accept.</p>
+        {inboxCount > 0 && (
+          <button
+            type="button"
+            onClick={onGoToInbox}
+            className="btn btn-primary btn-sm"
+            style={{ marginTop: 14 }}
+          >
+            <Inbox size={14} /> View your {inboxCount} ticket{inboxCount === 1 ? '' : 's'} in My Tickets
+          </button>
+        )}
       </div>
     );
   }
@@ -629,7 +746,16 @@ function OfferInboxPanel({ offers, busyMap, onAccept, onDecline }) {
   );
 }
 
+const URGENCY_STYLE = {
+  URGENT: { bg: '#fef2f2', color: '#b91c1c', label: 'Urgent' },
+  HIGH:   { bg: '#fff7ed', color: '#c2410c', label: 'High' },
+  NORMAL: { bg: '#f0fdf4', color: '#15803d', label: 'Normal' },
+  LOW:    { bg: '#f8fafc', color: '#475569', label: 'Low' },
+};
+
 function PartsApprovalPanel({ parts, busyMap, onApprove, onReject }) {
+  const [expandedId, setExpandedId] = useState(null);
+
   if (!parts.length) {
     return (
       <div className={styles.empty}>
@@ -641,43 +767,142 @@ function PartsApprovalPanel({ parts, busyMap, onApprove, onReject }) {
   }
   return (
     <div className={styles.list}>
-      {parts.map((p) => (
-        <article key={p.id} className={styles.card}>
-          <div className={styles.cardBody}>
-            <div className={styles.cardHead}>
-              <div className={styles.cardHeadLeft}>
-                <Package size={16} />
-                <Link href={`/tickets/${p.ticketNumber}`} className={styles.cardNumber}>
-                  {p.ticketNumber}
-                </Link>
-                <span className={styles.cardAge}>· {p.requiredApprovalBand}</span>
+      {parts.map((p) => {
+        const busy = !!busyMap[`part-${p.id}`];
+        const urgency = URGENCY_STYLE[p.urgency] || URGENCY_STYLE.NORMAL;
+        const cost = Number(p.totalCost || 0);
+        const open = expandedId === p.id;
+        return (
+          <article key={p.id} className={styles.partCard}>
+            <span className={styles.partAccent} style={{ background: urgency.color }} aria-hidden="true" />
+
+            <div className={styles.partBody}>
+              {/* ── Row 1: ticket + cost ── */}
+              <div className={styles.partHead}>
+                <div className={styles.partHeadLeft}>
+                  <span className={styles.partIconWrap} aria-hidden="true"><Package size={15} /></span>
+                  <Link href={`/tickets/${p.ticketNumber}`} className={styles.cardNumber}>
+                    {p.ticketNumber}
+                  </Link>
+                  <span className={styles.partBand}>{p.requiredApprovalBand}</span>
+                  <span className={styles.urgencyChip} style={{ background: urgency.bg, color: urgency.color }}>
+                    {urgency.label}
+                  </span>
+                </div>
+                <span className={styles.partCost}>
+                  {cost === 0 ? 'Quote pending' : `₹${cost.toLocaleString('en-IN')}`}
+                </span>
               </div>
-              <span style={{
-                fontSize: 16, fontWeight: 800, color: 'var(--on-surface)',
-              }}>
-                ₹{Number(p.totalCost || 0).toLocaleString('en-IN')}
-              </span>
+
+              {/* ── Row 2: part name ── */}
+              <div className={styles.partName}>
+                {p.partName}
+                <span className={styles.partQty}> × {p.quantity}</span>
+              </div>
+
+              {/* ── Row 3: requester note ── */}
+              {(p.requestedByName || p.notes) && (
+                <div className={styles.partNote}>
+                  <span className={styles.partRequester}>{p.requestedByName || 'Engineer'}</span>
+                  {p.notes && <span className={styles.partNoteText}> — "{p.notes}"</span>}
+                </div>
+              )}
+
+              {/* ── Row 4: expandable details ── */}
+              <AnimatePresence initial={false}>
+                {open && (
+                  <motion.div
+                    key="details"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div className={styles.partDetails}>
+                      <div className={styles.partDetailsGrid}>
+                        {/* Part specifics */}
+                        <div className={styles.detailSection}>
+                          <p className={styles.detailSectionLabel}>Part details</p>
+                          <DetailRow icon={<Hash size={13} />} label="Part name" value={p.partName} />
+                          <DetailRow icon={<Layers size={13} />} label="Quantity" value={`${p.quantity} unit${p.quantity !== 1 ? 's' : ''}`} />
+                          <DetailRow icon={<DollarSign size={13} />} label="Unit cost"
+                            value={cost > 0 ? `₹${(cost / (p.quantity || 1)).toLocaleString('en-IN')} / unit` : 'Quote pending'} />
+                          <DetailRow icon={<DollarSign size={13} />} label="Total cost"
+                            value={cost > 0 ? `₹${cost.toLocaleString('en-IN')}` : 'Quote pending'} highlight />
+                          <DetailRow icon={<AlertCircle size={13} />} label="Urgency" value={urgency.label} />
+                          <DetailRow icon={<ClipboardList size={13} />} label="Approval band" value={p.requiredApprovalBand} />
+                        </div>
+
+                        {/* Ticket context */}
+                        <div className={styles.detailSection}>
+                          <p className={styles.detailSectionLabel}>Ticket context</p>
+                          <DetailRow icon={<Hash size={13} />} label="Ticket"
+                            value={<Link href={`/tickets/${p.ticketNumber}`} className={styles.detailLink}>{p.ticketNumber}</Link>} />
+                          {p.ticketPriority && (
+                            <DetailRow icon={<AlertCircle size={13} />} label="Priority" value={p.ticketPriority} />
+                          )}
+                          {p.ticketProblemCategory && (
+                            <DetailRow icon={<Wrench size={13} />} label="Issue"
+                              value={(p.ticketProblemCategory || '').replace(/_/g, ' ')} />
+                          )}
+                          {p.customerName && (
+                            <DetailRow icon={<User size={13} />} label="Customer" value={p.customerName} />
+                          )}
+                          {p.propertyLabel && (
+                            <DetailRow icon={<MapPin size={13} />} label="Property" value={p.propertyLabel} />
+                          )}
+                          <DetailRow icon={<User size={13} />} label="Requested by"
+                            value={p.requestedByName || '—'} />
+                        </div>
+                      </div>
+
+                      {/* Notes block */}
+                      {p.notes && (
+                        <div className={styles.partNotesBlock}>
+                          <p className={styles.detailSectionLabel}>Engineer notes</p>
+                          <p className={styles.partNotesBody}>"{p.notes}"</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* ── Row 5: actions ── */}
+              <div className={styles.partActions}>
+                <button
+                  type="button"
+                  className={styles.detailsToggleBtn}
+                  onClick={() => setExpandedId(open ? null : p.id)}
+                  aria-expanded={open}
+                >
+                  {open ? <><ChevronUp size={14} /> Hide details</> : <><ChevronDown size={14} /> More details</>}
+                </button>
+                <span style={{ flex: 1 }} />
+                <button type="button" className={styles.rejectBtn} disabled={busy} onClick={() => onReject(p)}>
+                  {busy ? <span className="spinner spinner-sm" /> : <><X size={14} /> Reject</>}
+                </button>
+                <button type="button" className={styles.approveBtn} disabled={busy} onClick={() => onApprove(p)}>
+                  {busy ? <span className="spinner spinner-sm" /> : <><Check size={14} /> Approve</>}
+                </button>
+              </div>
             </div>
-            <h3 className={styles.cardTitle}>
-              {p.partName} × {p.quantity} <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--on-surface-variant)' }}>· {p.urgency || 'NORMAL'}</span>
-            </h3>
-            <p style={{ color: 'var(--on-surface-variant)', fontSize: 13, marginTop: 0 }}>
-              Requested by {p.requestedByName || '—'}
-              {p.notes && <> — "{p.notes}"</>}
-            </p>
-            <div className={styles.cardActions}>
-              <button className="btn btn-soft btn-sm" disabled={!!busyMap[`part-${p.id}`]}
-                      onClick={() => onReject(p)}>
-                <X size={14} /> Reject
-              </button>
-              <button className="btn btn-primary btn-sm" disabled={!!busyMap[`part-${p.id}`]}
-                      onClick={() => onApprove(p)}>
-                <Check size={14} /> Approve
-              </button>
-            </div>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value, highlight }) {
+  return (
+    <div className={styles.detailRow}>
+      <span className={styles.detailRowIcon}>{icon}</span>
+      <span className={styles.detailRowLabel}>{label}</span>
+      <span className={`${styles.detailRowValue} ${highlight ? styles.detailRowHighlight : ''}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -736,7 +961,22 @@ function StatTile({ label, value, color }) {
   );
 }
 
-function CrmTicketCard({ ticket, busyAction, onAcknowledge, onEscalate, onAssign, onResolve }) {
+function CrmTicketCard({
+  ticket, busyAction, teams = [],
+  onTeamChange, onEngineerChange,
+  onAcknowledge, onEscalate, onAssign, onResolve,
+}) {
+  // Engineer list = members of the currently assigned team (or all teams if none picked)
+  const engineerOptions = (() => {
+    if (!Array.isArray(teams) || teams.length === 0) return [];
+    if (ticket.assignedTeamName) {
+      const t = teams.find((tm) => tm.teamName === ticket.assignedTeamName);
+      return t?.engineers || [];
+    }
+    return teams.flatMap((tm) => (tm.engineers || []).map((e) => ({
+      ...e, name: `${e.name} · ${tm.teamName}`,
+    })));
+  })();
   const acked = !!ticket.acknowledgedAt;
   const escalated = (ticket.currentLevel || 1) > 1;
   const resolved = ['RESOLVED', 'CLOSED'].includes(ticket.status);
@@ -761,6 +1001,21 @@ function CrmTicketCard({ ticket, busyAction, onAcknowledge, onEscalate, onAssign
             <Link href={`/tickets/${ticket.ticketNumber}`} className={styles.cardNumber}>
               {ticket.ticketNumber}
             </Link>
+            {ticket.carriedForward && (
+              <span
+                title={ticket.originalScheduledDate
+                  ? `Rolled forward from ${ticket.originalScheduledDate}`
+                  : 'Carried forward from a previous day'}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '2px 8px', borderRadius: 999,
+                  background: '#fef3c7', color: '#92400e',
+                  fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
+                  textTransform: 'uppercase', border: '1px solid #fde68a',
+                }}>
+                <RefreshCw size={10} /> Carry-over
+              </span>
+            )}
             <span className={styles.cardAge}>· {relMin(ticket.createdAt)}</span>
           </div>
           <div className={styles.cardHeadRight}>
@@ -784,6 +1039,64 @@ function CrmTicketCard({ ticket, busyAction, onAcknowledge, onEscalate, onAssign
           <span className={styles.metaDot}>·</span>
           <span className={styles.metaItem}><MapPin size={14} /> {ticket.propertyLabel || '—'}</span>
         </div>
+
+        {/* V14 — direct team / engineer assignment, no offer handshake */}
+        {!resolved && (
+          <div
+            style={{
+              display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8,
+              padding: '8px 10px', borderRadius: 10,
+              background: 'var(--surface-container-low)',
+              border: '1px solid var(--border-light)',
+            }}
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--on-surface-variant)' }}>
+              <Users size={14} /> Team
+              <select
+                value={ticket.assignedTeamName || ''}
+                disabled={busyAction === 'team'}
+                onChange={(e) => onTeamChange?.(e.target.value)}
+                style={{
+                  marginLeft: 4, padding: '4px 8px', borderRadius: 8,
+                  border: '1px solid var(--border-light)', background: 'var(--surface)',
+                  color: 'var(--on-surface)', fontSize: 13,
+                }}
+              >
+                <option value="">Pick a team…</option>
+                {teams.map((tm) => (
+                  <option key={tm.teamName} value={tm.teamName}>
+                    {tm.teamName}{tm.lead ? ` · ${tm.lead.name}` : ''} ({tm.engineers?.length || 0} eng)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--on-surface-variant)' }}>
+              <Wrench size={14} /> Engineer
+              <select
+                value={ticket.engineerId || ''}
+                disabled={busyAction === 'engineer' || engineerOptions.length === 0}
+                onChange={(e) => onEngineerChange?.(e.target.value)}
+                style={{
+                  marginLeft: 4, padding: '4px 8px', borderRadius: 8,
+                  border: '1px solid var(--border-light)', background: 'var(--surface)',
+                  color: 'var(--on-surface)', fontSize: 13,
+                }}
+              >
+                <option value="">
+                  {engineerOptions.length ? 'Pick an engineer…' : 'No engineers on this team'}
+                </option>
+                {engineerOptions.map((e) => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+            </label>
+            {ticket.engineerName && (
+              <span style={{ alignSelf: 'center', fontSize: 12, color: 'var(--success, #16a34a)' }}>
+                <Check size={12} /> Engineer: {ticket.engineerName}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className={styles.cardActions}>
           <a className="btn btn-primary btn-sm" href={`tel:${ticket.customerPhone || ''}`}>
@@ -1044,5 +1357,454 @@ function SheetWrap({ children, onClose }) {
         {children}
       </motion.div>
     </motion.div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+ * V14 — Today's Pool (FIFO stockbroker-style)
+ *
+ * Every unassigned ticket sits here.  The list is sorted by
+ * priority then created_at on the server.  One-click "Pick"
+ * claims a ticket up to the daily cap.
+ * ──────────────────────────────────────────────────────────── */
+function PoolPanel({ pool, meta, busyMap, onPick, loading }) {
+  const PROBLEM_LABEL_LOCAL = {
+    NOT_COOLING: 'AC Not Cooling',
+    NOISE: 'Loud Noise',
+    LEAKING: 'Water Leak',
+    NOT_TURNING_ON: 'Not Turning On',
+    NO_AIRFLOW: 'No Airflow',
+    REMOTE_WIFI: 'Remote / Wi-Fi',
+    SMELL_BURNING: 'Burning Smell',
+    OTHER: 'Other Issue',
+  };
+  const pctFull = Math.min(100, Math.round((meta.currentLoad / Math.max(1, meta.cap)) * 100));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Capacity meter */}
+      <div
+        style={{
+          display: 'flex', flexDirection: 'column', gap: 8,
+          padding: '14px 16px', borderRadius: 14,
+          background: 'linear-gradient(135deg, var(--primary-container), var(--surface))',
+          border: '1px solid var(--border-light)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Sparkles size={18} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>Today&apos;s Pool</div>
+              <div style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+                {pool.length} waiting · pick the top one first
+              </div>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>You today</div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              {meta.currentLoad} / {meta.cap}
+              {meta.remaining <= 0 && (
+                <span style={{ marginLeft: 8, color: 'var(--danger, #b91c1c)', fontSize: 11 }}>
+                  · cap reached
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div style={{ height: 6, borderRadius: 999, background: 'var(--surface-container)', overflow: 'hidden' }}>
+          <div
+            style={{
+              width: `${pctFull}%`, height: '100%',
+              background: pctFull >= 100 ? 'var(--danger, #b91c1c)' : pctFull >= 75 ? '#f59e0b' : 'var(--primary)',
+              transition: 'width 220ms ease',
+            }}
+          />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className={styles.list}>
+          {[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 88 }} />)}
+        </div>
+      ) : pool.length === 0 ? (
+        <div className={styles.empty}>
+          <CheckCircle2 size={28} />
+          <h3>Pool is clear</h3>
+          <p>Every ticket for today has been picked up. Keep an eye out for new ones.</p>
+        </div>
+      ) : (
+        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {pool.map((t, idx) => (
+            <li
+              key={t.ticketNumber}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                gap: 14, alignItems: 'center',
+                padding: '12px 14px', borderRadius: 14,
+                background: 'var(--surface)',
+                border: '1px solid var(--border-light)',
+                boxShadow: idx < 3 ? '0 1px 0 var(--border-light), 0 6px 24px -16px rgba(0,0,0,.12)' : 'none',
+              }}
+            >
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--surface-container-low)',
+                fontWeight: 700, fontSize: 13, color: 'var(--on-surface-variant)',
+              }}>
+                {idx + 1}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                  <PriorityBadge priority={t.priority} />
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{t.ticketNumber}</span>
+                  {t.carriedForward && (
+                    <span title="Carried forward from a previous day" style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '2px 8px', borderRadius: 999,
+                      background: '#fef3c7', color: '#92400e',
+                      fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+                      textTransform: 'uppercase', border: '1px solid #fde68a',
+                    }}>
+                      <RefreshCw size={10} /> Carry-over
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+                    · {relMin(t.createdAt)}
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--on-surface)' }}>
+                  {PROBLEM_LABEL_LOCAL[t.problemCategory] || t.problemCategory || 'Service'} — {t.acUnitRoom || ''}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  <span><User size={11} style={{ verticalAlign: -1 }} /> {t.customerName || 'Customer'}</span>
+                  <span><MapPin size={11} style={{ verticalAlign: -1 }} /> {t.propertyLabel || '—'}</span>
+                  {t.scheduledDate && (
+                    <span><Clock size={11} style={{ verticalAlign: -1 }} /> {t.scheduledDate} {t.scheduledSlot || ''}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={!!busyMap[t.ticketNumber] || meta.remaining <= 0}
+                onClick={() => onPick(t)}
+                style={{ minWidth: 92 }}
+              >
+                {busyMap[t.ticketNumber] === 'pick'
+                  ? <span className="spinner spinner-sm" />
+                  : <><ThumbsUp size={14} /> Pick</>}
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+ * V14 — Create ticket on behalf of a customer
+ *
+ * Two steps: ① find the customer, ② raise a quick paid/AMC
+ * ticket using their existing property + AC.  No payment is
+ * collected from this surface — the CRM agent handles billing
+ * over the phone if the customer is paying.
+ * ──────────────────────────────────────────────────────────── */
+function CreateOnBehalfPanel({ onCreated }) {
+  const [q, setQ] = useState('');
+  const [hits, setHits] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [picked, setPicked] = useState(null);     // {id, name, phone, email}
+  const [properties, setProperties] = useState([]);
+  const [propertyId, setPropertyId] = useState('');
+  const [acUnitId, setAcUnitId] = useState('');
+  const [problem, setProblem] = useState('NOT_COOLING');
+  const [serviceType, setServiceType] = useState('PAID');
+  // Default to tomorrow so the server-side slot guard always has a date.
+  const [scheduledDate, setScheduledDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [scheduledSlot, setScheduledSlot] = useState('MORNING');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  // Debounced live search
+  useEffect(() => {
+    if (q.trim().length < 2) { setHits([]); return; }
+    let cancelled = false;
+    const id = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await crmPoolApi.searchCustomers(q.trim());
+        if (!cancelled) setHits(Array.isArray(res) ? res : []);
+      } catch { if (!cancelled) setHits([]); }
+      finally { if (!cancelled) setSearching(false); }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(id); };
+  }, [q]);
+
+  // Load the picked customer's properties via the staff-side endpoint
+  useEffect(() => {
+    if (!picked) { setProperties([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await crmPoolApi.customerProperties(picked.id);
+        if (!cancelled) {
+          const arr = Array.isArray(res) ? res : [];
+          setProperties(arr);
+          if (arr.length === 1) setPropertyId(arr[0].id);
+        }
+      } catch { if (!cancelled) setProperties([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [picked]);
+
+  const activeProperty = properties.find((p) => p.id === propertyId);
+  const acUnits = activeProperty?.acUnits || [];
+
+  useEffect(() => {
+    if (acUnits.length === 1) setAcUnitId(acUnits[0].id);
+  }, [propertyId, acUnits]);
+
+  const submit = async () => {
+    setErr('');
+    if (!picked || !propertyId || !acUnitId) {
+      setErr('Pick a customer, property and AC unit.'); return;
+    }
+    if (!scheduledDate) {
+      setErr('Pick a date — the slot capacity guard needs one.'); return;
+    }
+    setSaving(true);
+    try {
+      const body = {
+        propertyId, acUnitId,
+        serviceType,
+        problemCategory: problem,
+        problemDescription: description || 'Raised by CRM on behalf of customer',
+        priority: serviceType === 'AMC' ? 'P1' : serviceType === 'WARRANTY' ? 'P2' : 'P3',
+        scheduledDate,
+        scheduledSlot,
+      };
+      const res = await crmPoolApi.createOnBehalf(picked.id, body);
+      onCreated?.(res.ticketNumber || res.data?.ticketNumber || 'AES-NEW');
+      // Reset for the next one
+      setPicked(null); setQ(''); setHits([]); setProperties([]);
+      setPropertyId(''); setAcUnitId(''); setDescription('');
+    } catch (e) {
+      setErr(e?.message || 'Could not create the ticket.');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720 }}>
+      <div style={{
+        padding: 18, borderRadius: 16,
+        background: 'var(--surface)', border: '1px solid var(--border-light)',
+      }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: 18 }}>① Find the customer</h3>
+        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--on-surface-variant)' }}>
+          Search by name, phone or email. Helpful when the customer can&apos;t self-serve.
+        </p>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            className="input"
+            placeholder="e.g. 9876543210, Hitansu, hitan@example.com…"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPicked(null); }}
+            style={{ width: '100%' }}
+          />
+          {searching && (
+            <span style={{ position: 'absolute', right: 10, top: 10 }}>
+              <span className="spinner spinner-sm" />
+            </span>
+          )}
+        </div>
+        {!picked && hits.length > 0 && (
+          <ul style={{
+            listStyle: 'none', margin: '10px 0 0', padding: 0,
+            border: '1px solid var(--border-light)', borderRadius: 12,
+            maxHeight: 260, overflowY: 'auto',
+          }}>
+            {hits.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => setPicked(c)}
+                  style={{
+                    width: '100%', textAlign: 'left',
+                    padding: '10px 12px', background: 'transparent',
+                    border: 0, borderBottom: '1px solid var(--border-light)',
+                    cursor: 'pointer', color: 'var(--on-surface)',
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{c.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+                    {c.phoneNumber}{c.email ? ` · ${c.email}` : ''}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {picked && (
+          <div style={{
+            marginTop: 10, padding: '10px 12px', borderRadius: 12,
+            background: 'var(--primary-container)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div>
+              <div style={{ fontWeight: 700 }}>{picked.name}</div>
+              <div style={{ fontSize: 12 }}>{picked.phoneNumber}</div>
+            </div>
+            <button type="button" className="btn btn-soft btn-sm" onClick={() => { setPicked(null); setProperties([]); }}>
+              <X size={14} /> Change
+            </button>
+          </div>
+        )}
+      </div>
+
+      {picked && (
+        <div style={{
+          padding: 18, borderRadius: 16,
+          background: 'var(--surface)', border: '1px solid var(--border-light)',
+        }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>② Raise the ticket</h3>
+
+          {properties.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--on-surface-variant)' }}>
+              Loading {picked.name}&apos;s properties…
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
+              <label className="input-group">
+                <span>Property</span>
+                <select
+                  className="input"
+                  value={propertyId}
+                  onChange={(e) => { setPropertyId(e.target.value); setAcUnitId(''); }}
+                >
+                  <option value="">Choose a property</option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>{p.label} — {p.formattedAddress || p.addressLine1 || ''}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="input-group">
+                <span>AC unit</span>
+                <select
+                  className="input"
+                  value={acUnitId}
+                  onChange={(e) => setAcUnitId(e.target.value)}
+                  disabled={!propertyId}
+                >
+                  <option value="">Choose an AC</option>
+                  {acUnits.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {(a.roomLabel || 'AC')} · {a.brand || ''} {a.modelNumber || ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="input-group">
+                <span>Service type</span>
+                <select
+                  className="input"
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
+                >
+                  <option value="PAID">Paid (P3 · 24h SLA)</option>
+                  <option value="WARRANTY">In-Warranty (P2 · 8h SLA)</option>
+                  <option value="AMC">AMC (P1 · 4h SLA)</option>
+                </select>
+              </label>
+              <label className="input-group">
+                <span>Problem</span>
+                <select
+                  className="input"
+                  value={problem}
+                  onChange={(e) => setProblem(e.target.value)}
+                >
+                  <option value="NOT_COOLING">AC Not Cooling</option>
+                  <option value="NOISE">Loud Noise</option>
+                  <option value="LEAKING">Water Leak</option>
+                  <option value="NOT_TURNING_ON">Not Turning On</option>
+                  <option value="NO_AIRFLOW">No Airflow</option>
+                  <option value="REMOTE_WIFI">Remote / Wi-Fi</option>
+                  <option value="SMELL_BURNING">Burning Smell</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </label>
+              <label className="input-group">
+                <span>Preferred date (optional)</span>
+                <input
+                  type="date" className="input"
+                  value={scheduledDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                />
+              </label>
+              <label className="input-group">
+                <span>Slot</span>
+                <select
+                  className="input"
+                  value={scheduledSlot}
+                  onChange={(e) => setScheduledSlot(e.target.value)}
+                >
+                  <option value="EARLY">Anytime (general shift)</option>
+                  <option value="MORNING">Morning 9 AM – 12 PM</option>
+                  <option value="AFTERNOON">Afternoon 12 PM – 4 PM</option>
+                  <option value="EVENING">Evening 4 PM – 7 PM</option>
+                </select>
+              </label>
+              <label className="input-group" style={{ gridColumn: '1 / -1' }}>
+                <span>What did the customer describe? (optional)</span>
+                <textarea
+                  className="input"
+                  rows={3}
+                  placeholder="“Indoor unit started leaking after rain last night…”"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
+
+          {err && (
+            <div style={{
+              marginTop: 12, padding: '10px 12px', borderRadius: 10,
+              background: 'var(--danger-light, #fef2f2)', color: '#b91c1c',
+              fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <AlertCircle size={14} /> {err}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="btn btn-primary btn-full btn-lg"
+            disabled={saving || !propertyId || !acUnitId}
+            onClick={submit}
+            style={{ marginTop: 14 }}
+          >
+            {saving ? <span className="spinner spinner-sm" /> : (
+              <><Send size={16} /> Create ticket &amp; pick it for me</>
+            )}
+          </button>
+          <p style={{ marginTop: 8, fontSize: 12, color: 'var(--on-surface-variant)' }}>
+            Tip: the new ticket is auto-claimed by you. Open it from <strong>My Tickets</strong>
+            {' '}to assign a team / engineer.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

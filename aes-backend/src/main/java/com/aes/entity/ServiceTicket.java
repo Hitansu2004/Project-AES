@@ -79,6 +79,25 @@ public class ServiceTicket {
     @Column(name = "scheduled_slot", length = 20)
     private String scheduledSlot;
 
+    /**
+     * TRUE when the nightly carry-forward job pushed this ticket's
+     * scheduled_date out by a day because it wasn't closed in time.
+     * The CRM / Engineer dashboards float carry-overs to the top so
+     * they get worked first the next morning.  Flips back to FALSE
+     * the moment the ticket reaches a terminal state.
+     */
+    @Column(name = "carried_forward", nullable = false)
+    @Builder.Default
+    private Boolean carriedForward = Boolean.FALSE;
+
+    /**
+     * The {@code scheduled_date} the customer originally booked. Stays
+     * untouched even when {@code scheduled_date} is bumped forward — so
+     * SLA reports can distinguish "booked late" from "delivered late".
+     */
+    @Column(name = "original_scheduled_date")
+    private LocalDate originalScheduledDate;
+
     // Current assignment
     @Column(name = "current_level", nullable = false)
     @Builder.Default
@@ -89,6 +108,15 @@ public class ServiceTicket {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User currentAssignee;
+
+    /**
+     * V14 — name of the dispatch team the CRM agent assigned this
+     * ticket to ("Team 01" … "Team 15").  Independent of the engineer
+     * FK so the CRM can pick a team first and let the team lead
+     * choose which engineer on the team actually visits.
+     */
+    @Column(name = "assigned_team_name", length = 50)
+    private String assignedTeamName;
 
     @Column(name = "assigned_at")
     private OffsetDateTime assignedAt;
@@ -175,6 +203,56 @@ public class ServiceTicket {
     /** Reason picker value when a customer triggers a T1 escalation. */
     @Column(name = "escalation_reason", length = 40)
     private String escalationReason;
+
+    // ── V12: visit location + dynamic pricing + payment state ───────
+    @Column(name = "service_address", columnDefinition = "TEXT")
+    private String serviceAddress;
+
+    @Column(name = "service_lat")
+    private Double serviceLat;
+
+    @Column(name = "service_lng")
+    private Double serviceLng;
+
+    @Column(length = 200)
+    private String landmark;
+
+    @Column(name = "secondary_phone", length = 15)
+    private String secondaryPhone;
+
+    @Column(name = "distance_km", precision = 6, scale = 2)
+    private BigDecimal distanceKm;
+
+    @Column(name = "base_charge")
+    private Integer baseCharge;
+
+    @Column(name = "distance_charge")
+    private Integer distanceCharge;
+
+    @Column(name = "discount_code", length = 20)
+    private String discountCode;
+
+    @Column(name = "discount_pct")
+    private Integer discountPct;
+
+    @Column(name = "discount_amount")
+    private Integer discountAmount;
+
+    @Column(name = "total_charge")
+    private Integer totalCharge;
+
+    @Column(name = "payment_status", nullable = false, length = 20)
+    @Builder.Default
+    private String paymentStatus = "NOT_REQUIRED";
+
+    @Column(name = "payment_method", length = 20)
+    private String paymentMethod;
+
+    @Column(name = "payment_ref", length = 100)
+    private String paymentRef;
+
+    @Column(name = "paid_at")
+    private OffsetDateTime paidAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

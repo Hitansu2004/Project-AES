@@ -42,17 +42,25 @@ the way customers do — enter the 10-digit phone, tap **Send OTP**, then
 type **`000000`** (demo bypass). The JWT that comes back already carries
 the staff role, so they're redirected to their own dashboard automatically.
 
-| Role               | Display name     | Phone               | Branch     | On-shift | Default dashboard | What they do                                                                                  |
-|--------------------|------------------|---------------------|------------|----------|-------------------|-----------------------------------------------------------------------------------------------|
-| OPS_MANAGER        | **Meera Nair**   | **+91 90000 66666** | Hyderabad  | ✅        | `/ops`            | Triages every new ticket / install. Assigns CRM owners and watches workload across the floor. |
-| CRM_AGENT (L1)     | **Ravi Kumar**   | **+91 90000 11111** | Hyderabad  | ✅        | `/crm`            | Accepts/declines offers, talks to customer, dispatches engineers, drafts quotes, raises parts.|
-| CRM_AGENT (L1)     | **Lakshmi Nair** | **+91 90000 22222** | Hyderabad  | ⛔ off    | `/crm`            | Currently off-shift — useful for testing the shift toggle and auto-handoff.                   |
-| SERVICE_MANAGER L2 | **Suresh Babu**  | **+91 90000 33333** | Hyderabad  | ✅        | `/admin`          | Approves mid-band quotes, reviews part orders, takes Stage-C escalations.                     |
-| SERVICE_MANAGER L2 | **Deepa Iyer**   | **+91 90000 44444** | Hyderabad  | ✅        | `/admin`          | Second L2 — receives live escalations during the demo (Stage-B → Stage-C jump).               |
-| ADMIN (L3)         | **Anand Rao**    | **+91 90000 55555** | Hyderabad  | ✅        | `/admin`          | High-band quote approval, KPI dashboard, last-resort escalations.                             |
-| SITE_ENGINEER      | **Rajesh Verma** | **+91 90000 77777** | Hyderabad  | ✅        | `/engineer`       | Mobile-first dispatch dashboard. Accept job → en-route → on-site → in-progress → resolved.    |
-| SITE_ENGINEER      | **Imran Khan**   | **+91 90000 88888** | Hyderabad  | ✅        | `/engineer`       | Second engineer for testing parallel dispatch + workload balancing.                           |
-| SITE_ENGINEER      | **Sandeep Rao**  | **+91 90000 99999** | Hyderabad  | ✅        | `/engineer`       | Third engineer — try **"Cannot attend"** / **"Need help"** flows here.                        |
+| Role               | Display name     | Phone               | Team       | Branch     | On-shift | Default dashboard  | What they do                                                                                  |
+|--------------------|------------------|---------------------|------------|------------|----------|--------------------|-----------------------------------------------------------------------------------------------|
+| **SUPER_ADMIN** 👑 | **Anand Mehta**  | **+91 90000 00001** | —          | HQ         | ✅        | `/admin/revenue`   | Owner — live revenue HQ, every transaction, team & engineer board.                            |
+| OPS_MANAGER        | **Meera Nair**   | **+91 90000 66666** | —          | Hyderabad  | ✅        | `/crm` (Pool)      | V14 — Ops triage retired. Uses the same FIFO pool view as the CRM team.                       |
+| CRM_AGENT (Lead 1) | **Ravi Kumar**   | **+91 90000 11111** | **Team 01**| Hyderabad  | ✅        | `/crm`             | Picks tickets from the live pool, assigns team/engineer, drafts quotes.                       |
+| CRM_AGENT (Lead 2) | **Lakshmi Nair** | **+91 90000 22222** | —          | Hyderabad  | ⛔ off    | `/crm`             | Off-shift — useful for testing the shift toggle and auto-handoff.                             |
+| SERVICE_MANAGER L2 | **Suresh Babu**  | **+91 90000 33333** | **Team 02**| Hyderabad  | ✅        | `/admin`           | Approves mid-band quotes, reviews part orders, takes Stage-C escalations.                     |
+| SERVICE_MANAGER L2 | **Deepa Iyer**   | **+91 90000 44444** | —          | Hyderabad  | ✅        | `/admin`           | Second L2 — receives live escalations during the demo (Stage-B → Stage-C jump).               |
+| ADMIN (L3)         | **Anand Rao**    | **+91 90000 55555** | —          | Hyderabad  | ✅        | `/admin`           | High-band quote approval, KPI dashboard, last-resort escalations.                             |
+| SITE_ENGINEER      | **Rajesh Verma** | **+91 90000 77777** | **Team 01**| Hyderabad  | ✅        | `/engineer`        | Mobile-first dispatch dashboard. Accept job → en-route → on-site → in-progress → resolved.    |
+| SITE_ENGINEER      | **Imran Khan**   | **+91 90000 88888** | **Team 02**| Hyderabad  | ✅        | `/engineer`        | Second engineer for testing parallel dispatch + workload balancing.                           |
+| SITE_ENGINEER      | **Sandeep Rao**  | **+91 90000 99999** | **Team 03**| Hyderabad  | ✅        | `/engineer`        | Third engineer — try **"Cannot attend"** / **"Need help"** flows here.                        |
+
+> **V14 — 15 named teams seeded.** Teams 01–03 have real members (above); Teams 04–15 are
+> empty placeholders so the CRM "Assign team" dropdown shows every option. The owner can
+> staff them later via SQL or a future admin screen.
+>
+> **Role rename:** the UI now says **"Service Engineer"** everywhere; the database enum is
+> still `SITE_ENGINEER` for back-compat (no painful migration).
 
 > **Demo tip:** the easiest way to switch roles during a demo is to log
 > out, type the next staff phone number, and use `000000`. You're in the
@@ -106,10 +114,10 @@ the staff role, so they're redirected to their own dashboard automatically.
 | `/tickets/[ticketNumber]`            | Customer / Staff                  | Ticket detail (e.g. `/tickets/AES-2026-1202`)                  |
 | `/notifications`                     | Both                              | Deep-links to the right detail page now                        |
 | `/account`                           | Customer                          | Profile · Properties (+ AC units) · AMC                        |
-| `/ops`                               | OPS_MANAGER                       | Triage inbox · workload · engineer board                       |
-| `/crm`                               | CRM_AGENT                         | Offer inbox · my tickets · dispatch · approvals · quotes       |
-| `/engineer`                          | SITE_ENGINEER                     | Mobile-first dispatch dashboard                                |
+| `/crm`                               | CRM_AGENT · OPS_MANAGER · SUPER_ADMIN | V14 — Today's Pool · Create on behalf · My Tickets · Quotes · Parts |
+| `/engineer`                          | SITE_ENGINEER                     | Mobile-first dispatch dashboard ("Service Engineer")           |
 | `/admin`                             | ADMIN · SERVICE_MANAGER           | KPIs · escalations · quote queue · part queue                  |
+| `/admin/revenue`                     | **SUPER_ADMIN** · ADMIN           | V14 — Live revenue HQ (today/week/month/year + transactions feed) |
 
 ---
 

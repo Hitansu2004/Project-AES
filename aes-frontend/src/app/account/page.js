@@ -2,8 +2,13 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { user as userApi, properties, acUnits, amc } from '@/lib/api';
+import {
+  user as userApi, properties, acUnits, amc,
+  amcUpgrades as amcUpgradesApi,
+} from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import LocationPicker from '@/components/ui/LocationPicker';
+import { MapPin, Check } from 'lucide-react';
 import styles from './account.module.css';
 
 export default function AccountPageWrapper() {
@@ -33,6 +38,14 @@ function AccountPage() {
   const [newPropCity, setNewPropCity] = useState('');
   const [newPropPin, setNewPropPin]   = useState('');
   const [propSaving, setPropSaving]   = useState(false);
+  // V12: pinned coordinates picked via Google Maps
+  const [newPropPin_lat, setNewPropLat] = useState(null);
+  const [newPropPin_lng, setNewPropLng] = useState(null);
+  const [newPropPin_addr, setNewPropFmtAddr] = useState('');
+  const [newPropPin_landmark, setNewPropLandmark] = useState('');
+  const [newPropPin_secondary, setNewPropSecondary] = useState('');
+  const [newPropPin_placeId, setNewPropPlaceId] = useState(null);
+  const [showLocPicker, setShowLocPicker] = useState(false);
 
   // Add-AC-unit form state (per property)
   const [addAcFor, setAddAcFor] = useState(null); // property
@@ -97,9 +110,18 @@ function AccountPage() {
         addressLine1: newPropAddr.trim(),
         city: newPropCity.trim() || 'Hyderabad',
         pincode: newPropPin.trim() || undefined,
+        // V12 — only send coords if user actually picked a pin
+        latitude:         newPropPin_lat ?? undefined,
+        longitude:        newPropPin_lng ?? undefined,
+        formattedAddress: newPropPin_addr || undefined,
+        landmark:         newPropPin_landmark || undefined,
+        secondaryPhone:   newPropPin_secondary || undefined,
+        googlePlaceId:    newPropPin_placeId || undefined,
       });
       toast.success('Property added.');
       setNewPropLabel(''); setNewPropAddr(''); setNewPropCity(''); setNewPropPin('');
+      setNewPropLat(null); setNewPropLng(null); setNewPropFmtAddr('');
+      setNewPropLandmark(''); setNewPropSecondary(''); setNewPropPlaceId(null);
       setShowPropertyForm(false);
       await loadData();
     } catch (e) {
@@ -242,15 +264,9 @@ function AccountPage() {
                   </div>
 
                   {units.length > 0 && (
-                    <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {units.map((u) => (
-                        <li key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--surface-container-low)', borderRadius: 8, fontSize: 13 }}>
-                          <span style={{ fontWeight: 600 }}>{u.roomLabel}</span>
-                          <span style={{ color: 'var(--on-surface-variant)' }}>·</span>
-                          <span style={{ color: 'var(--on-surface-variant)' }}>
-                            {u.brand} {u.modelNumber || ''} · {u.tonnage || '?'}T · {u.acType?.replace('_', '/')}
-                          </span>
-                        </li>
+                        <AcUnitRow key={u.id} unit={u} property={prop} />
                       ))}
                     </ul>
                   )}
@@ -308,6 +324,50 @@ function AccountPage() {
                     <div className="input-group"><label>City</label><input className="input" placeholder="Hyderabad" value={newPropCity} onChange={(e) => setNewPropCity(e.target.value)} /></div>
                     <div className="input-group"><label>PIN code</label><input className="input" placeholder="500034" maxLength={6} value={newPropPin} onChange={(e) => setNewPropPin(e.target.value.replace(/\D/g,''))} /></div>
                   </div>
+
+                  {/* V12 — Maps pin (recommended) */}
+                  {newPropPin_lat && newPropPin_lng ? (
+                    <button type="button"
+                            onClick={() => setShowLocPicker(true)}
+                            style={{
+                              display:'flex', alignItems:'flex-start', gap:10,
+                              width:'100%', textAlign:'left', cursor:'pointer',
+                              padding:'10px 12px', borderRadius:10,
+                              background:'linear-gradient(135deg, #16a34a15, #22c55e10)',
+                              border:'1px solid #16a34a40',
+                            }}>
+                      <Check size={16} color="#16a34a" style={{ marginTop:2, flexShrink:0 }} />
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:11, color:'#16a34a', fontWeight:700, letterSpacing:0.3, textTransform:'uppercase' }}>
+                          Pinned on map · tap to change
+                        </div>
+                        <div style={{ fontSize:13, color:'var(--on-surface)', marginTop:2 }}>
+                          {newPropPin_addr}
+                        </div>
+                      </div>
+                    </button>
+                  ) : (
+                    <button type="button"
+                            onClick={() => setShowLocPicker(true)}
+                            style={{
+                              display:'flex', alignItems:'center', gap:10,
+                              width:'100%', textAlign:'left', cursor:'pointer',
+                              padding:'10px 12px', borderRadius:10,
+                              background:'var(--surface-container-low, #f8fafc)',
+                              border:'1px dashed var(--border-light, #cbd5e1)',
+                            }}>
+                      <MapPin size={16} color="var(--secondary, #0ea5e9)" />
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:'var(--on-surface)' }}>
+                          Pin on map (recommended)
+                        </div>
+                        <div style={{ fontSize:11, color:'var(--on-surface-variant)', marginTop:2 }}>
+                          We&rsquo;ll use this for accurate distance pricing &amp; engineer routing.
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
                   <div className={styles.formActions}>
                     <button className="btn btn-ghost" disabled={propSaving} onClick={() => setShowPropertyForm(false)}>Cancel</button>
                     <button className="btn btn-primary" disabled={propSaving} onClick={handleAddProperty}>
@@ -319,6 +379,35 @@ function AccountPage() {
             ) : (
               <button className="btn btn-outline btn-full" onClick={() => setShowPropertyForm(true)}>＋ Add New Property</button>
             )}
+
+            <LocationPicker
+              open={showLocPicker}
+              initial={newPropPin_lat ? {
+                lat: newPropPin_lat,
+                lng: newPropPin_lng,
+                formattedAddress: newPropPin_addr,
+                landmark: newPropPin_landmark,
+                secondaryPhone: newPropPin_secondary,
+              } : null}
+              onClose={() => setShowLocPicker(false)}
+              onSave={(loc) => {
+                setNewPropLat(loc.lat);
+                setNewPropLng(loc.lng);
+                setNewPropFmtAddr(loc.formattedAddress);
+                setNewPropLandmark(loc.landmark || '');
+                setNewPropSecondary(loc.secondaryPhone || '');
+                setNewPropPlaceId(loc.googlePlaceId || null);
+                // Always overwrite the address line with the picked one
+                // — the customer just confirmed it visually on the map.
+                setNewPropAddr(loc.formattedAddress);
+                // Auto-fill city + PIN from Google's addressComponents so
+                // the customer doesn't have to retype what they just picked.
+                if (loc.city)    setNewPropCity(loc.city);
+                if (loc.pincode) setNewPropPin(loc.pincode);
+                setShowLocPicker(false);
+                toast.success('Pin saved.');
+              }}
+            />
           </div>
         )}
 
@@ -348,5 +437,95 @@ function AccountPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/* ─── AC unit row (warranty status + Upgrade-to-AMC CTA) ───── */
+function AcUnitRow({ unit, property }) {
+  const toast = useToast();
+  const [requesting, setRequesting] = useState(false);
+
+  const badge = unit.warrantyBadge || 'No Warranty';
+  const daysLeft = unit.warrantyDaysLeft;
+  const isExpired = badge === 'Expired';
+  const isExpiring = badge === 'Expiring soon';
+  const inWarranty = badge === 'In Warranty';
+
+  // Format expiry detail string
+  let detail = 'No warranty info on file';
+  if (unit.warrantyExpiry) {
+    const dt = new Date(unit.warrantyExpiry);
+    const dateStr = dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (daysLeft >= 0) detail = `Expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'} · ${dateStr}`;
+    else detail = `Expired ${Math.abs(daysLeft)} day${daysLeft === -1 ? '' : 's'} ago · ${dateStr}`;
+  }
+
+  const handleUpgrade = async () => {
+    setRequesting(true);
+    try {
+      await amcUpgradesApi.create({
+        propertyId: property.id,
+        acUnitId:   unit.id,
+        preferredPlan: 'PREMIUM',
+        notes: `Customer requested AMC upgrade for ${unit.roomLabel} (${unit.brand} ${unit.modelNumber || ''})`,
+      });
+      toast.success("AMC upgrade request sent — we'll call you within 4 working hours.");
+    } catch (e) {
+      toast.error(e?.message || 'Could not send upgrade request');
+    } finally { setRequesting(false); }
+  };
+
+  const tone =
+    inWarranty   ? { bg: '#16a34a15', fg: '#15803d', border: '#16a34a40' }
+  : isExpiring   ? { bg: '#f59e0b18', fg: '#b45309', border: '#f59e0b40' }
+  : isExpired    ? { bg: '#ef444415', fg: '#b91c1c', border: '#ef444440' }
+                 : { bg: '#94a3b820', fg: '#475569', border: '#cbd5e1' };
+
+  return (
+    <li style={{
+      padding: '10px 12px',
+      background: 'var(--surface-container-low)',
+      borderRadius: 10,
+      border: '1px solid var(--border-light)',
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>{unit.roomLabel}</span>
+        <span style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>
+          · {unit.brand} {unit.modelNumber || ''} · {unit.tonnage || '?'}T · {unit.acType?.replace('_', '/')}
+        </span>
+        <span style={{
+          marginLeft: 'auto',
+          padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+          background: tone.bg, color: tone.fg, border: `1px solid ${tone.border}`,
+          textTransform: 'uppercase', letterSpacing: 0.4,
+        }}>
+          {badge}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                    fontSize: 12, color: 'var(--on-surface-variant)' }}>
+        <span>{detail}</span>
+        {unit.purchasedFromAes && (
+          <span style={{ fontStyle: 'italic' }}>· AES installed</span>
+        )}
+      </div>
+
+      {(isExpired || (!unit.warrantyExpiry && !unit.amcContractId)) && (
+        <button
+          onClick={handleUpgrade}
+          disabled={requesting}
+          style={{
+            alignSelf: 'flex-start',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 8,
+            background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff',
+            border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+          }}>
+          {requesting ? 'Sending…' : '⭐ Upgrade to AMC'}
+        </button>
+      )}
+    </li>
   );
 }

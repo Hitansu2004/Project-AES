@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-import { dashboard, ops as opsApi } from '@/lib/api';
+import { dashboard, ops as opsApi, amcUpgrades as amcUpgradesApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import useStompTopic from '@/hooks/useStompTopic';
 import Logo from '@/components/ui/Logo';
@@ -88,11 +88,17 @@ export default function OpsDashboardPage() {
     }
   }, [user, authLoading, router]);
 
+  const [amcUpgrades, setAmcUpgrades] = useState([]);
+
   const fetchAll = useCallback(async (silent = false) => {
     if (!silent) setRefresh(true);
     try {
-      const dash = await dashboard.ops();
+      const [dash, amcUps] = await Promise.all([
+        dashboard.ops(),
+        amcUpgradesApi.open().catch(() => []),
+      ]);
       setData(dash);
+      setAmcUpgrades(Array.isArray(amcUps) ? amcUps : []);
     } catch (err) {
       if (!silent) toast.error(err?.message || 'Could not load ops dashboard');
     } finally {
@@ -138,6 +144,7 @@ export default function OpsDashboardPage() {
     { label: 'Customer escalated', value: data?.escalatedByCustomer ?? 0, icon: AlertTriangle, tone: 'esc' },
     { label: 'New installs', value: data?.untriagedInstalls ?? 0, icon: Building2, tone: 'install' },
     { label: 'SLA red zone', value: data?.slaRedZone ?? 0, icon: Clock, tone: 'red' },
+    { label: 'AMC upgrade leads', value: amcUpgrades.length, icon: Headset, tone: 'install' },
   ];
 
   return (
@@ -283,6 +290,55 @@ export default function OpsDashboardPage() {
             </AnimatePresence>
           </div>
         </section>
+
+        {/* AMC UPGRADE LEADS */}
+        {amcUpgrades.length > 0 && (
+          <section className={`${styles.col} ${styles.colCrm}`}>
+            <header className={styles.colHeader}>
+              <h2><Headset size={16} /> AMC Upgrade Leads</h2>
+              <span className={styles.colCount}>{amcUpgrades.length}</span>
+            </header>
+            <div className={styles.list}>
+              {amcUpgrades.map((r) => (
+                <article key={r.id} style={{
+                  padding: '14px 16px', borderRadius: 12,
+                  background: 'var(--surface-container-low)',
+                  border: '1px solid var(--border-light)',
+                  display: 'flex', flexDirection: 'column', gap: 6,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                      background: '#6366f120', color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5,
+                    }}>{r.status}</span>
+                    <span style={{ fontSize: 12, color: 'var(--on-surface-variant)', fontFamily: 'monospace' }}>
+                      {r.requestNumber}
+                    </span>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+                    {r.customerName || 'Customer'}
+                  </h3>
+                  <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {r.customerPhone && <span>📞 {r.customerPhone}</span>}
+                    {r.propertyLabel && <span>🏠 {r.propertyLabel}</span>}
+                    {r.acRoomLabel && <span>❄ {r.acRoomLabel}</span>}
+                    {r.preferredPlan && <span>Plan preference: {r.preferredPlan}</span>}
+                  </div>
+                  {r.notes && (
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--on-surface-variant)', fontStyle: 'italic' }}>
+                      "{r.notes}"
+                    </p>
+                  )}
+                  {r.assignedCrmName && (
+                    <div style={{ fontSize: 12, color: 'var(--secondary)' }}>
+                      Assigned to {r.assignedCrmName}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* CRM WORKLOAD */}
         <section className={`${styles.col} ${styles.colCrm}`}>

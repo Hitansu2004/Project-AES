@@ -24,9 +24,13 @@ export const acTypeLabel = (value) =>
   AC_TYPES.find((t) => t.value === value)?.label || value;
 
 export const TIME_SLOTS = [
+  // `EARLY` is the internal enum value used by the backend; for the
+  // customer we display it as a flexible "Anytime" general shift —
+  // we'll fit them in whenever a team frees up that day.
+  { value: 'EARLY',     label: 'Anytime',   range: 'AES picks the best time' },
   { value: 'MORNING',   label: 'Morning',   range: '9 AM – 12 PM' },
   { value: 'AFTERNOON', label: 'Afternoon', range: '12 PM – 4 PM' },
-  { value: 'EVENING',   label: 'Evening',   range: '4 PM – 7 PM', tag: 'Limited slots' },
+  { value: 'EVENING',   label: 'Evening',   range: '4 PM – 7 PM' },
 ];
 
 export const slotLabel = (value) =>
@@ -187,13 +191,14 @@ export const modelEmi = ({ offer }, months = 9) =>
   offer ? Math.round(offer / months / 10) * 10 : 0;
 
 export const PROBLEM_CATEGORIES = [
-  { value: 'NOT_COOLING',    label: 'Not Cooling',     iconName: 'snowflake' },
-  { value: 'NOISE',          label: 'Noise',           iconName: 'volume2' },
-  { value: 'LEAKING',        label: 'Water Leak',      iconName: 'droplet' },
-  { value: 'NOT_TURNING_ON', label: 'Not Turning On',  iconName: 'power' },
-  { value: 'NO_AIRFLOW',     label: 'No Airflow',      iconName: 'wind' },
-  { value: 'REMOTE_WIFI',    label: 'Remote / Wi-Fi',  iconName: 'remote' },
-  { value: 'OTHER',          label: 'Other',           iconName: 'more' },
+  { value: 'NOT_COOLING',    label: 'Not Cooling',           iconName: 'snowflake' },
+  { value: 'NOISE',          label: 'Noise',                 iconName: 'volume2' },
+  { value: 'LEAKING',        label: 'Water Leak',            iconName: 'droplet' },
+  { value: 'NOT_TURNING_ON', label: 'Not Turning On',        iconName: 'power' },
+  { value: 'NO_AIRFLOW',     label: 'No Airflow',            iconName: 'wind' },
+  { value: 'SMELL_BURNING',  label: 'Burning Smell',         iconName: 'flame' },
+  { value: 'REMOTE_WIFI',    label: 'Remote / Wi-Fi',        iconName: 'remote' },
+  { value: 'OTHER',          label: 'Other',                 iconName: 'more' },
 ];
 
 export const PRIORITY_META = {

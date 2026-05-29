@@ -74,7 +74,7 @@ export default function EngineerDashboardPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace('/login?next=/engineer'); return; }
-    if (user.role !== 'SITE_ENGINEER' && user.role !== 'ADMIN') {
+    if (user.role !== 'SITE_ENGINEER' && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       router.replace(defaultRouteForRole(user.role));
     }
   }, [user, authLoading, router]);
@@ -313,6 +313,21 @@ function JobCard({ job, busy, onMark, onCannotAttend, onNeedHelp, onRaisePart })
       <div className={styles.cardTop}>
         <PriorityBadge priority={job.priority} />
         {statusPill(job.status)}
+        {job.carriedForward && (
+          <span
+            title={job.originalScheduledDate
+              ? `Originally booked for ${job.originalScheduledDate}`
+              : 'Carried forward from a previous day'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '2px 8px', borderRadius: 999,
+              background: '#fef3c7', color: '#92400e',
+              fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
+              textTransform: 'uppercase', border: '1px solid #fde68a',
+            }}>
+            ↻ Carry-over
+          </span>
+        )}
         {job.scheduledDate && (
           <span className={styles.expiry}>
             <Clock size={12} /> {job.scheduledDate} · {job.scheduledSlot || ''}
@@ -336,13 +351,24 @@ function JobCard({ job, busy, onMark, onCannotAttend, onNeedHelp, onRaisePart })
             <Phone size={14} /> Call customer
           </a>
         )}
-        {job.locality && (
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${job.propertyLabel || ''} ${job.locality}`)}`}
-             target="_blank" rel="noopener noreferrer"
-             className={styles.callBtn}>
-            <MapPin size={14} /> Open in Maps
-          </a>
-        )}
+        <a
+          href={`/api/v1/maps/route/${job.ticketNumber}`}
+          onClick={async (e) => {
+            e.preventDefault();
+            try {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/maps/route/${job.ticketNumber}`,
+                { headers: { Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('aes_access_token') : ''}` } });
+              const body = await res.json();
+              const url = body?.data?.directionsUrl
+                || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+            } catch {
+              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`, '_blank');
+            }
+          }}
+          className={styles.callBtn}>
+          <MapPin size={14} /> View route from office
+        </a>
         <Link href={`/tickets/${job.ticketNumber}`} className={styles.callBtn}>
           <ChevronRight size={14} /> Detail
         </Link>

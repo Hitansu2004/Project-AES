@@ -102,7 +102,8 @@ export function useAuth() {
 
 /** Default route for a given role. */
 export function defaultRouteForRole(role) {
-  if (role === 'OPS_MANAGER') return '/ops';
+  if (role === 'SUPER_ADMIN') return '/admin/revenue';
+  if (role === 'OPS_MANAGER') return '/crm';        // V14: ops triage retired, goes to pool
   if (role === 'CRM_AGENT') return '/crm';
   if (role === 'SITE_ENGINEER') return '/engineer';
   if (role === 'SERVICE_MANAGER' || role === 'ADMIN') return '/admin';

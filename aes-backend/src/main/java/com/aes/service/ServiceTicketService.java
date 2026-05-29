@@ -53,6 +53,10 @@ public class ServiceTicketService {
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
     private final UserRepository userRepository;
+    private final PricingService pricingService;
+    private final PaymentTransactionRepository paymentRepository;
+    private final DiscountCouponService discountCouponService;
+    private final SlotAvailabilityService slotAvailabilityService;
 
     /**
      * Create a new service ticket.
@@ -75,6 +79,13 @@ public class ServiceTicketService {
                     "Scheduled date must be tomorrow or later.",
                     HttpStatus.BAD_REQUEST);
         }
+
+        // V13 — BookMyShow-style server-side capacity guard. Throws a
+        // clean 409 if the customer is trying to book a date or slot
+        // that's already at the 30-job-per-day ceiling.
+        slotAvailabilityService.assertSlotAvailable(
+                request.getScheduledDate(),
+                request.getScheduledSlot());
 
         User customer = acUnit.getCustomer();
 
@@ -99,7 +110,7 @@ public class ServiceTicketService {
 
         User assignedAgent = opsTriage ? null : assignmentService.getNextAvailableCrmAgent();
 
-        ServiceTicket ticket = ServiceTicket.builder()
+        ServiceTicket.ServiceTicketBuilder b = ServiceTicket.builder()
                 .ticketNumber(ticketNumber)
                 .customer(customer)
                 .property(acUnit.getProperty())
@@ -112,15 +123,88 @@ public class ServiceTicketService {
                 .photosJson(photosJson)
                 .scheduledDate(request.getScheduledDate())
                 .scheduledSlot(request.getScheduledSlot() != null ? request.getScheduledSlot().name() : null)
+                .originalScheduledDate(request.getScheduledDate())   // V13 — preserved across carry-forwards
+                .carriedForward(Boolean.FALSE)
                 .currentLevel(1)
                 .currentAssignee(assignedAgent)
                 .assignedAt(assignedAgent != null ? now : null)
                 .status(opsTriage ? TicketStatus.NEW : TicketStatus.OPEN)
                 .slaDeadlineL1(slaDeadlineL1)
-                .slaDeadlineFinal(slaDeadlineFinal)
-                .build();
+                .slaDeadlineFinal(slaDeadlineFinal);
 
-        ticket = ticketRepository.save(ticket);
+        // ── V12: location + dynamic pricing + payment integration ──────
+        Double lat = request.getServiceLat() != null
+                ? request.getServiceLat()
+                : (acUnit.getProperty() != null ? acUnit.getProperty().getLatitude() : null);
+        Double lng = request.getServiceLng() != null
+                ? request.getServiceLng()
+                : (acUnit.getProperty() != null ? acUnit.getProperty().getLongitude() : null);
+
+        b.serviceLat(lat)
+         .serviceLng(lng)
+         .serviceAddress(request.getServiceAddress())
+         .landmark(request.getLandmark())
+         .secondaryPhone(request.getSecondaryPhone());
+
+        if (priority == Priority.P3 && lat != null && lng != null) {
+            // Calculate the canonical price from server-side rules so the
+            // customer can't tamper with the amount in the request body.
+            PricingService.Quote q = pricingService.quote(
+                    acUnit.getAcType(), lat, lng, request.getDiscountCode());
+            b.distanceKm(q.distanceKm)
+             .baseCharge(q.baseCharge)
+             .distanceCharge(q.distanceCharge)
+             .discountCode(q.couponCode)
+             .discountPct(q.discountPct)
+             .discountAmount(q.discountAmount)
+             .totalCharge(q.total)
+             .estimatedCharge(new java.math.BigDecimal(q.total));
+
+            // Payment is REQUIRED for P3 tickets created from the wizard.
+            if (request.getPaymentId() == null) {
+                throw new BusinessException("PAYMENT_REQUIRED",
+                        "Payment is required for paid service tickets. " +
+                        "Please complete payment before creating the ticket.",
+                        HttpStatus.PAYMENT_REQUIRED);
+            }
+            PaymentTransaction tx = paymentRepository.findById(request.getPaymentId())
+                    .orElseThrow(() -> new BusinessException("PAYMENT_NOT_FOUND",
+                            "Payment record not found", HttpStatus.BAD_REQUEST));
+            if (!tx.getCustomer().getId().equals(customerId)) {
+                throw new BusinessException("PAYMENT_OWNER_MISMATCH",
+                        "This payment does not belong to you", HttpStatus.FORBIDDEN);
+            }
+            if (!"SUCCESS".equals(tx.getStatus())) {
+                throw new BusinessException("PAYMENT_NOT_SUCCESSFUL",
+                        "Payment must be successful before raising the ticket",
+                        HttpStatus.BAD_REQUEST);
+            }
+            if (tx.getAmount() < q.total) {
+                throw new BusinessException("PAYMENT_AMOUNT_MISMATCH",
+                        "Payment amount ₹" + tx.getAmount() + " is less than the expected ₹" + q.total,
+                        HttpStatus.BAD_REQUEST);
+            }
+            b.paymentStatus("PAID")
+             .paymentMethod(tx.getMethod())
+             .paymentRef(tx.getGatewayPaymentId() == null ? tx.getId().toString() : tx.getGatewayPaymentId())
+             .paidAt(tx.getUpdatedAt() == null ? now : tx.getUpdatedAt());
+            // record coupon usage
+            if (q.couponCode != null) discountCouponService.recordUsage(q.couponCode);
+        } else {
+            // AMC / Warranty / installation-based tickets — no upfront payment.
+            b.paymentStatus("NOT_REQUIRED");
+        }
+
+        ServiceTicket draft = b.build();
+        final ServiceTicket ticket = ticketRepository.save(draft);
+
+        // Link the payment back to the ticket so finance can reconcile.
+        if (request.getPaymentId() != null) {
+            paymentRepository.findById(request.getPaymentId()).ifPresent(tx -> {
+                tx.setTicket(ticket);
+                paymentRepository.save(tx);
+            });
+        }
 
         createActivity(ticket, customer, ActivityType.TICKET_RAISED,
                 "Ticket raised by customer");
@@ -388,6 +472,18 @@ public class ServiceTicketService {
         return buildBaseResponse(ticket, OffsetDateTime.now()).build();
     }
 
+    /** V14 — exposed for the CRM pool controller. */
+    public TicketResponse toResponse(ServiceTicket ticket) {
+        return toSummaryResponse(ticket);
+    }
+
+    /** V14 — exposed for the CRM pool controller. */
+    @Transactional(readOnly = true)
+    public ServiceTicket getTicketEntityByNumber(String ticketNumber) {
+        return ticketRepository.findByTicketNumber(ticketNumber)
+                .orElseThrow(() -> new com.aes.exception.NotFoundException("ServiceTicket", ticketNumber));
+    }
+
     private TicketResponse.TicketResponseBuilder buildBaseResponse(ServiceTicket ticket, OffsetDateTime now) {
         return TicketResponse.builder()
                 .id(ticket.getId())
@@ -408,11 +504,16 @@ public class ServiceTicketService {
                 .photosJson(ticket.getPhotosJson())
                 .scheduledDate(ticket.getScheduledDate())
                 .scheduledSlot(ticket.getScheduledSlot())
+                .carriedForward(Boolean.TRUE.equals(ticket.getCarriedForward()))
+                .originalScheduledDate(ticket.getOriginalScheduledDate())
+                .assignedTeamName(ticket.getAssignedTeamName())
                 .currentLevel(ticket.getCurrentLevel())
                 .currentAssigneeId(ticket.getCurrentAssignee() != null ?
                         ticket.getCurrentAssignee().getId() : null)
                 .currentAssigneeName(ticket.getCurrentAssignee() != null ?
                         ticket.getCurrentAssignee().getName() : null)
+                .engineerId(ticket.getEngineer() != null ? ticket.getEngineer().getId() : null)
+                .engineerName(ticket.getEngineer() != null ? ticket.getEngineer().getName() : null)
                 .assignedAt(ticket.getAssignedAt())
                 .status(ticket.getStatus().name())
                 .acknowledgedAt(ticket.getAcknowledgedAt())

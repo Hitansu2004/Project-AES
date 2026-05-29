@@ -54,4 +54,23 @@ public class CreateTicketRequest {
 
     @NotNull(message = "Scheduled slot is required (MORNING, AFTERNOON, or EVENING)")
     private TimeSlot scheduledSlot;
+
+    // ── V12 additions — location, pricing, payment ──────────────
+    /** Lat captured from Google Maps picker (or property fallback). */
+    private Double serviceLat;
+    private Double serviceLng;
+    @Size(max = 500) private String serviceAddress;
+    @Size(max = 200) private String landmark;
+    @Size(max = 15)  private String secondaryPhone;
+
+    /** Discount code typed/applied by customer (server re-validates). */
+    @Size(max = 20)  private String discountCode;
+
+    /**
+     * UUID of the {@code payment_transactions} row created via the
+     * mock gateway.  Required for P3 tickets, ignored otherwise.
+     * If supplied, the row must be in {@code SUCCESS} state and
+     * belong to the same customer — verified in the service.
+     */
+    private UUID paymentId;
 }

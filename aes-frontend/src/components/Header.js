@@ -37,6 +37,13 @@ const navLinks = {
   ADMIN: [
     { href: '/admin', label: 'Escalation' },
     { href: '/crm', label: 'CRM View' },
+    { href: '/admin/revenue', label: 'Revenue' },
+    { href: '/account', label: 'Account' },
+  ],
+  SUPER_ADMIN: [
+    { href: '/admin/revenue', label: 'Revenue' },
+    { href: '/admin', label: 'Operations' },
+    { href: '/crm', label: 'CRM View' },
     { href: '/account', label: 'Account' },
   ],
 };
@@ -52,10 +59,11 @@ export default function Header() {
   const roleLabel = {
     CUSTOMER: '',
     OPS_MANAGER: 'Ops Triage',
-    CRM_AGENT: 'CRM Dashboard — Level 1',
-    SITE_ENGINEER: 'Field Engineer',
+    CRM_AGENT: 'CRM Dispatch Pool',
+    SITE_ENGINEER: 'Service Engineer',
     SERVICE_MANAGER: 'Escalation Management',
     ADMIN: 'Admin Console',
+    SUPER_ADMIN: 'Owner · Revenue HQ',
   }[user.role] || '';
 
   return (

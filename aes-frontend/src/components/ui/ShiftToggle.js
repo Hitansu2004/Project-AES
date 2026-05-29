@@ -6,7 +6,7 @@ import { staff } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 
 /**
- * Shift toggle for CRM agents and site engineers.
+ * Shift toggle for CRM agents and service engineers.
  *
  * End-shift is ALWAYS a soft pause: the user stops receiving new offers
  * and ticket pings, but every active ticket / install assignment stays

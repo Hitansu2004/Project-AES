@@ -38,6 +38,15 @@ public class User {
     @Builder.Default
     private Boolean isActive = true;
 
+    /** V14 — one of "Team 01" … "Team 15", or NULL for customers/owners. */
+    @Column(name = "team_name", length = 50)
+    private String teamName;
+
+    /** V14 — TRUE for the single team lead within each team. */
+    @Column(name = "is_team_lead", nullable = false)
+    @Builder.Default
+    private Boolean isTeamLead = Boolean.FALSE;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

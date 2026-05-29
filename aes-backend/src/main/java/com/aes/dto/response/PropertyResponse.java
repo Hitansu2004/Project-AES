@@ -32,4 +32,12 @@ public class PropertyResponse {
     private long acUnitsCount;
     private List<AcUnitResponse> acUnits;
     private OffsetDateTime createdAt;
+
+    // ── V12: location + secondary contact ───────────────────────
+    private Double latitude;
+    private Double longitude;
+    private String formattedAddress;
+    private String landmark;
+    private String googlePlaceId;
+    private String secondaryPhone;
 }

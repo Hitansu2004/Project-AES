@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
 
@@ -27,8 +27,9 @@ export function ToastProvider({ children }) {
 
   const value = useMemo(() => ({
     success: (msg, d) => push('success', msg, d),
-    error: (msg, d) => push('error', msg, d),
-    info: (msg, d) => push('info', msg, d),
+    error:   (msg, d) => push('error',   msg, d),
+    info:    (msg, d) => push('info',    msg, d),
+    warning: (msg, d) => push('warning', msg, d),
     dismiss,
   }), [push, dismiss]);
 
@@ -48,8 +49,9 @@ export function ToastProvider({ children }) {
               role="status"
             >
               {t.variant === 'success' && <CheckCircle2 size={20} color="var(--success)" />}
-              {t.variant === 'error' && <XCircle size={20} color="var(--error)" />}
-              {t.variant === 'info' && <Info size={20} color="var(--secondary)" />}
+              {t.variant === 'error'   && <XCircle size={20} color="var(--error)" />}
+              {t.variant === 'info'    && <Info size={20} color="var(--secondary)" />}
+              {t.variant === 'warning' && <AlertTriangle size={20} color="var(--warning, #f59e0b)" />}
               <span style={{ flex: 1 }}>{t.message}</span>
               <button
                 onClick={() => dismiss(t.id)}

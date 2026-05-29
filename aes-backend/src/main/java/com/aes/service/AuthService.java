@@ -145,7 +145,9 @@ public class AuthService {
                 .name(user.getName())
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
-                .role(user.getRole().name());
+                .role(user.getRole().name())
+                .teamName(user.getTeamName())
+                .isTeamLead(Boolean.TRUE.equals(user.getIsTeamLead()));
         staffProfileRepository.findById(user.getId()).ifPresent(sp -> {
             urb.onShift(Boolean.TRUE.equals(sp.getOnShift()));
             urb.branch(sp.getBranch());
