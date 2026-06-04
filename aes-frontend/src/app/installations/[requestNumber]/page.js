@@ -11,7 +11,8 @@ import {
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { installations as installationsApi, quotes as quotesApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
-import AppTopBar from '@/components/ui/AppTopBar';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './detail.module.css';
 
 const STATUS_LABEL = {
@@ -112,21 +113,28 @@ export default function InstallationDetailPage({ params }) {
   };
 
   if (authLoading || loading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading project…" />;
   }
 
   if (!req) {
     return (
-      <div className={styles.shell}>
-        <AppTopBar title="Project not found" width="detail" />
+      <RoseShell
+        focused
+        hero={
+          <div>
+            <h1 className={styles.heroTitle}>Project not found</h1>
+            <p className={styles.heroSub}>It may have been removed, or you might not have access.</p>
+          </div>
+        }
+      >
         <div className={styles.empty}>
           <Building2 size={32} />
-          <h2>We couldn't find that project.</h2>
-          <Link href="/installations" className="btn btn-outline">
+          <h2>We couldn&apos;t find that project.</h2>
+          <Link href="/installations" className={styles.backCta}>
             <ArrowLeft size={14} /> Back to my projects
           </Link>
         </div>
-      </div>
+      </RoseShell>
     );
   }
 
@@ -139,10 +147,25 @@ export default function InstallationDetailPage({ params }) {
     catch { return []; }
   })();
 
-  return (
-    <div className={styles.shell}>
-      <AppTopBar title={req.requestNumber} width="detail" />
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <span className={styles.heroEyebrow}>Installation project</span>
+        <h1 className={styles.heroTitle}>{req.requestNumber}</h1>
+        <p className={styles.heroSub}>
+          {(req.acType || '').replace('_', '/')} installation
+          {req.tonnage && ` · ${req.tonnage} ton`}
+          {req.brand && ` · ${req.brand}`}
+        </p>
+      </div>
+      <button type="button" className={styles.backCta} onClick={() => router.push('/installations')}>
+        ← All projects
+      </button>
+    </div>
+  );
 
+  return (
+    <RoseShell hero={hero} focused>
       <div className={styles.body}>
         <motion.section className={styles.statusCard}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -262,7 +285,7 @@ export default function InstallationDetailPage({ params }) {
       {openQuote && (
         <QuoteReviewSheet quote={openQuote} onClose={() => setOpenQuote(null)} onSubmit={handleQuoteDecision} />
       )}
-    </div>
+    </RoseShell>
   );
 }
 

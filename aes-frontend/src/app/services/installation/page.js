@@ -18,7 +18,8 @@ import {
   modelDiscount, modelEmi,
 } from '@/lib/constants';
 import { BUILDING_TYPES, AC_TYPE_IMAGES, BRAND_LOGOS } from '@/lib/aesCatalog';
-import AppTopBar from '@/components/ui/AppTopBar';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import StepIndicator from '@/components/ui/StepIndicator';
 import DayPicker from '@/components/ui/DayPicker';
 import AcTypeIcon from '@/components/ui/AcTypeIcon';
@@ -125,7 +126,7 @@ export default function InstallationWizard() {
   };
 
   if (authLoading || !user || !hydrated) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading installation planner…" />;
   }
 
   // Success page
@@ -133,14 +134,35 @@ export default function InstallationWizard() {
     return <SuccessScreen request={submittedRequest} onHome={() => router.replace('/dashboard')} />;
   }
 
-  return (
-    <div className={styles.shell}>
-      <AppTopBar
-        title="New Installation"
-        onBack={goBack}
-        right={<StepIndicator current={step} total={TOTAL_STEPS} />}
-      />
+  const STEP_TITLES = [
+    { eyebrow: 'Step 1 of 5', title: 'Plan a new installation', sub: 'Tell us about the space — we tailor the kit and crew to match.' },
+    { eyebrow: 'Step 2 of 5', title: 'Pick your AC type',         sub: 'Choose the system that suits your layout and load.' },
+    { eyebrow: 'Step 3 of 5', title: 'Pick a brand and model',    sub: 'Authorised dealer for India\u2019s top OEMs.' },
+    { eyebrow: 'Step 4 of 5', title: 'Where and what rooms?',     sub: 'Tell us about the site so we can prep the team.' },
+    { eyebrow: 'Step 5 of 5', title: 'Schedule the site survey',  sub: 'Pick a date and slot that works best for you.' },
+  ];
+  const stepHero = STEP_TITLES[step - 1];
 
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <span className={styles.heroEyebrow}>{stepHero.eyebrow}</span>
+        <h1 className={styles.heroTitle}>{stepHero.title}</h1>
+        <p className={styles.heroSub}>{stepHero.sub}</p>
+      </div>
+      <div className={styles.heroSide}>
+        <StepIndicator current={step} total={TOTAL_STEPS} />
+        {step > 1 && (
+          <button type="button" className={styles.heroBackBtn} onClick={goBack}>
+            <ArrowLeft size={14} /> Back
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <RoseShell hero={hero} focused>
       <div className={styles.body}>
         <AnimatePresence custom={direction} mode="wait" initial={false}>
           {step === 1 && (
@@ -238,28 +260,40 @@ export default function InstallationWizard() {
 
       <div className={styles.actionBar}>
         <div className={styles.actionInner}>
+          {step > 1 && (
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={goBack}
+              disabled={submitting}
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+          )}
           {step === TOTAL_STEPS ? (
             <button
-              className="btn btn-primary btn-full btn-lg"
+              type="button"
+              className={styles.primaryBtn}
               disabled={!step5Valid || submitting}
               onClick={handleSubmit}
             >
               {submitting ? <span className="spinner spinner-sm" /> : (
-                <>Submit Request <ArrowRight size={18} /></>
+                <>Submit Request <ArrowRight size={16} /></>
               )}
             </button>
           ) : (
             <button
-              className="btn btn-primary btn-full btn-lg"
+              type="button"
+              className={styles.primaryBtn}
               disabled={!stepValid}
               onClick={goNext}
             >
-              Continue <ArrowRight size={18} />
+              Continue <ArrowRight size={16} />
             </button>
           )}
         </div>
       </div>
-    </div>
+    </RoseShell>
   );
 }
 
@@ -868,9 +902,7 @@ function SuccessScreen({ request, onHome }) {
     : null;
 
   return (
-    <div className={styles.successPage}>
-      <AppTopBar title="Request Submitted" showBack={false} variant="transparent" />
-
+    <RoseShell bare focused contentClassName={styles.successCanvas}>
       <motion.div
         className={styles.successInner}
         initial={{ opacity: 0, y: 20 }}
@@ -938,15 +970,15 @@ function SuccessScreen({ request, onHome }) {
         </div>
 
         <div className={styles.successActions}>
-          <button className="btn btn-outline btn-full" onClick={() => router.push('/tickets')}>
+          <button type="button" className={styles.secondaryBtn} onClick={() => router.push('/installations')}>
             Track this request
           </button>
-          <button className="btn btn-primary btn-full" onClick={onHome}>
+          <button type="button" className={styles.primaryBtn} onClick={onHome}>
             Back to home
           </button>
         </div>
       </motion.div>
-    </div>
+    </RoseShell>
   );
 }
 

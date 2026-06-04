@@ -3,14 +3,17 @@
 import { Suspense, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Lightbulb, ArrowRight, Wrench } from 'lucide-react';
-import AppTopBar from '@/components/ui/AppTopBar';
+import {
+  Search, Lightbulb, ArrowRight, Wrench, AlertTriangle, RotateCcw,
+} from 'lucide-react';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import { ERROR_CODE_BRANDS, ERROR_CODES } from '@/lib/errorCodes';
 import styles from './error.module.css';
 
 export default function ErrorCodesPage() {
   return (
-    <Suspense fallback={<div className="loading-page"><div className="spinner" /></div>}>
+    <Suspense fallback={<RoseSplash message="Loading error code guide…" />}>
       <ErrorCodesScreen />
     </Suspense>
   );
@@ -47,38 +50,69 @@ function ErrorCodesScreen() {
     else router.push('/services/ticket');
   };
 
-  return (
-    <div className={styles.shell}>
-      <AppTopBar title="Error Code Guide" />
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>Error Code Guide</h1>
+        <p className={styles.heroSub}>
+          Look up your AC&apos;s error code, learn what it means, and pick the right
+          fix — or apply it directly to a new service ticket.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={goBookService}
+        className={styles.heroCta}
+      >
+        <Wrench size={14} /> {fromWizard ? 'Back to ticket' : 'Book service'}
+      </button>
+    </div>
+  );
 
-      <div className={styles.brandTabs}>
+  return (
+    <RoseShell hero={hero}>
+      {/* Brand pills */}
+      <section className={styles.brandTabs} role="tablist" aria-label="Brand">
         {ERROR_CODE_BRANDS.map((brand) => {
           const active = brand === activeBrand;
           return (
             <button
               key={brand}
               type="button"
-              onClick={() => setActiveBrand(brand)}
+              role="tab"
+              aria-selected={active}
+              onClick={() => { setActiveBrand(brand); setQuery(''); }}
               className={`${styles.brandTab} ${active ? styles.brandTabActive : ''}`}
             >
               {brand}
-              {active && <motion.span layoutId="brandUnderline" className={styles.brandUnderline} />}
             </button>
           );
         })}
-      </div>
+      </section>
 
+      {/* Search */}
       <div className={styles.searchRow}>
-        <Search size={18} className={styles.searchIcon} />
+        <Search size={16} className={styles.searchIcon} />
         <input
           className={styles.searchInput}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search error code (e.g. E1, H6, P1...)"
+          placeholder={`Search ${activeBrand} codes — e.g. E1, H6, P1…`}
         />
+        {query && (
+          <button
+            type="button"
+            className={styles.searchClear}
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+          >
+            <RotateCcw size={14} />
+          </button>
+        )}
       </div>
 
+      {/* Cards */}
       <div className={styles.list}>
         <AnimatePresence mode="popLayout">
           {codes.length === 0 ? (
@@ -89,9 +123,9 @@ function ErrorCodesScreen() {
               exit={{ opacity: 0 }}
               className={styles.empty}
             >
-              <Search size={28} color="var(--on-surface-variant)" />
+              <div className={styles.emptyIcon}><Search size={26} /></div>
               <h3>No matching codes</h3>
-              <p>Try a different brand tab or clear the search.</p>
+              <p>Try a different brand or clear the search.</p>
             </motion.div>
           ) : (
             codes.map((c, i) => (
@@ -101,7 +135,7 @@ function ErrorCodesScreen() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ delay: i * 0.03 }}
+                transition={{ delay: i * 0.025 }}
                 className={styles.card}
               >
                 <button
@@ -115,8 +149,10 @@ function ErrorCodesScreen() {
                     <div className={styles.cardTitleCol}>
                       <h3 className={styles.cardTitle}>{c.title}</h3>
                       <span className={`${styles.severity} ${c.severity === 'TECH' ? styles.sevTech : styles.sevReset}`}>
-                        <span className={styles.severityDot} />
-                        {c.severity === 'TECH' ? 'Requires Tech' : 'Try Reset First'}
+                        {c.severity === 'TECH'
+                          ? <AlertTriangle size={11} />
+                          : <RotateCcw size={11} />}
+                        {c.severity === 'TECH' ? 'Requires Technician' : 'Try Reset First'}
                       </span>
                     </div>
                   </div>
@@ -126,7 +162,7 @@ function ErrorCodesScreen() {
                     <p>{c.tip}</p>
                   </div>
                   <span className={styles.applyHint}>
-                    Apply to my ticket <ArrowRight size={14} />
+                    Apply to my ticket <ArrowRight size={12} />
                   </span>
                 </button>
               </motion.article>
@@ -134,12 +170,6 @@ function ErrorCodesScreen() {
           )}
         </AnimatePresence>
       </div>
-
-      <div className={styles.bottomBar}>
-        <button onClick={goBookService} className="btn btn-primary btn-full btn-lg">
-          <Wrench size={18} /> {fromWizard ? 'Back to Ticket' : 'Book Service'}
-        </button>
-      </div>
-    </div>
+    </RoseShell>
   );
 }

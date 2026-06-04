@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
       <head>
         {/* Sets data-theme before first paint to avoid the white-flash on dark-mode reloads. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <meta name="theme-color" content="#003366" />
+        <meta name="theme-color" content="#780037" />
       </head>
       <body>
         <ThemeProvider>

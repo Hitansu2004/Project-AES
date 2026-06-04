@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell, CheckCheck, AlertTriangle, Wrench, Sparkles, Calendar, ChevronRight,
+  Bell,
+  CheckCheck,
+  AlertTriangle,
+  Wrench,
+  Sparkles,
+  Calendar,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-import AppTopBar from '@/components/ui/AppTopBar';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './notifications.module.css';
 
 const TYPE_META = {
@@ -30,7 +37,6 @@ function formatStamp(iso) {
     const y = new Date(); y.setDate(today.getDate() - 1);
     return y.toDateString() === date.toDateString();
   })();
-
   const time = date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
   if (isToday) return `Today, ${time}`;
   if (isYesterday) return `Yesterday, ${time}`;
@@ -57,13 +63,11 @@ export default function NotificationsPage() {
   const { items, unread, loading, refresh, markRead, markAllRead } = useNotifications();
   const router = useRouter();
 
-  // Auth guard
   useEffect(() => {
     if (authLoading) return;
     if (!user) router.replace('/login?next=/notifications');
   }, [user, authLoading, router]);
 
-  // Refresh on mount so the list is fresh even if context is stale
   useEffect(() => { if (user) refresh(); }, [user, refresh]);
 
   const grouped = useMemo(() => {
@@ -76,108 +80,92 @@ export default function NotificationsPage() {
   }, [items]);
 
   if (authLoading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading notifications…" />;
   }
 
-  const goToHome = () => router.push(defaultRouteForRole(user.role));
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>Notifications</h1>
+        <p className={styles.heroSub}>
+          {unread > 0
+            ? `${unread} unread · ${items.length} total`
+            : items.length > 0
+              ? `You’re all caught up · ${items.length} total`
+              : 'No notifications yet — we’ll let you know when something happens.'}
+        </p>
+      </div>
+      {unread > 0 && (
+        <button
+          type="button"
+          className={styles.markAllBtn}
+          onClick={markAllRead}
+          aria-label="Mark all read"
+        >
+          <CheckCheck size={14} /> Mark all read
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <div className={styles.shell}>
-      <AppTopBar
-        title="Notifications"
-        width="content"
-        onBack={goToHome}
-        right={
-          unread > 0 ? (
-            <button
-              type="button"
-              className={styles.markAllBtn}
-              onClick={markAllRead}
-              aria-label="Mark all read"
-            >
-              <CheckCheck size={16} /> Mark all read
-            </button>
-          ) : (
-            <div style={{ width: 40 }} />
-          )
-        }
-      />
-
-      <main className={styles.main}>
-        <header className={styles.heroHeader}>
-          <div className={styles.heroBadge}>
-            <Bell size={18} />
-            {unread > 0 && <span className={styles.heroBadgeDot}>{unread}</span>}
-          </div>
-          <div>
-            <h1 className={styles.heroTitle}>Updates</h1>
-            <p className={styles.heroSub}>
-              {unread > 0
-                ? `${unread} unread • ${items.length} total`
-                : items.length > 0
-                  ? `You're all caught up • ${items.length} total`
-                  : 'No notifications yet'}
-            </p>
-          </div>
-        </header>
-
-        {loading && items.length === 0 && (
-          <div className={styles.skeletonStack}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className={`skeleton ${styles.skeletonCard}`} />
-            ))}
-          </div>
-        )}
-
-        {!loading && items.length === 0 && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}><Bell size={28} /></div>
-            <h2>No notifications yet</h2>
-            <p>Ticket updates, escalations, and reminders will show up here.</p>
-            <Link href={defaultRouteForRole(user.role)} className="btn btn-primary">
-              Back home
-            </Link>
-          </div>
-        )}
-
-        <AnimatePresence initial={false}>
-          {Object.entries(grouped).map(([bucket, list]) => list.length === 0 ? null : (
-            <motion.section
-              key={bucket}
-              layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className={styles.section}
-            >
-              <h3 className={styles.sectionTitle}>{bucket}</h3>
-              <ul className={styles.list}>
-                <AnimatePresence initial={false}>
-                  {list.map((n) => (
-                    <motion.li
-                      key={n.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.97 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.97 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      <NotificationCard
-                        notification={n}
-                        onClick={() => {
-                          if (!n.read) markRead(n.id);
-                          if (n.link) router.push(n.link);
-                        }}
-                      />
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
-            </motion.section>
+    <RoseShell hero={hero}>
+      {loading && items.length === 0 && (
+        <div className={styles.skeletonStack}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className={`skeleton ${styles.skeletonCard}`} />
           ))}
-        </AnimatePresence>
-      </main>
-    </div>
+        </div>
+      )}
+
+      {!loading && items.length === 0 && (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}><Bell size={28} /></div>
+          <h2>No notifications yet</h2>
+          <p>Ticket updates, escalations, and reminders will show up here.</p>
+          <Link href={defaultRouteForRole(user.role)} className={styles.emptyCta}>
+            Back to dashboard
+          </Link>
+        </div>
+      )}
+
+      <AnimatePresence initial={false}>
+        {Object.entries(grouped).map(([bucket, list]) => list.length === 0 ? null : (
+          <motion.section
+            key={bucket}
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={styles.section}
+          >
+            <h3 className={styles.sectionTitle}>{bucket}</h3>
+            <ul className={styles.list}>
+              <AnimatePresence initial={false}>
+                {list.map((n) => (
+                  <motion.li
+                    key={n.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <NotificationCard
+                      notification={n}
+                      onClick={() => {
+                        if (!n.read) markRead(n.id);
+                        if (n.link) router.push(n.link);
+                      }}
+                    />
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </ul>
+          </motion.section>
+        ))}
+      </AnimatePresence>
+    </RoseShell>
   );
 }
 

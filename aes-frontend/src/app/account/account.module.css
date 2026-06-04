@@ -1,30 +1,125 @@
 .page { min-height: 100dvh; }
 
-/* Profile Header */
-.profileHeader {
-  display: flex; align-items: center; gap: var(--space-5);
-  margin-bottom: var(--space-6);
+/* ── Rose Hero ─────────────────────────────────────────── */
+.heroRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
 }
-.avatar {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: linear-gradient(135deg, #003366, #0099CC);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 800; flex-shrink: 0;
+.heroAvatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--aes-radius-full);
+  background: linear-gradient(135deg, #780037, #9d174d);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-family: var(--aes-font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  box-shadow: var(--aes-shadow-cta);
 }
-.profileName { font-size: 22px; font-weight: 700; color: var(--primary-dark); }
-.profilePhone { font-size: 14px; color: var(--outline); margin: 2px 0 6px; }
+.heroText { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.heroTitle {
+  font-family: var(--aes-font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+}
+@media (min-width: 1024px) { .heroTitle { font-size: 40px; } }
+.heroSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  color: var(--aes-on-surface-variant);
+}
+.heroRolePill {
+  display: inline-flex;
+  padding: 3px 10px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.heroSignOut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: var(--aes-surface-container-lowest);
+  color: var(--aes-error);
+  border: 1px solid var(--aes-error-container);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.heroSignOut:hover { background: var(--aes-error-container); transform: translateY(-1px); }
 
-/* Tabs */
+/* ── Rose Tabs ─────────────────────────────────────────── */
 .tabs {
-  display: flex; background: var(--surface-container-low); border-radius: var(--radius);
-  padding: 4px; margin-bottom: var(--space-5);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px solid rgba(120, 0, 55, 0.04);
+  border-radius: var(--aes-radius-full);
+  box-shadow: var(--aes-shadow-card);
+  margin-bottom: 22px;
+  width: fit-content;
 }
 .tab {
-  flex: 1; padding: 10px; border: none; background: transparent;
-  font-size: 14px; font-weight: 600; color: var(--outline);
-  border-radius: 6px; cursor: pointer; transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--aes-on-surface-variant);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
 }
-.tabActive { background: var(--surface-container-lowest); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.tab:hover {
+  background: var(--aes-surface-container-low);
+  color: var(--aes-on-surface);
+}
+.tabActive {
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+}
+.tabActive:hover { background: var(--aes-primary-hover); color: var(--aes-on-primary); }
+.tabSurface { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── Legacy profile header (now hidden in favor of hero) ── */
+.profileHeader {
+  display: none;
+}
+.avatar {
+  width: 64px; height: 64px; border-radius: var(--aes-radius-full);
+  background: linear-gradient(135deg, #780037, #9d174d);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; flex-shrink: 0;
+}
+.profileName { font-size: 22px; font-weight: 700; color: var(--aes-on-surface-strong); }
+.profilePhone { font-size: 14px; color: var(--aes-on-surface-variant); margin: 2px 0 6px; }
 
 .tabContent { display: flex; flex-direction: column; gap: var(--space-4); }
 
@@ -76,3 +171,33 @@
 .emptyState span { font-size: 48px; opacity: 0.5; }
 .emptyState h3 { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
 .emptyState p { font-size: 14px; color: var(--outline); }
+
+/* ============================================================
+   Mobile (≤768px) — centered avatar hero, scrollable tabs
+   ============================================================ */
+@media (max-width: 768px) {
+  .heroRow {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+  .heroAvatar { width: 84px; height: 84px; font-size: 30px; }
+  .heroTitle { font-size: 24px; }
+  .heroText { align-items: center; }
+  .heroSub { justify-content: center; }
+  .heroSignOut { width: 100%; justify-content: center; margin-top: 4px; }
+
+  .tabs {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; padding: 8px 14px; font-size: 12.5px; }
+}

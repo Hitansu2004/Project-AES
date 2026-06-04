@@ -1,15 +1,15 @@
 import { Snowflake } from 'lucide-react';
 
 /**
- * AES brand mark — a snowflake glyph on a navy chip + wordmark.
+ * AES brand mark — a snowflake glyph on a deep-rose chip + wordmark.
  * Sizes: "sm" (24), "md" (32), "lg" (48).
  */
-export default function Logo({ size = 'md', showWordmark = true, color = 'navy' }) {
+export default function Logo({ size = 'md', showWordmark = true, color = 'rose' }) {
   const dim = { sm: 24, md: 32, lg: 48 }[size] || 32;
   const chip = dim + 12;
   const palette = color === 'white'
     ? { bg: 'rgba(255,255,255,0.15)', fg: '#ffffff', text: '#ffffff' }
-    : { bg: 'var(--primary-dark)', fg: '#ffffff', text: 'var(--primary-dark)' };
+    : { bg: 'var(--primary)', fg: '#ffffff', text: 'var(--primary)' };
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>

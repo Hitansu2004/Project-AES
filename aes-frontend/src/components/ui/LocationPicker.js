@@ -311,7 +311,7 @@ export default function LocationPicker({
           {/* Header */}
           <div style={header}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <MapPin size={18} color="#6366f1" />
+              <MapPin size={18} color="#780037" />
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Set your visit address</h3>
                 <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>
@@ -402,7 +402,7 @@ export default function LocationPicker({
 
           {/* Selected address card */}
           <div style={selectedCard}>
-            <Home size={16} color="#6366f1" style={{ flexShrink: 0, marginTop: 2 }} />
+            <Home size={16} color="#780037" style={{ flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase' }}>
                 Selected address
@@ -504,7 +504,7 @@ const searchBox = {
 const locBtn = {
   display: 'inline-flex', alignItems: 'center', gap: 6,
   padding: '0 12px', borderRadius: 10,
-  background: 'linear-gradient(135deg, #6366f1, #0ea5e9)',
+  background: 'linear-gradient(135deg, #780037, #9d174d)',
   color: '#fff', border: 'none', cursor: 'pointer',
 };
 const dropdown = {
@@ -546,8 +546,8 @@ const crosshair = {
 const selectedCard = {
   display: 'flex', alignItems: 'flex-start', gap: 10,
   padding: '12px 14px', borderRadius: 10,
-  background: 'linear-gradient(135deg, #6366f110, #0ea5e910)',
-  border: '1px solid #6366f130',
+  background: 'linear-gradient(135deg, #78003710, #9d174d10)',
+  border: '1px solid #78003730',
 };
 const fieldLabel = {
   fontSize: 11, fontWeight: 600, color: '#475569',

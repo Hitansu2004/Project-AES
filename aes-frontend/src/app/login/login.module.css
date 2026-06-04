@@ -1,195 +1,565 @@
+/* ============================================================
+   Login — Desktop pink design (scoped)
+   Mirrors the New Design / Desktop reference. Tokens are scoped
+   to .page so the rest of the app keeps its existing palette
+   until each page is migrated to the pink system.
+   ============================================================ */
+
 .page {
-  min-height: 100dvh;
-  background:
-    radial-gradient(circle at 20% 0%, #d6e4f9 0%, transparent 55%),
-    linear-gradient(180deg, var(--surface) 0%, var(--surface-container-low) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 20px;
+  /* ── Scoped pink design tokens ───────────────────────────── */
+  --aes-primary: #780037;
+  --aes-primary-hover: #8e0542;
+  --aes-primary-press: #5d0029;
+  --aes-on-primary: #ffffff;
+
+  --aes-primary-fixed: #ffd9e0;
+  --aes-primary-fixed-dim: #ffb1c3;
+  --aes-on-primary-fixed: #3f0019;
+
+  --aes-surface: #f0f3ff;
+  --aes-surface-tint: #af275a;
+  --aes-surface-container-lowest: #ffffff;
+  --aes-surface-container-low: #f6f8ff;
+  --aes-surface-container: #e7eeff;
+  --aes-surface-container-high: #dee8ff;
+
+  --aes-on-surface: #111c2d;
+  --aes-on-surface-strong: #0a1320;
+  --aes-on-surface-variant: #574146;
+
+  --aes-outline: #8b7076;
+  --aes-outline-variant: #debfc4;
+
+  --aes-error: #ba1a1a;
+  --aes-error-container: #ffdad6;
+  --aes-on-error-container: #410002;
+
+  --aes-warning: #b06800;
+  --aes-warning-container: #fef3c7;
+
+  --aes-radius-sm: 8px;
+  --aes-radius: 12px;
+  --aes-radius-lg: 16px;
+  --aes-radius-xl: 24px;
+  --aes-radius-full: 9999px;
+
+  --aes-shadow-card:
+    0 1px 2px rgba(120, 0, 55, 0.04),
+    0 24px 60px -28px rgba(120, 0, 55, 0.22),
+    0 6px 18px -10px rgba(15, 28, 44, 0.10);
+
+  --aes-shadow-cta:
+    0 8px 18px -8px rgba(120, 0, 55, 0.45),
+    0 2px 4px rgba(120, 0, 55, 0.10);
+
+  --aes-font-display: 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --aes-font-body: 'Hanken Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --aes-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(255, 177, 195, 0.35) 0%, transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(175, 39, 90, 0.10) 0%, transparent 55%),
+    linear-gradient(180deg, #f4f6ff 0%, var(--aes-surface) 100%);
   overflow: hidden;
-}
-@media (min-width: 768px) {
-  .page { padding: 48px 32px; }
+  color: var(--aes-on-surface);
+  font-family: var(--aes-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.blob {
+/* Soft aurora glow behind the card */
+.aurora {
   position: absolute;
-  width: 420px; height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(91, 202, 255, 0.30) 0%, transparent 70%);
-  top: -120px; right: -120px;
-  filter: blur(40px);
+  inset: 0;
   pointer-events: none;
+  background:
+    radial-gradient(420px 260px at 50% 28%, rgba(255, 217, 224, 0.55), transparent 70%),
+    radial-gradient(360px 220px at 50% 78%, rgba(120, 0, 55, 0.06), transparent 70%);
+  filter: blur(2px);
+}
+
+/* Faint blueprint grid — engineering texture */
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(120, 0, 55, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 0, 55, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 80%);
 }
 
 .shell {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-  position: relative;
-  z-index: 1;
+  gap: 20px;
 }
 
+/* ── Card ───────────────────────────────────────────────── */
+.card {
+  width: 100%;
+  background: var(--aes-surface-container-lowest);
+  border-radius: var(--aes-radius-xl);
+  border: 1px solid rgba(120, 0, 55, 0.06);
+  box-shadow: var(--aes-shadow-card);
+  padding: 40px 40px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Brand block ────────────────────────────────────────── */
 .brand {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-align: center;
 }
 
-.title {
-  font-size: 24px;
+.brandChip {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-lg);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 0, 55, 0.06),
+    0 6px 14px -8px rgba(120, 0, 55, 0.35);
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card:hover .brandChip {
+  transform: translateY(-1px) rotate(-2deg);
+}
+
+.wordmark {
+  font-family: var(--aes-font-display);
   font-weight: 700;
-  color: var(--primary-dark);
-  letter-spacing: -0.02em;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--aes-primary);
+  margin: 2px 0 0;
 }
 
-.subtitle {
-  font-size: 13px;
-  color: var(--on-surface-variant);
+.brandTag {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aes-on-surface-variant);
 }
 
-.card {
-  width: 100%;
-  background: var(--surface-container-lowest);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
+/* ── Form ───────────────────────────────────────────────── */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
-.heading { display: flex; flex-direction: column; gap: 4px; }
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .h2 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  font-family: var(--aes-font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
   letter-spacing: -0.01em;
+  color: var(--aes-on-surface-strong);
 }
 .h2sub {
+  font-family: var(--aes-font-body);
   font-size: 14px;
-  color: var(--on-surface-variant);
+  line-height: 1.5;
+  color: var(--aes-on-surface-variant);
+}
+.h2sub strong {
+  color: var(--aes-on-surface);
+  font-weight: 600;
+  font-feature-settings: "tnum";
+}
+
+/* ── Field ──────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fieldLabel {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aes-on-surface-variant);
 }
 
 .phoneRow {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: stretch;
 }
-.flag {
+
+.flagPill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 0 14px;
-  background: var(--surface-container);
-  border-radius: var(--radius);
-  font-weight: 700;
-  color: var(--primary-dark);
-  font-size: 14px;
+  background: var(--aes-surface-container);
+  color: var(--aes-on-surface);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius);
+  font-family: var(--aes-font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
 }
-.flagDot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--secondary);
-  display: inline-block;
+.flagPill:hover {
+  background: var(--aes-surface-container-high);
+  border-color: var(--aes-primary-fixed-dim);
 }
-.phoneInput { flex: 1; letter-spacing: 0.04em; }
+.flagPill svg {
+  color: var(--aes-on-surface-variant);
+}
 
+.phoneInput {
+  flex: 1;
+  min-width: 0;
+  height: 52px;
+  padding: 0 16px;
+  background: var(--aes-surface-container-lowest);
+  border: 1.5px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius);
+  font-family: var(--aes-font-body);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--aes-on-surface);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+.phoneInput::placeholder {
+  color: var(--aes-outline);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+.phoneInput:focus {
+  outline: none;
+  border-color: var(--aes-primary);
+  background: var(--aes-surface-container-lowest);
+  box-shadow:
+    0 0 0 4px rgba(120, 0, 55, 0.12),
+    inset 0 0 0 1px rgba(120, 0, 55, 0.04);
+}
+
+/* ── Primary CTA ────────────────────────────────────────── */
+.cta {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 52px;
+  padding: 0 22px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border: 1px solid var(--aes-primary);
+  border-radius: var(--aes-radius);
+  font-family: var(--aes-font-body);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: var(--aes-shadow-cta);
+  transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+.cta:hover:not(:disabled) {
+  background: var(--aes-primary-hover);
+  border-color: var(--aes-primary-hover);
+  box-shadow:
+    0 12px 24px -10px rgba(120, 0, 55, 0.55),
+    0 2px 4px rgba(120, 0, 55, 0.12);
+}
+.cta:active:not(:disabled) {
+  background: var(--aes-primary-press);
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px -6px rgba(120, 0, 55, 0.45);
+}
+.cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.ctaIcon {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cta:hover:not(:disabled) .ctaIcon {
+  transform: translateX(3px);
+}
+
+/* ── Secure note ────────────────────────────────────────── */
 .secureNote {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  align-self: stretch;
-  padding: 10px 12px;
-  background: var(--surface-container);
-  border-radius: var(--radius);
+  padding: 10px 14px;
+  background: var(--aes-surface-container-low);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius);
   font-size: 12.5px;
-  color: var(--on-surface-variant);
-  line-height: 1.4;
+  line-height: 1.45;
+  color: var(--aes-on-surface-variant);
 }
 .secureNote svg {
-  color: var(--secondary);
+  color: var(--aes-primary);
   flex-shrink: 0;
 }
 
+/* ── Inline error ───────────────────────────────────────── */
 .error {
-  background: var(--error-container);
-  color: #93000a;
+  background: var(--aes-error-container);
+  color: var(--aes-on-error-container);
   padding: 10px 14px;
-  border-radius: var(--radius);
+  border-radius: var(--aes-radius);
   font-size: 13px;
   font-weight: 500;
-  border-left: 3px solid var(--error);
+  border-left: 3px solid var(--aes-error);
 }
 
-.helper {
-  font-size: 12px;
-  color: var(--on-surface-variant);
-  text-align: center;
-  margin-top: 4px;
+/* ── OTP step extras ────────────────────────────────────── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-bottom: -6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--aes-radius-sm);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aes-primary);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+.backLink:hover {
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary-hover);
 }
 
 .demoBanner {
   display: inline-flex;
+  align-self: center;
   align-items: center;
   gap: 8px;
-  align-self: center;
   padding: 8px 14px;
-  background: var(--warning-light);
-  border: 1px dashed var(--warning);
-  color: #92400e;
-  border-radius: var(--radius-full);
-  font-size: 13px;
+  background: var(--aes-warning-container);
+  border: 1px dashed var(--aes-warning);
+  color: #6b3a00;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-mono);
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.04em;
 }
-.demoBanner strong { font-weight: 700; letter-spacing: 0.12em; }
+.demoBanner strong {
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
 
 .timerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-family: var(--aes-font-body);
   font-size: 13px;
+}
+.timerLabel {
+  font-family: var(--aes-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--aes-on-surface-variant);
+  text-transform: uppercase;
 }
 .resend {
+  appearance: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--aes-font-body);
   font-size: 13px;
   font-weight: 600;
-  color: var(--secondary);
+  color: var(--aes-primary);
+  padding: 4px 6px;
+  border-radius: var(--aes-radius-sm);
+  transition: background 160ms ease, color 160ms ease;
+}
+.resend:hover:not(:disabled) {
+  background: var(--aes-primary-fixed);
 }
 .resend:disabled {
-  color: var(--outline);
+  color: var(--aes-outline);
   cursor: not-allowed;
 }
 
-.backLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--secondary);
-  margin-bottom: -10px;
-  align-self: flex-start;
-}
-.backLink:hover { color: var(--secondary-strong); }
-
-.support {
-  font-size: 13px;
-  color: var(--on-surface-variant);
+/* ── Legal footer ───────────────────────────────────────── */
+.legal {
+  border-top: 1px solid var(--aes-outline-variant);
+  padding-top: 18px;
   text-align: center;
 }
-.support a {
-  color: var(--secondary);
-  font-weight: 600;
+.legal p {
+  font-family: var(--aes-font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--aes-on-surface-variant);
 }
+.legalLink {
+  color: var(--aes-primary);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.legalLink:hover {
+  color: var(--aes-primary-hover);
+  border-bottom-color: var(--aes-primary-hover);
+}
+
+/* ── Support line ───────────────────────────────────────── */
+.support {
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  color: var(--aes-on-surface-variant);
+  text-align: center;
+  margin-top: 4px;
+}
+.supportLink {
+  color: var(--aes-primary);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(120, 0, 55, 0.4);
+  padding-bottom: 1px;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.supportLink:hover {
+  color: var(--aes-primary-hover);
+  border-bottom-color: var(--aes-primary-hover);
+}
+
+/* ============================================================
+   Responsive — desktop is the polished primary view here.
+   Mobile & tablet variants will be redesigned in a later pass;
+   for now they downscale the desktop layout gracefully so the
+   form remains usable on smaller viewports.
+   ============================================================ */
+
+/* Large desktop — give the card a little more breathing room */
+@media (min-width: 1280px) {
+  .page {
+    padding: 64px 32px;
+  }
+  .shell {
+    max-width: 500px;
+    gap: 24px;
+  }
+  .card {
+    padding: 48px 48px 32px;
+    border-radius: 28px;
+  }
+  .wordmark {
+    font-size: 30px;
+  }
+}
+
+/* Tablet — keep card centered but tighten padding */
+@media (max-width: 1023px) {
+  .page {
+    padding: 32px 24px;
+  }
+  .shell {
+    max-width: 460px;
+  }
+  .card {
+    padding: 32px 32px 24px;
+    border-radius: 22px;
+  }
+  .wordmark {
+    font-size: 26px;
+  }
+}
+
+/* Mobile — single column, smaller chip and padding */
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 16px;
+    place-items: start center;
+    padding-top: 48px;
+  }
+  .shell {
+    max-width: 100%;
+    gap: 16px;
+  }
+  .card {
+    padding: 28px 22px 22px;
+    border-radius: 20px;
+    gap: 24px;
+  }
+  .brand {
+    gap: 12px;
+  }
+  .brandChip {
+    width: 56px;
+    height: 56px;
+  }
+  .wordmark {
+    font-size: 22px;
+    letter-spacing: 0.05em;
+  }
+  .h2 {
+    font-size: 22px;
+  }
+  .phoneInput {
+    height: 50px;
+    font-size: 15px;
+  }
+  .cta {
+    height: 50px;
+    font-size: 15px;
+  }
+}
+
+/* Reduced motion — neutralize the chip tilt and CTA arrow */
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .brandChip,
+  .cta:hover:not(:disabled) .ctaIcon {
+    transform: none;
+  }
+}
+
+

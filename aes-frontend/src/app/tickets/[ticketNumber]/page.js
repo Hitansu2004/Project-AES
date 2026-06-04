@@ -5,17 +5,18 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   AlertCircle, Camera, Phone, Clock, History, Snowflake, MapPin,
-  Star, CalendarDays, MoreHorizontal, X, CheckCircle2, Send,
+  Star, CalendarDays, X, CheckCircle2, Send,
   ArrowUp, RefreshCw, RotateCcw, FileText, ThumbsUp, ThumbsDown,
   MessageSquare,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import { tickets as ticketsApi, ticketActions, quotes as quotesApi } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
-import AppTopBar from '@/components/ui/AppTopBar';
 import PriorityBadge from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
 import EscalationLadder from '@/components/ui/EscalationLadder';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import useStompTopic from '@/hooks/useStompTopic';
 import { slotLabel } from '@/lib/constants';
 import styles from './ticketDetail.module.css';
@@ -148,17 +149,24 @@ export default function TicketDetailPage({ params }) {
   }, [ticket, resolved]);
 
   if (authLoading || loading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading ticket…" />;
   }
   if (!ticket) {
     return (
-      <div className={styles.shell}>
-        <AppTopBar title="Ticket not found" width="detail" />
+      <RoseShell
+        focused
+        hero={
+          <div>
+            <h1 className={styles.heroTitle}>Ticket not found</h1>
+            <p className={styles.heroSub}>It may have been removed, or you might not have access.</p>
+          </div>
+        }
+      >
         <div className={styles.empty}>
           <h2>We couldn&apos;t find that ticket.</h2>
-          <p>It may have been removed, or you might not have access.</p>
+          <p>Go back to your tickets list or contact support.</p>
         </div>
-      </div>
+      </RoseShell>
     );
   }
 
@@ -219,18 +227,30 @@ export default function TicketDetailPage({ params }) {
   const canRequest = isCustomer && ['OPEN','ACKNOWLEDGED','ASSIGNED','EN_ROUTE','ON_SITE','IN_PROGRESS'].includes(ticket.status);
   const pendingQuote = (ticketQuotes || []).find((q) => q.status === 'SENT_TO_CUSTOMER');
 
-  return (
-    <div className={styles.shell}>
-      <AppTopBar
-        title={`Ticket ${ticket.ticketNumber}`}
-        width="detail"
-        right={
-          <button className={styles.iconBtn} aria-label="More" type="button">
-            <MoreHorizontal size={20} />
-          </button>
-        }
-      />
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <span className={styles.heroEyebrow}>Service ticket</span>
+        <h1 className={styles.heroTitle}>{ticket.ticketNumber}</h1>
+        <p className={styles.heroSub}>
+          {PROBLEM_LABEL[ticket.problemCategory] || ticket.problemCategory || 'Service request'}
+          {' · '}
+          {ticket.acBrand || ''} {ticket.acUnitRoom ? `· ${ticket.acUnitRoom}` : ''}
+        </p>
+      </div>
+      <button
+        type="button"
+        className={styles.backCta}
+        onClick={() => router.push('/tickets')}
+        aria-label="Back to tickets"
+      >
+        ← All tickets
+      </button>
+    </div>
+  );
 
+  return (
+    <RoseShell hero={hero} focused>
       <div className={styles.body}>
         <motion.section
           initial={{ opacity: 0, y: 8 }}
@@ -317,7 +337,7 @@ export default function TicketDetailPage({ params }) {
             )}
             {ticket.scheduledDate && (
               <div className={styles.scheduleBlock}>
-                <CalendarDays size={18} color="#0099CC" />
+                <CalendarDays size={18} color="#780037" />
                 <div>
                   <span className={styles.detailLabel}>Scheduled Visit</span>
                   <p>
@@ -443,7 +463,7 @@ export default function TicketDetailPage({ params }) {
       {openQuote && (
         <QuoteReviewSheet quote={openQuote} onClose={() => setOpenQuote(null)} onSubmit={handleQuoteDecision} />
       )}
-    </div>
+    </RoseShell>
   );
 }
 

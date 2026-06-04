@@ -1,18 +1,65 @@
-/* ─── Shell ─────────────────────────────────────────────── */
-.shell {
-  min-height: 100dvh;
-  background: var(--surface);
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  position: relative;
+/* ============================================================
+   Installation Wizard — Rose Luxury redesign
+   Mounted inside RoseShell; hero classes feed RoseShell.hero
+   ============================================================ */
+
+/* ── Hero ─────────────────────────────────────────────── */
+.heroRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.heroText { display: flex; flex-direction: column; gap: 6px; max-width: 680px; }
+.heroEyebrow {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--aes-primary);
+}
+.heroTitle {
+  font-family: var(--aes-font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+}
+@media (min-width: 1024px) { .heroTitle { font-size: 40px; } }
+.heroSub {
+  font-family: var(--aes-font-body);
+  font-size: 14.5px;
+  color: var(--aes-on-surface-variant);
+  line-height: 1.45;
+}
+.heroSide {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
 }
+.heroBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--aes-surface-container-lowest);
+  color: var(--aes-on-surface);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+.heroBackBtn:hover { background: var(--aes-surface-container-low); border-color: var(--aes-primary-fixed-dim); }
 
+/* ── Wizard body ──────────────────────────────────────── */
 .body {
-  flex: 1;
-  padding: 16px var(--page-pad-x) 140px;
+  padding-bottom: 100px;
 }
 
 .stepBody {
@@ -21,21 +68,67 @@
   gap: 18px;
 }
 
+/* ── Sticky action bar ─────────────────────────────────── */
 .actionBar {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: var(--max-width);
-  padding: 12px var(--page-pad-x) calc(20px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(248, 249, 255, 0) 0%, var(--surface) 32%);
+  left: 0;
+  right: 0;
+  margin: 0 -24px -24px;
+  padding: 16px 24px calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--aes-surface) 24%);
   z-index: 40;
-  pointer-events: none;
 }
-.actionInner { pointer-events: auto; }
+.actionInner {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  max-width: 720px;
+  margin-left: auto;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border: none;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--aes-shadow-cta);
+  transition: background 160ms ease, transform 160ms ease;
+  min-width: 220px;
+}
+.primaryBtn:hover:not(:disabled) { background: var(--aes-primary-hover); transform: translateY(-1px); }
+.primaryBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  background: var(--aes-surface-container-lowest);
+  color: var(--aes-on-surface);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.secondaryBtn:hover { background: var(--aes-surface-container-low); border-color: var(--aes-primary-fixed-dim); }
+.secondaryBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.successCanvas { padding-top: 0; }
+
 @media (min-width: 768px) {
-  .body { padding-top: 24px; }
   .heading h2 { font-size: 26px; }
 }
 
@@ -1000,7 +1093,7 @@
   text-align: left;
   padding: 14px 16px;
   background: var(--info-light);
-  border: 1px solid #bfdbfe;
+  border: 1px solid #ffd9e0;
   border-radius: 12px;
 }
 .successInfoIcon { color: var(--secondary); flex-shrink: 0; margin-top: 2px; }
@@ -1131,4 +1224,47 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* ============================================================
+   Mobile (≤768px) — compact wizard hero, action bar fixed at
+   bottom of viewport (bottom nav is hidden via hideBottomNav)
+   ============================================================ */
+@media (max-width: 768px) {
+  .heroRow { flex-direction: column; align-items: stretch; gap: 12px; }
+  .heroTitle { font-size: 22px; }
+  .heroSub { font-size: 13px; }
+  .heroSide { justify-content: space-between; width: 100%; }
+  .heroBackBtn { padding: 8px 12px; font-size: 12px; }
+
+  .body { padding-bottom: 0; }
+
+  .actionBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+    background: rgba(249, 249, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--aes-outline-variant);
+  }
+  .actionInner {
+    flex-direction: row;
+    gap: 8px;
+    justify-content: space-between;
+    max-width: none;
+  }
+  .primaryBtn {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+  .secondaryBtn { padding: 12px 16px; font-size: 13px; }
+
+  /* Reserve space below content so the fixed bar doesn't cover it */
+  .stepBody { padding-bottom: 96px; }
 }

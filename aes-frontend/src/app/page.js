@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
+import RoseSplash from '@/components/rose/RoseSplash';
 
 export default function HomeRedirector() {
   const { user, loading } = useAuth();
@@ -14,9 +15,5 @@ export default function HomeRedirector() {
     router.replace(defaultRouteForRole(user.role));
   }, [user, loading, router]);
 
-  return (
-    <div className="loading-page">
-      <div className="spinner" />
-    </div>
-  );
+  return <RoseSplash />;
 }

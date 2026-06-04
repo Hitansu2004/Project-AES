@@ -11,7 +11,8 @@ import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
 import {
   PRODUCT_FAMILIES, AES_BRANDS, AES_PROJECTS, BUILDING_TYPES,
 } from '@/lib/aesCatalog';
-import AppTopBar from '@/components/ui/AppTopBar';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './products.module.css';
 
 const FILTERS = [
@@ -57,13 +58,11 @@ export default function ProductsCatalogPage() {
   }, [filter]);
 
   if (loading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading product catalog…" />;
   }
 
   return (
-    <div className={styles.shell}>
-      <AppTopBar title="Our Products" showBack width="content" />
-
+    <RoseShell bare contentClassName={styles.shellMain}>
       <main className={styles.main}>
         {/* Hero */}
         <section className={styles.hero}>
@@ -263,8 +262,7 @@ export default function ProductsCatalogPage() {
 
                 <Link
                   href="/services/installation"
-                  className="btn btn-primary btn-full btn-lg"
-                  style={{ marginTop: 22 }}
+                  className={styles.modalCta}
                 >
                   Get a quote for this <ArrowRight size={16} />
                 </Link>
@@ -273,6 +271,6 @@ export default function ProductsCatalogPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </RoseShell>
   );
 }

@@ -26,8 +26,8 @@ import { useToast } from './Toast';
 
 const METHODS = [
   { id: 'MOCK_UPI',   label: 'UPI',         hint: 'Pay via GPay / PhonePe / Paytm', Icon: Smartphone, color: '#5f6cea' },
-  { id: 'MOCK_CARD',  label: 'Credit / Debit Card', hint: 'Visa, Mastercard, RuPay', Icon: CreditCard, color: '#0ea5e9' },
-  { id: 'MOCK_NB',    label: 'NetBanking',  hint: 'All major banks',          Icon: Building2,  color: '#14b8a6' },
+  { id: 'MOCK_CARD',  label: 'Credit / Debit Card', hint: 'Visa, Mastercard, RuPay', Icon: CreditCard, color: '#780037' },
+  { id: 'MOCK_NB',    label: 'NetBanking',  hint: 'All major banks',          Icon: Building2,  color: '#9d174d' },
 ];
 
 export default function PaymentModal({
@@ -208,7 +208,7 @@ export default function PaymentModal({
 
             {phase === 'processing' && (
               <Centered>
-                <Loader2 className="spin" size={42} color="#0ea5e9" />
+                <Loader2 className="spin" size={42} color="#780037" />
                 <p style={{ fontWeight: 600, marginTop: 14 }}>Processing your payment…</p>
                 <p style={{ fontSize: 12, color: '#64748b' }}>Please don't close this window.</p>
               </Centered>
@@ -280,7 +280,7 @@ const header = {
 };
 const brandDot = {
   width: 32, height: 32, borderRadius: 8,
-  background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+  background: 'linear-gradient(135deg, #780037, #9d174d)',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 const closeBtn = {
@@ -313,7 +313,7 @@ const demoHint = {
 };
 const payBtn = (disabled) => ({
   marginTop: 16, width: '100%', padding: '12px',
-  background: disabled ? '#94a3b8' : 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+  background: disabled ? '#94a3b8' : 'linear-gradient(135deg, #780037, #9d174d)',
   color: '#fff', border: 'none', borderRadius: 10,
   fontSize: 15, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
 });

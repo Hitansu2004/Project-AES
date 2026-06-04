@@ -1,22 +1,295 @@
-.page { min-height: 100dvh; }
-.topBar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); }
-.backBtn { background: none; border: none; color: var(--primary-dark); font-size: 15px; font-weight: 600; }
-.pageTitle { font-size: 17px; font-weight: 700; color: var(--primary-dark); }
+/* ============================================================
+   AMC Service — Rose Luxury redesign
+   ============================================================ */
 
+/* ── Hero ──────────────────────────────────────────────── */
+.heroRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.heroText { display: flex; flex-direction: column; gap: 8px; max-width: 600px; }
+.heroTitle {
+  font-family: var(--aes-font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+}
+@media (min-width: 1024px) { .heroTitle { font-size: 44px; } }
+.heroSub {
+  font-family: var(--aes-font-body);
+  font-size: 15px;
+  color: var(--aes-on-surface-variant);
+  line-height: 1.5;
+}
+.heroCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.heroCta:hover {
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  transform: translateY(-1px);
+}
+
+/* ── Perks strip ───────────────────────────────────────── */
+.perks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.perk {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px solid rgba(120, 0, 55, 0.04);
+  border-radius: var(--aes-radius-lg);
+  box-shadow: var(--aes-shadow-card);
+  font-family: var(--aes-font-body);
+  font-size: 13.5px;
+  color: var(--aes-on-surface);
+}
+.perkIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-full);
+}
+
+/* ── Contract list ─────────────────────────────────────── */
+.contractList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 1024px) { .contractList { grid-template-columns: repeat(2, 1fr); } }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px solid rgba(120, 0, 55, 0.04);
+  border-radius: var(--aes-radius-xl);
+  box-shadow: var(--aes-shadow-card);
+  position: relative;
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--aes-shadow-card-hover);
+}
+.cardActive::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--aes-primary) 0%, var(--aes-primary-fixed-dim) 100%);
+}
+.cardExpired::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--aes-outline-variant);
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cardHeadLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.contractNum {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  color: var(--aes-primary);
+}
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.statusActive { background: var(--aes-success-container); color: var(--aes-success); }
+.statusExpired { background: var(--aes-surface-container); color: var(--aes-on-surface-variant); }
+.cardTitle {
+  font-family: var(--aes-font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--aes-on-surface-strong);
+  line-height: 1.2;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: var(--aes-surface-container-low);
+  border-radius: var(--aes-radius);
+}
+.metric { display: flex; flex-direction: column; gap: 4px; }
+.metricLabel {
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  color: var(--aes-on-surface-variant);
+  text-transform: uppercase;
+}
+.metricValue {
+  font-family: var(--aes-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--aes-on-surface);
+}
+.metricValueStrong { font-size: 22px; color: var(--aes-primary); }
+
+.progressBar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: var(--aes-surface-container);
+  border-radius: var(--aes-radius-full);
+  overflow: hidden;
+}
+.progressFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--aes-primary), var(--aes-primary-fixed-dim));
+  border-radius: var(--aes-radius-full);
+  transition: width 480ms ease;
+}
+
+.cardFoot {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border: none;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--aes-shadow-cta);
+  transition: background 160ms ease, transform 160ms ease;
+}
+.primaryBtn:hover { background: var(--aes-primary-hover); transform: translateY(-1px); }
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--aes-surface-container-lowest);
+  color: var(--aes-on-surface);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.secondaryBtn:hover { background: var(--aes-surface-container-low); border-color: var(--aes-primary-fixed-dim); }
+
+/* ── Empty ─────────────────────────────────────────────── */
 .empty {
-  text-align: center; padding: var(--space-12);
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 24px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px dashed var(--aes-outline-variant);
+  border-radius: var(--aes-radius-xl);
+  text-align: center;
 }
-.empty span { font-size: 48px; }
-.empty h3 { font-size: 18px; font-weight: 700; color: var(--primary-dark); }
-.empty p { font-size: 14px; color: var(--outline); }
+.emptyIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-full);
+}
+.empty h3 {
+  font-family: var(--aes-font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--aes-on-surface);
+}
+.empty p {
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  color: var(--aes-on-surface-variant);
+  max-width: 420px;
+  line-height: 1.5;
+}
+.emptyActions {
+  display: inline-flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
-.contractList { display: flex; flex-direction: column; gap: var(--space-4); }
-.contractCard {
-  background: var(--surface-container-lowest); border: 1px solid var(--border-light);
-  border-radius: var(--radius-md); padding: var(--space-5);
-  display: flex; flex-direction: column; gap: var(--space-3);
+/* ============================================================
+   Mobile (≤768px) — compact AMC layout
+   ============================================================ */
+@media (max-width: 768px) {
+  .heroRow { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .heroTitle { font-size: 26px; }
+  .heroSub { font-size: 13px; }
+  .perks {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
 }
-.contractHeader { display: flex; align-items: center; gap: var(--space-3); }
-.contractCard h3 { font-size: 17px; font-weight: 700; color: var(--primary-dark); }
-.contractCard p { font-size: 13px; color: var(--on-surface-variant); }

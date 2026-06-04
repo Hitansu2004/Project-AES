@@ -5,14 +5,21 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell, ChevronRight, Inbox, Filter, Star, ArrowRight, Sparkles,
+  ChevronRight,
+  Inbox,
+  RefreshCw,
+  Star,
+  ArrowRight,
+  Sparkles,
+  Plus,
+  Search,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
 import { tickets as ticketsApi } from '@/lib/api';
 import PriorityBadge from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
-import Logo from '@/components/ui/Logo';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './tickets.module.css';
 
 const FILTERS = [
@@ -26,26 +33,24 @@ const FILTERS = [
 const STATUS_TONE = {
   OPEN: 'open',
   ACKNOWLEDGED: 'open',
-  ASSIGNED: 'open',
-  IN_PROGRESS: 'open',
+  ASSIGNED: 'progress',
+  IN_PROGRESS: 'progress',
   RESOLVED: 'resolved',
   CLOSED: 'resolved',
   CANCELLED: 'neutral',
 };
-
 const STATUS_LABEL = {
   OPEN: 'Open',
   ACKNOWLEDGED: 'Acknowledged',
   ASSIGNED: 'Assigned',
   IN_PROGRESS: 'In Progress',
-  RESOLVED: 'Resolved ✓',
-  CLOSED: 'Closed ✓',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
   CANCELLED: 'Cancelled',
 };
-
 const PROBLEM_LABEL = {
   NOT_COOLING: 'Not Cooling',
-  NOISE: 'Noise',
+  NOISE: 'Loud Noise',
   LEAKING: 'Water Leak',
   NOT_TURNING_ON: 'Not Turning On',
   NO_AIRFLOW: 'No Airflow',
@@ -57,8 +62,7 @@ function relativeShort(date) {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
-  const diffMs = now - d;
-  const mins = Math.floor(diffMs / 60000);
+  const mins = Math.floor((now - d) / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
@@ -70,26 +74,24 @@ function relativeShort(date) {
 
 function ticketTitle(t) {
   const issue = PROBLEM_LABEL[t.problemCategory] || t.problemCategory || 'Service';
-  return `${issue} — ${t.acUnitRoom || ''}`;
+  return `${issue}${t.acUnitRoom ? ` — ${t.acUnitRoom}` : ''}`;
 }
 
 export default function TicketsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { unread } = useNotifications();
   const [ticketList, setTicketList] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Auth guard
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace('/login?next=/tickets'); return; }
     if (user.role !== 'CUSTOMER') router.replace(defaultRouteForRole(user.role));
   }, [user, authLoading, router]);
 
-  // Initial fetch
   useEffect(() => {
     if (!user || user.role !== 'CUSTOMER') return;
     let cancelled = false;
@@ -119,42 +121,64 @@ export default function TicketsPage() {
     () => (FILTERS.find((f) => f.key === filter) || FILTERS[0]).match,
     [filter]
   );
-  const filtered = useMemo(
-    () => ticketList.filter(filterFn),
-    [ticketList, filterFn]
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ticketList.filter((t) => {
+      if (!filterFn(t)) return false;
+      if (!q) return true;
+      return [
+        t.ticketNumber,
+        t.problemCategory,
+        t.acUnitRoom,
+        t.propertyLabel,
+      ].filter(Boolean).some((s) => String(s).toLowerCase().includes(q));
+    });
+  }, [ticketList, filterFn, search]);
+
+  if (authLoading || !user) return <RoseSplash message="Loading your tickets…" />;
+
+  const openCount = ticketList.filter((t) => !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(t.status)).length;
+
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>Service Requests</h1>
+        <p className={styles.heroSub}>
+          {ticketList.length === 0
+            ? 'You have no service tickets yet — raise one and our CRM team responds in 30 minutes.'
+            : `${openCount} active · ${ticketList.length} total tickets across all your properties.`}
+        </p>
+      </div>
+      <div className={styles.heroActions}>
+        <div className={styles.searchBox}>
+          <Search size={15} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by ticket number, room, problem…"
+          />
+        </div>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={refresh}
+          disabled={refreshing}
+          aria-label="Refresh"
+          title="Refresh"
+        >
+          <RefreshCw size={15} className={refreshing ? styles.spin : ''} />
+        </button>
+        <Link href="/services/ticket" className={styles.newBtn}>
+          <Plus size={15} /> Raise Ticket
+        </Link>
+      </div>
+    </div>
   );
 
-  if (authLoading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
-  }
-
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <Logo />
-        <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
-          <Bell size={20} />
-          {unread > 0 && (
-            <span className={styles.iconBadge}>{unread > 99 ? '99+' : unread}</span>
-          )}
-        </Link>
-      </header>
-
-      <div className={styles.titleRow}>
-        <div>
-          <h1 className={styles.title}>My Tickets</h1>
-          <p className={styles.subtitle}>
-            {ticketList.length === 0
-              ? 'You have no tickets yet'
-              : `${ticketList.length} ${ticketList.length === 1 ? 'ticket' : 'tickets'} in total`}
-          </p>
-        </div>
-        <button type="button" onClick={refresh} className={styles.refreshBtn} disabled={refreshing} aria-label="Refresh">
-          <Filter size={18} />
-        </button>
-      </div>
-
-      <div className={styles.filterScroll}>
+    <RoseShell hero={hero}>
+      <div className={styles.filterRow}>
         {FILTERS.map((f) => {
           const count = ticketList.filter(f.match).length;
           const active = filter === f.key;
@@ -175,17 +199,17 @@ export default function TicketsPage() {
       {loading ? (
         <div className={styles.list}>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton" style={{ height: 132 }} />
+            <div key={i} className="skeleton" style={{ height: 124, borderRadius: 16 }} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState filterKey={filter} />
+        <EmptyState filterKey={filter} hasSearch={!!search.trim()} />
       ) : (
         <motion.div
           className={styles.list}
           initial="hidden"
           animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
         >
           <AnimatePresence mode="popLayout">
             {filtered.map((t) => (
@@ -201,7 +225,7 @@ export default function TicketsPage() {
           </AnimatePresence>
         </motion.div>
       )}
-    </div>
+    </RoseShell>
   );
 }
 
@@ -211,31 +235,29 @@ function TicketCard({ ticket }) {
   const resolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
   const needsRating = ticket.status === 'RESOLVED' && !ticket.customerRating;
 
-  const accent = escalated
-    ? 'esc'
-    : resolved
-      ? 'resolved'
-      : ticket.priority === 'P1' ? 'amc' : ticket.priority === 'P3' ? 'paid' : 'warranty';
+  const tone = escalated ? 'esc'
+    : resolved ? 'resolved'
+    : STATUS_TONE[ticket.status] || 'open';
 
   return (
-    <Link href={`/tickets/${ticket.ticketNumber}`} className={`${styles.card} ${styles[`accent_${accent}`]}`}>
-      <div className={styles.cardAccentBar} />
+    <Link
+      href={`/tickets/${ticket.ticketNumber}`}
+      className={`${styles.card} ${styles[`card_${tone}`]}`}
+    >
+      <span className={styles.cardAccent} aria-hidden="true" />
       <div className={styles.cardBody}>
-        <div className={styles.cardHeadRow}>
+        <div className={styles.cardHead}>
           <span className={styles.ticketNumber}>{ticket.ticketNumber}</span>
           <PriorityBadge priority={ticket.priority} />
-          <span className={`${styles.statusPill} ${styles[`status_${escalated ? 'esc' : STATUS_TONE[ticket.status] || 'neutral'}`]}`}>
-            {escalated ? 'Escalated' : (STATUS_LABEL[ticket.status] || ticket.status)}
+          <span className={`${styles.statusPill} ${styles[`status_${tone}`]}`}>
+            {escalated ? `Escalated · L${ticket.currentLevel}` : (STATUS_LABEL[ticket.status] || ticket.status)}
           </span>
         </div>
 
         <h3 className={styles.cardTitle}>{ticketTitle(ticket)}</h3>
 
-        {escalated && (
-          <p className={styles.escLine}>
-            <span className={styles.escDot} />
-            Level {ticket.currentLevel} — {ticket.currentLevel === 2 ? 'Service Managers' : 'Management'}
-          </p>
+        {ticket.propertyLabel && (
+          <p className={styles.cardMeta}>{ticket.propertyLabel}</p>
         )}
 
         <div className={styles.cardFooter}>
@@ -246,20 +268,18 @@ function TicketCard({ ticket }) {
             <SlaCountdown deadlineISO={ticket.slaDeadlineL2} />
           )}
           {resolved && ticket.resolvedAt && (
-            <span className={styles.metaText}>
-              Resolved {relativeShort(ticket.resolvedAt)}
-            </span>
+            <span className={styles.metaText}>Resolved {relativeShort(ticket.resolvedAt)}</span>
           )}
           {!resolved && !ticket.slaDeadlineL1 && (
             <span className={styles.metaText}>Created {relativeShort(ticket.createdAt)}</span>
           )}
-          <span className={styles.dotSep}>•</span>
-          <span className={styles.metaText}>{relativeShort(ticket.createdAt)}</span>
+          <span className={styles.dotSep}>·</span>
+          <span className={styles.metaText}>Opened {relativeShort(ticket.createdAt)}</span>
         </div>
 
         {needsRating && (
           <span className={styles.rateLink}>
-            <Star size={14} /> Rate your experience <ArrowRight size={12} />
+            <Star size={13} /> Rate your experience <ArrowRight size={11} />
           </span>
         )}
       </div>
@@ -268,22 +288,24 @@ function TicketCard({ ticket }) {
   );
 }
 
-function EmptyState({ filterKey }) {
-  const isAll = filterKey === 'all';
+function EmptyState({ filterKey, hasSearch }) {
+  const isAll = filterKey === 'all' && !hasSearch;
   return (
     <div className={styles.empty}>
       <div className={styles.emptyIcon}>
         <Inbox size={26} />
       </div>
-      <h3>{isAll ? 'No tickets yet' : 'Nothing in this view'}</h3>
+      <h3>{isAll ? 'No tickets yet' : 'Nothing matches this view'}</h3>
       <p>
         {isAll
           ? 'Raise a service ticket and our CRM team will respond within 30 minutes.'
-          : 'Try a different filter to see your other tickets.'}
+          : hasSearch
+            ? 'Try a different search term or clear the filter.'
+            : 'Try a different filter to see your other tickets.'}
       </p>
       {isAll && (
-        <Link href="/services/ticket" className="btn btn-primary">
-          <Sparkles size={16} /> Raise a Service Ticket
+        <Link href="/services/ticket" className={styles.emptyCta}>
+          <Sparkles size={14} /> Raise a service ticket
         </Link>
       )}
     </div>

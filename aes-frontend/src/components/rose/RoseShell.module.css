@@ -1,0 +1,630 @@
+/* ============================================================
+   RoseShell — Rose Luxury desktop chrome
+   Sidebar + glassmorphic top-right header. Sidebar collapses
+   off-canvas on mobile, persistent on desktop.
+   ============================================================ */
+
+.root {
+  --sidebar-w: 240px;
+  --topbar-pad-x: 48px;
+  --topbar-h: 80px;
+  position: relative;
+  min-height: 100dvh;
+  background: var(--aes-surface);
+  color: var(--aes-on-surface);
+  font-family: var(--aes-font-body);
+}
+
+/* Focused flow: hide all global chrome — page provides its own back header.
+   Works across desktop, tablet and mobile. */
+.focused .sidebar,
+.focused .backdrop,
+.focused .mobileNav,
+.focused .topBar,
+.focused .bottomNav,
+.focused .footer {
+  display: none !important;
+}
+.focused .canvas {
+  margin-left: 0 !important;
+}
+
+/* ── Mobile top app bar (≤1023px) ──────────────────────── */
+.mobileNav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(222, 191, 196, 0.4);
+}
+.mobileBrand {
+  flex: 1;
+  font-family: var(--aes-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--aes-primary);
+  text-decoration: none;
+  text-align: center;
+  text-transform: uppercase;
+}
+.mobileAvatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--aes-radius-full);
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  font-family: var(--aes-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+  flex-shrink: 0;
+}
+.mobileAvatar:active { transform: scale(0.92); }
+.mobileBell {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--aes-primary);
+  text-decoration: none;
+  transition: transform 160ms ease, opacity 160ms ease;
+  flex-shrink: 0;
+}
+.mobileBell:active { transform: scale(0.92); opacity: 0.7; }
+.mobileBellBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--aes-radius-full);
+  background: var(--aes-error);
+  color: var(--aes-on-error);
+  font-family: var(--aes-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Mobile bottom nav (glassmorphic, ≤768px) ─────────── */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: none; /* visible only via media query below */
+  align-items: center;
+  justify-content: space-around;
+  height: 72px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(222, 191, 196, 0.4);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -6px 24px rgba(15, 28, 44, 0.06);
+}
+.bottomNavItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 56px;
+  margin: 0 4px;
+  padding: 6px 4px;
+  border-radius: var(--aes-radius);
+  color: var(--aes-on-surface-variant);
+  text-decoration: none;
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  max-width: 96px;
+}
+.bottomNavItem:active { transform: scale(0.92); }
+.bottomNavItem span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.bottomNavItemActive {
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 60;
+  width: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid var(--aes-outline-variant);
+  padding: 32px 16px 24px;
+  transform: translateX(-100%);
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-y: auto;
+}
+.sidebarOpen {
+  transform: translateX(0);
+}
+
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 8px 24px;
+}
+
+.brand {
+  display: block;
+  padding: 0 8px;
+  font-family: var(--aes-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aes-primary);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.primaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border-radius: var(--aes-radius-sm);
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: var(--aes-shadow-card);
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.primaryCta:hover {
+  background: var(--aes-primary-hover);
+  box-shadow: var(--aes-shadow-cta);
+}
+.primaryCta:active {
+  background: var(--aes-primary-press);
+  transform: translateY(1px);
+}
+
+.navList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+.navLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-radius: var(--aes-radius-sm);
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--aes-secondary);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.navLink svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+.navLink:hover {
+  background: rgba(120, 0, 55, 0.06);
+  color: var(--aes-primary);
+  transform: translateX(2px);
+}
+.navAccent {
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 22px;
+  background: var(--aes-primary);
+  border-radius: 0 3px 3px 0;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.navLinkActive {
+  color: var(--aes-primary);
+  background: rgba(120, 0, 55, 0.06);
+}
+.navLinkActive .navAccent {
+  transform: translateY(-50%) scaleY(1);
+}
+.navLinkActive:hover {
+  transform: none;
+}
+
+.sidebarFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--aes-outline-variant);
+}
+
+/* Mobile backdrop */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(15, 28, 44, 0.45);
+  border: none;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Canvas (right of sidebar on desktop) ──────────────── */
+.canvas {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  background: rgba(249, 249, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.topBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.iconBtn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--aes-radius-full);
+  color: var(--aes-on-surface-variant);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.iconBtn:hover {
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  transform: translateY(-1px);
+}
+
+.bellBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--aes-radius-full);
+  background: var(--aes-primary);
+  color: #fff;
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--aes-surface);
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--aes-radius-full);
+  background: linear-gradient(135deg, var(--aes-primary-fixed) 0%, var(--aes-primary-fixed-dim) 100%);
+  color: var(--aes-primary);
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  border: 1px solid var(--aes-outline-variant);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.avatar:hover {
+  border-color: var(--aes-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -8px rgba(120, 0, 55, 0.35);
+}
+
+/* ── Main content ──────────────────────────────────────── */
+.main {
+  flex: 1;
+  padding: 0 24px 64px;
+  width: 100%;
+}
+
+.pageHero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0 56px;
+  max-width: 760px;
+}
+.pageTitle {
+  font-family: var(--aes-font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+}
+.pageSubtitle {
+  font-family: var(--aes-font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--aes-on-surface-variant);
+}
+
+/* ── Footer ────────────────────────────────────────────── */
+.footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px 32px;
+  border-top: 1px solid var(--aes-outline-variant);
+}
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+}
+.footerLinks a {
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  color: var(--aes-on-surface-variant);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.footerLinks a:hover {
+  color: var(--aes-primary);
+}
+.footerCopy {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  color: var(--aes-on-surface-variant);
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Three distinct viewport tiers, each fully independent:
+     • Desktop  ≥1024px — wide persistent sidebar (240–260px),
+                          full topBar, generous 48–64px margins
+     • Tablet   768–1023px — slim persistent sidebar (200px),
+                          topBar visible, mobileNav + bottomNav hidden
+     • Mobile   ≤767px — sidebar collapsed to drawer,
+                          glass mobileNav + bottomNav visible
+   ============================================================ */
+
+/* ─── Desktop (≥1024px) ─────────────────────────────────── */
+@media (min-width: 1024px) {
+  .mobileNav { display: none; }
+  .backdrop { display: none; }
+  .bottomNav { display: none; }
+
+  .sidebar {
+    transform: translateX(0);
+    padding: 40px 16px 28px;
+  }
+
+  .canvas {
+    margin-left: var(--sidebar-w);
+  }
+
+  .topBar {
+    padding: 24px var(--topbar-pad-x);
+  }
+
+  .main {
+    padding: 16px var(--topbar-pad-x) 64px;
+  }
+
+  .pageHero {
+    margin: 8px 0 64px;
+  }
+  .pageTitle {
+    font-size: 48px;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+  .pageSubtitle {
+    font-size: 18px;
+  }
+
+  .footer {
+    padding: 48px var(--topbar-pad-x) 40px;
+  }
+}
+
+/* Wide desktop — luxury 64px margins from the design spec */
+@media (min-width: 1440px) {
+  .root {
+    --topbar-pad-x: 64px;
+    --sidebar-w: 260px;
+  }
+}
+
+/* ─── Tablet (769–1023px) ───────────────────────────────── */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .root {
+    --sidebar-w: 200px;
+    --topbar-pad-x: 32px;
+  }
+
+  /* Hide the mobile glass top bar + bottom nav — sidebar is the nav */
+  .mobileNav { display: none; }
+  .backdrop { display: none; }
+  .bottomNav { display: none; }
+
+  /* Persistent slim sidebar, like desktop but tighter */
+  .sidebar {
+    transform: translateX(0);
+    width: var(--sidebar-w);
+    padding: 28px 12px 20px;
+    box-shadow: none;
+  }
+  .brand {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
+  .primaryCta {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .navLink {
+    padding: 9px 12px;
+    font-size: 13.5px;
+    gap: 12px;
+  }
+
+  /* Canvas offset for the persistent sidebar */
+  .canvas {
+    margin-left: var(--sidebar-w);
+  }
+
+  /* Top bar visible but tighter than desktop */
+  .topBar {
+    padding: 16px var(--topbar-pad-x);
+  }
+
+  .main {
+    padding: 8px var(--topbar-pad-x) 48px;
+  }
+
+  .pageHero {
+    margin: 6px 0 40px;
+    gap: 10px;
+  }
+  .pageTitle {
+    font-size: 38px;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+  }
+  .pageSubtitle {
+    font-size: 16px;
+  }
+
+  .footer {
+    padding: 36px var(--topbar-pad-x) 28px;
+  }
+}
+
+/* ─── Mobile (≤768px) — matches page modules' breakpoint ── */
+@media (max-width: 768px) {
+  .root { background: var(--aes-surface); }
+
+  /* Hide the desktop topBar — mobileNav replaces it */
+  .topBar { display: none; }
+
+  /* Bottom nav becomes visible */
+  .bottomNav {
+    display: flex;
+  }
+
+  /* Sidebar drawer: narrower on phones */
+  .sidebar {
+    width: min(85vw, 320px);
+    box-shadow: 0 20px 50px rgba(15, 28, 44, 0.2);
+  }
+
+  /* Main canvas padding for mobile — leaves room for bottom nav */
+  .main {
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  /* When bottom nav is hidden (wizards, detail pages), reclaim the space */
+  .noBottomNav .main {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+
+  /* Compact hero on mobile */
+  .pageHero {
+    gap: 6px;
+    margin: 8px 0 24px;
+  }
+  .pageTitle {
+    font-size: 28px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  .pageSubtitle {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  /* Hide the desktop footer on mobile — it would land under the bottom nav */
+  .footer {
+    display: none;
+  }
+}

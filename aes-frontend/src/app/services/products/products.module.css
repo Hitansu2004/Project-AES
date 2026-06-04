@@ -1,39 +1,39 @@
 /* ============================================================
-   Products Catalogue — Precision Engineering layout
-   Based on the reference at `ui reference/Product page`.
-   Brand colors stay AES (navy + teal); structure, spacing
-   and typography hierarchy mirror the reference.
+   Products Catalogue — Rose Luxury redesign
+   Uses --aes-* tokens. Mounts inside RoseShell so we don't add
+   our own sidebar/topbar — only the page body.
    ============================================================ */
 
-.shell {
-  min-height: 100dvh;
-  background: var(--surface);
-  color: var(--on-surface);
-  padding-bottom: 96px;
-}
+.shellMain { padding-top: 0; }
 
-/* The main content column uses a fixed-grid feel — generous
-   side margins on desktop, snug margins on mobile. */
 .main {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 32px var(--page-pad-x) 64px;
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 48px;
 }
-@media (min-width: 768px) {
-  .main {
-    padding: 56px 40px 80px;
-    gap: 72px;
-  }
+@media (min-width: 1100px) { .main { gap: 64px; } }
+
+.modalCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px 22px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border: none;
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--aes-shadow-cta);
+  transition: background 160ms ease, transform 160ms ease;
 }
-@media (min-width: 1100px) {
-  .main {
-    padding: 64px 40px 96px;
-    gap: 88px;
-  }
-}
+.modalCta:hover { background: var(--aes-primary-hover); transform: translateY(-1px); }
 
 /* ─── Hero ─────────────────────────────────────────────────
    Mobile: text → image grid (stacked).
@@ -708,4 +708,24 @@
   font-weight: 600;
   text-align: center;
   color: var(--on-surface-variant);
+}
+
+/* ============================================================
+   Mobile (≤768px) — compact product catalog
+   ============================================================ */
+@media (max-width: 768px) {
+  .main { gap: 32px; }
+  .hero { gap: 18px; }
+  .heroTitle { font-size: 28px; line-height: 1.1; }
+  .heroSub { font-size: 14px; }
+  .heroCtas { flex-direction: column; align-items: stretch; }
+  .heroCta { width: 100%; justify-content: center; }
+  .filterBar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filterBar::-webkit-scrollbar { display: none; }
+  .grid { grid-template-columns: 1fr; gap: 14px; }
 }

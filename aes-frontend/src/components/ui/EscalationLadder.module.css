@@ -46,8 +46,8 @@
 
 /* ─── Phase: active ──────────────────────────────────────── */
 .active .dot {
-  border-color: #0099CC;
-  background: #0099CC;
+  border-color: #780037;
+  background: #780037;
   box-shadow: 0 0 0 4px rgba(0, 153, 204, 0.18);
 }
 .active .pulse {
@@ -60,8 +60,8 @@
   0%, 100% { transform: scale(1);   opacity: 1; }
   50%      { transform: scale(1.4); opacity: 0.6; }
 }
-.active .connector { background: linear-gradient(180deg, #0099CC 0%, var(--outline-variant) 100%); }
-.active .title { color: #006689; }
+.active .connector { background: linear-gradient(180deg, #780037 0%, var(--outline-variant) 100%); }
+.active .title { color: #780037; }
 
 /* ─── Phase: past (auto-escalated) ───────────────────────── */
 .past .dot {

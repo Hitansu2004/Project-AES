@@ -1,37 +1,40 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Wrench, Send, MapPin, Phone, Bell, LogOut, Clock, AlertTriangle,
-  CheckCircle2, Car, Home, Hammer, PackagePlus, HandHelping, ChevronRight,
-  X, Timer, RefreshCw, ShieldAlert, ListChecks,
+  Bell,
+  Briefcase,
+  Car,
+  MapPin,
+  CheckCircle2,
+  AlertTriangle,
+  Timer,
+  Hammer,
+  Home,
+  HandHelping,
+  PackagePlus,
+  Phone,
+  ChevronRight,
+  ShieldAlert,
+  X,
+  RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
-import { engineer as engineerApi, offers as offersApi, parts as partsApi, user as userApi } from '@/lib/api';
+import {
+  engineer as engineerApi,
+  offers as offersApi,
+  parts as partsApi,
+} from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import useStompTopic from '@/hooks/useStompTopic';
-import Logo from '@/components/ui/Logo';
-import PriorityBadge from '@/components/ui/PriorityBadge';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import ShiftToggle from '@/components/ui/ShiftToggle';
 import styles from './engineer.module.css';
-
-function initials(name) {
-  return (name || '?').trim().split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
-}
-function expirySec(s) {
-  if (s == null) return '—';
-  if (s <= 0) return 'expired';
-  if (s < 60)  return `${Math.round(s)}s`;
-  return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
-}
-function timeOf(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
 
 const PROBLEM_LABEL = {
   NOT_COOLING: 'AC Not Cooling',
@@ -43,25 +46,33 @@ const PROBLEM_LABEL = {
   OTHER: 'Other',
 };
 
-const STATUS_TONE = {
-  ACKNOWLEDGED: { tone: 'ack',  label: 'AWAITING DISPATCH' },
-  ASSIGNED:     { tone: 'work', label: 'ASSIGNED' },
-  EN_ROUTE:     { tone: 'work', label: 'EN ROUTE' },
-  ON_SITE:      { tone: 'work', label: 'ON SITE' },
-  IN_PROGRESS:  { tone: 'work', label: 'WORKING' },
-  WAITING_PART: { tone: 'wait', label: 'WAITING PART' },
-  RESOLVED:     { tone: 'done', label: 'RESOLVED' },
+const STATUS_LABEL = {
+  ACKNOWLEDGED: 'AWAITING DISPATCH',
+  ASSIGNED:     'ASSIGNED',
+  EN_ROUTE:     'EN ROUTE',
+  ON_SITE:      'ON SITE',
+  IN_PROGRESS:  'WORKING',
+  WAITING_PART: 'WAITING PART',
+  RESOLVED:     'RESOLVED',
 };
-function statusPill(s) {
-  const t = STATUS_TONE[s] || { tone: 'ack', label: s };
-  return <span className={`${styles.statusPill} ${styles[`tone_${t.tone}`]}`}>{t.label}</span>;
+
+function expirySec(s) {
+  if (s == null) return '—';
+  if (s <= 0) return 'expired';
+  if (s < 60)  return `${Math.round(s)}s`;
+  return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
+}
+function timeOf(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-IN', {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
 }
 
 export default function EngineerDashboardPage() {
   const router = useRouter();
   const toast = useToast();
-  const { user, loading: authLoading, logout, fetchUser } = useAuth();
-  const { unread } = useNotifications();
+  const { user, loading: authLoading, fetchUser } = useAuth();
 
   const [data, setData]     = useState(null);
   const [loading, setLoad]  = useState(true);
@@ -70,11 +81,10 @@ export default function EngineerDashboardPage() {
   const [showHelp, setShowHelp]     = useState(null);
   const [showPart, setShowPart]     = useState(null);
 
-  // Auth guard
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace('/login?next=/engineer'); return; }
-    if (user.role !== 'SITE_ENGINEER' && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+    if (!['SITE_ENGINEER', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       router.replace(defaultRouteForRole(user.role));
     }
   }, [user, authLoading, router]);
@@ -102,7 +112,6 @@ export default function EngineerDashboardPage() {
   const setBusy = (key, label) => setBusyOf((b) => ({ ...b, [key]: label }));
   const unbusy  = (key) => setBusyOf((b) => { const { [key]: _, ...rest } = b; return rest; });
 
-  // Actions
   const acceptOffer = async (o) => {
     setBusy(`offer-${o.id}`, 'accept');
     try { await offersApi.accept(o.id); toast.success(`Accepted ${o.ticketNumber}`); await fetchAll(); }
@@ -133,175 +142,215 @@ export default function EngineerDashboardPage() {
     }
   };
 
-  if (authLoading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+  if (authLoading || !user || (loading && !data)) {
+    return <RoseSplash message="Loading your shift…" />;
   }
 
   const tiles = [
-    { label: 'Offers',     value: data?.pendingOffers ?? 0, icon: Send,        tone: data?.pendingOffers ? 'alert' : 'idle' },
-    { label: 'My Jobs',    value: data?.activeJobs    ?? 0, icon: ListChecks,  tone: 'work' },
-    { label: 'En route',   value: data?.enRoute       ?? 0, icon: Car,         tone: 'work' },
-    { label: 'On site',    value: data?.onSite        ?? 0, icon: Home,        tone: 'work' },
-    { label: 'Done today', value: data?.resolvedToday ?? 0, icon: CheckCircle2,tone: 'done' },
+    { key: 'offers',     label: 'Offers',     value: data?.pendingOffers ?? 0, icon: Bell,         featured: (data?.pendingOffers ?? 0) > 0 },
+    { key: 'my_jobs',    label: 'My Jobs',    value: data?.activeJobs    ?? 0, icon: Briefcase },
+    { key: 'en_route',   label: 'En Route',   value: data?.enRoute       ?? 0, icon: Car },
+    { key: 'on_site',    label: 'On Site',    value: data?.onSite        ?? 0, icon: MapPin },
+    { key: 'done_today', label: 'Done Today', value: data?.resolvedToday ?? 0, icon: CheckCircle2 },
   ];
 
-  return (
-    <div className={styles.shell}>
-      {/* ─── Top bar ────────────────────────────────────────── */}
-      <header className={styles.topBar}>
-        <div className={styles.topBarLeft}>
-          <Logo />
-          <span className={styles.topBarRole}>Engineer · Field Ops</span>
-        </div>
-        <div className={styles.topBarRight}>
-          <ShiftToggle
-            onShift={!!user?.onShift}
-            compact
-            activeWork={{
-              tickets: data?.activeJobs ?? 0,
-              offers: data?.pendingOffers ?? 0,
-            }}
-            onChange={() => { fetchUser(); fetchAll(); }}
-          />
-          <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
-            <Bell size={18} />
-            {unread > 0 && <span className={styles.notifDot}>{unread > 9 ? '9+' : unread}</span>}
-          </Link>
-          <button className={styles.iconBtn} onClick={() => fetchAll()} aria-label="Refresh">
-            <RefreshCw size={18} />
-          </button>
-          <span className={styles.agentBadge}>
-            <span className={styles.agentAv}>{initials(user.name)}</span>
-            {user.name?.split(' ')[0]}
-          </span>
-          <button className={styles.iconBtn} onClick={logout} aria-label="Sign out"><LogOut size={18} /></button>
-        </div>
-      </header>
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>Today's Pool</h1>
+        <p className={styles.heroSub}>Manage your assignments and dispatch offers.</p>
+      </div>
+      <div className={styles.heroActions}>
+        <ShiftToggle
+          onShift={!!user?.onShift}
+          compact
+          activeWork={{ tickets: data?.activeJobs ?? 0, offers: data?.pendingOffers ?? 0 }}
+          onChange={() => { fetchUser(); fetchAll(); }}
+        />
+        <button type="button" className={styles.refreshBtn} onClick={() => fetchAll()} aria-label="Refresh">
+          <RefreshCw size={16} />
+        </button>
+      </div>
+    </div>
+  );
 
-      {/* ─── KPI strip ──────────────────────────────────────── */}
-      <section className={styles.kpiStrip}>
+  return (
+    <RoseShell hero={hero}>
+      {/* ── Stat tiles ───────────────────────────────────── */}
+      <section className={styles.tiles}>
         {tiles.map((t) => (
-          <div key={t.label} className={`${styles.kpi} ${styles[`kpi_${t.tone}`]}`}>
-            <t.icon size={18} />
-            <div className={styles.kpiBody}>
-              <div className={styles.kpiVal}>{loading ? '—' : t.value}</div>
-              <div className={styles.kpiLabel}>{t.label}</div>
+          <div
+            key={t.key}
+            className={`${styles.tile} ${t.featured ? styles.tileFeatured : ''}`}
+          >
+            <div className={styles.tileHead}>
+              <span className={styles.tileLabel}>{t.label}</span>
+              <t.icon size={18} strokeWidth={2} />
             </div>
+            <div className={styles.tileValue}>{t.value}</div>
           </div>
         ))}
       </section>
 
-      {/* ─── Offers (sticky on top if any) ──────────────────── */}
-      {(data?.offers || []).length > 0 && (
-        <section className={styles.offerStack}>
+      {/* ── Offers + Resolved Today ──────────────────────── */}
+      <section className={styles.duo}>
+        <div className={styles.duoLeft}>
           <header className={styles.sectionHead}>
-            <h2><Send size={16} /> Pending offers</h2>
+            <h2 className={styles.sectionTitle}>
+              <Bell size={18} className={styles.sectionIcon} /> Pending Dispatch Offers
+            </h2>
           </header>
-          <div className={styles.offerGrid}>
-            {data.offers.map((o) => (
-              <article key={o.id} className={styles.offerCard}>
-                <div className={styles.cardTop}>
-                  <PriorityBadge priority={o.ticketPriority} />
-                  <span className={styles.tagDispatch}>DISPATCH</span>
-                  <span className={styles.expiry}>
-                    <Timer size={12} /> {expirySec(o.secondsUntilExpiry)}
-                  </span>
-                </div>
-                <h3 className={styles.offerTitle}>
-                  {o.ticketNumber} — {PROBLEM_LABEL[o.ticketProblemCategory] || o.ticketProblemCategory || 'Service'}
-                </h3>
-                <div className={styles.cardMeta}>
-                  <span>From {o.offeredByName} ({o.offeredByRole})</span>
-                  {o.note && <span className={styles.noteChip}>"{o.note}"</span>}
-                </div>
-                <div className={styles.cardActions}>
-                  <button className={styles.btnGhost}
-                          disabled={!!busyOf[`offer-${o.id}`]}
-                          onClick={() => declineOffer(o)}>
-                    Decline
-                  </button>
-                  <button className={styles.btnPrimary}
-                          disabled={!!busyOf[`offer-${o.id}`]}
-                          onClick={() => acceptOffer(o)}>
-                    <CheckCircle2 size={14} /> Accept
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
 
-      {/* ─── Active jobs ────────────────────────────────────── */}
-      <section className={styles.jobsSection}>
-        <header className={styles.sectionHead}>
-          <h2><ListChecks size={16} /> My Jobs</h2>
-        </header>
-        {loading && <div className={styles.empty}><div className="spinner" /></div>}
-        {!loading && (data?.jobs || []).length === 0 && (
-          <div className={styles.empty}>
-            <CheckCircle2 size={36} />
-            <p>No active jobs. Enjoy the break.</p>
-          </div>
-        )}
-        <div className={styles.jobGrid}>
-          {(data?.jobs || []).map((j) => (
-            <JobCard key={j.ticketNumber}
-                     job={j}
-                     busy={busyOf[`job-${j.ticketNumber}`]}
-                     onMark={(act) => mark(j, act)}
-                     onCannotAttend={() => setShowCannot(j)}
-                     onNeedHelp={() => setShowHelp(j)}
-                     onRaisePart={() => setShowPart(j)} />
-          ))}
+          {(data?.offers || []).length === 0 ? (
+            <div className={styles.empty}>
+              <CheckCircle2 size={28} strokeWidth={1.5} />
+              <p>No pending offers. CRM will route new work here.</p>
+            </div>
+          ) : (
+            <div className={styles.offerGrid}>
+              {data.offers.map((o) => (
+                <article key={o.id} className={styles.offerCard}>
+                  <header className={styles.offerHead}>
+                    <div className={styles.offerTags}>
+                      <PriorityChip priority={o.ticketPriority} />
+                      <span className={styles.dispatchTag}>DISPATCH</span>
+                    </div>
+                    <span className={styles.offerNumber}>#{o.ticketNumber}</span>
+                  </header>
+                  <h3 className={styles.offerTitle}>
+                    {PROBLEM_LABEL[o.ticketProblemCategory] || o.ticketProblemCategory || 'Service'}
+                  </h3>
+                  <p className={styles.offerMeta}>
+                    <Briefcase size={12} />{' '}
+                    {o.propertyLabel || o.locality || 'Property TBD'}
+                  </p>
+                  {o.note && (
+                    <p className={styles.offerNote}>"{o.note}"</p>
+                  )}
+                  <div className={styles.offerFootRow}>
+                    <span className={styles.offerExpiry}>
+                      <Timer size={12} /> {expirySec(o.secondsUntilExpiry)}
+                    </span>
+                    <span className={styles.offerFrom}>
+                      From {o.offeredByName} ({o.offeredByRole})
+                    </span>
+                  </div>
+                  <div className={styles.offerActions}>
+                    <button
+                      className={styles.btnGhost}
+                      disabled={!!busyOf[`offer-${o.id}`]}
+                      onClick={() => declineOffer(o)}
+                    >
+                      Decline
+                    </button>
+                    <button
+                      className={styles.btnPrimary}
+                      disabled={!!busyOf[`offer-${o.id}`]}
+                      onClick={() => acceptOffer(o)}
+                    >
+                      <CheckCircle2 size={14} /> Accept Job
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
+
+        <aside className={styles.duoRight}>
+          <header className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>
+              <CheckCircle2 size={18} className={styles.sectionIcon} /> Resolved Today
+            </h2>
+            {(data?.resolvedTodayList || []).length > 0 && (
+              <span className={styles.resolvedCount}>
+                {data.resolvedTodayList.length}
+              </span>
+            )}
+          </header>
+          {(data?.resolvedTodayList || []).length === 0 ? (
+            <p className={styles.resolvedEmpty}>No resolutions yet today.</p>
+          ) : (
+            <ul className={styles.resolvedList}>
+              {data.resolvedTodayList.slice(0, 6).map((j) => (
+                <li key={j.ticketNumber}>
+                  <Link href={`/tickets/${j.ticketNumber}`} className={styles.resolvedRow}>
+                    <div className={styles.resolvedText}>
+                      <p className={styles.resolvedTitle}>
+                        {PROBLEM_LABEL[j.problemCategory] || j.problemCategory || 'Service'}
+                      </p>
+                      <p className={styles.resolvedMeta}>
+                        #{j.ticketNumber} &middot; {timeOf(j.resolvedAt)}
+                      </p>
+                    </div>
+                    <ChevronRight size={16} className={styles.resolvedArrow} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
       </section>
 
-      {/* ─── Resolved today ─────────────────────────────────── */}
-      {(data?.resolvedTodayList || []).length > 0 && (
-        <section className={styles.jobsSection}>
-          <header className={styles.sectionHead}>
-            <h2><CheckCircle2 size={16} /> Resolved today</h2>
-          </header>
-          <div className={styles.doneList}>
-            {data.resolvedTodayList.map((j) => (
-              <Link key={j.ticketNumber} href={`/tickets/${j.ticketNumber}`} className={styles.doneRow}>
-                <CheckCircle2 size={16} color="var(--success)" />
-                <div>
-                  <div className={styles.doneTitle}>
-                    {j.ticketNumber} — {PROBLEM_LABEL[j.problemCategory] || j.problemCategory}
-                  </div>
-                  <div className={styles.doneMeta}>{j.customerName} · {timeOf(j.resolvedAt)}</div>
-                </div>
-                <ChevronRight size={16} />
-              </Link>
+      {/* ── My Active Jobs ───────────────────────────────── */}
+      <section className={styles.jobsSection}>
+        <header className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>
+            <Briefcase size={18} className={styles.sectionIcon} /> My Active Jobs
+          </h2>
+          <span className={styles.resolvedCount}>{(data?.jobs || []).length}</span>
+        </header>
+
+        {(data?.jobs || []).length === 0 ? (
+          <div className={styles.empty}>
+            <CheckCircle2 size={28} strokeWidth={1.5} />
+            <p>No active jobs. Take a breather — new work will appear here.</p>
+          </div>
+        ) : (
+          <div className={styles.jobGrid}>
+            {data.jobs.map((j) => (
+              <JobCard
+                key={j.ticketNumber}
+                job={j}
+                busy={busyOf[`job-${j.ticketNumber}`]}
+                onMark={(act) => mark(j, act)}
+                onCannotAttend={() => setShowCannot(j)}
+                onNeedHelp={() => setShowHelp(j)}
+                onRaisePart={() => setShowPart(j)}
+              />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <AnimatePresence>
         {showCannot && (
-          <CannotAttendModal job={showCannot}
-                             onClose={() => setShowCannot(null)}
-                             onDone={async () => { setShowCannot(null); await fetchAll(); }} />
+          <CannotAttendModal
+            job={showCannot}
+            onClose={() => setShowCannot(null)}
+            onDone={async () => { setShowCannot(null); await fetchAll(); }}
+          />
         )}
         {showHelp && (
-          <NeedHelpModal job={showHelp}
-                         onClose={() => setShowHelp(null)}
-                         onDone={async () => { setShowHelp(null); await fetchAll(); }} />
+          <NeedHelpModal
+            job={showHelp}
+            onClose={() => setShowHelp(null)}
+            onDone={async () => { setShowHelp(null); await fetchAll(); }}
+          />
         )}
         {showPart && (
-          <RaisePartModal job={showPart}
-                          onClose={() => setShowPart(null)}
-                          onDone={async () => { setShowPart(null); await fetchAll(); }} />
+          <RaisePartModal
+            job={showPart}
+            onClose={() => setShowPart(null)}
+            onDone={async () => { setShowPart(null); await fetchAll(); }}
+          />
         )}
       </AnimatePresence>
-    </div>
+    </RoseShell>
   );
 }
 
-/* ─────────────────────────────────────────────────────────── */
+/* ─── Job Card ─────────────────────────────────────────── */
 function JobCard({ job, busy, onMark, onCannotAttend, onNeedHelp, onRaisePart }) {
   const stage = job.status;
   const canEnRoute = ['ASSIGNED'].includes(stage);
@@ -310,98 +359,151 @@ function JobCard({ job, busy, onMark, onCannotAttend, onNeedHelp, onRaisePart })
 
   return (
     <article className={styles.jobCard}>
-      <div className={styles.cardTop}>
-        <PriorityBadge priority={job.priority} />
-        {statusPill(job.status)}
-        {job.carriedForward && (
-          <span
-            title={job.originalScheduledDate
-              ? `Originally booked for ${job.originalScheduledDate}`
-              : 'Carried forward from a previous day'}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '2px 8px', borderRadius: 999,
-              background: '#fef3c7', color: '#92400e',
-              fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
-              textTransform: 'uppercase', border: '1px solid #fde68a',
-            }}>
-            ↻ Carry-over
-          </span>
-        )}
+      <span className={styles.jobAccent} aria-hidden="true" />
+      <header className={styles.jobHead}>
+        <div className={styles.jobTags}>
+          <StatusPill status={job.status} />
+          <span className={styles.jobNumber}>#{job.ticketNumber}</span>
+        </div>
         {job.scheduledDate && (
-          <span className={styles.expiry}>
-            <Clock size={12} /> {job.scheduledDate} · {job.scheduledSlot || ''}
+          <span className={styles.jobScheduled}>
+            <Clock size={12} /> {job.scheduledDate}
+            {job.scheduledSlot && ` · ${job.scheduledSlot}`}
+          </span>
+        )}
+      </header>
+
+      <h3 className={styles.jobTitle}>
+        {PROBLEM_LABEL[job.problemCategory] || job.problemCategory || 'Service'}
+      </h3>
+
+      <div className={styles.jobMeta}>
+        {job.propertyLabel && (
+          <span className={styles.jobMetaLine}>
+            <MapPin size={12} /> {job.propertyLabel}
+          </span>
+        )}
+        {job.acRoomLabel && (
+          <span className={styles.jobMetaLine}>
+            <Hammer size={12} /> {job.acBrand} {job.acModel} · {job.acRoomLabel}
+          </span>
+        )}
+        {job.customerName && (
+          <span className={styles.jobMetaLine}>
+            <Briefcase size={12} /> {job.customerName}
           </span>
         )}
       </div>
-      <h3 className={styles.jobTitle}>
-        {job.ticketNumber} — {PROBLEM_LABEL[job.problemCategory] || job.problemCategory || 'Service'}
-      </h3>
-      {job.problemDescription && <p className={styles.jobBody}>{job.problemDescription}</p>}
 
-      <div className={styles.cardMeta}>
-        <span><strong>{job.customerName}</strong></span>
-        {job.acRoomLabel && <span>{job.acBrand} {job.acModel} · {job.acRoomLabel}</span>}
-        {job.locality && <span><MapPin size={12} /> {job.locality}</span>}
-      </div>
+      {job.problemDescription && (
+        <p className={styles.jobBody}>{job.problemDescription}</p>
+      )}
 
-      <div className={styles.callRow}>
+      <div className={styles.quickRow}>
         {job.customerPhone && (
-          <a href={`tel:${job.customerPhone}`} className={styles.callBtn}>
-            <Phone size={14} /> Call customer
+          <a href={`tel:${job.customerPhone}`} className={styles.iconChip} aria-label="Call customer">
+            <Phone size={14} />
           </a>
         )}
-        <a
-          href={`/api/v1/maps/route/${job.ticketNumber}`}
-          onClick={async (e) => {
-            e.preventDefault();
-            try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/maps/route/${job.ticketNumber}`,
-                { headers: { Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('aes_access_token') : ''}` } });
-              const body = await res.json();
-              const url = body?.data?.directionsUrl
-                || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`;
-              window.open(url, '_blank', 'noopener,noreferrer');
-            } catch {
-              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`, '_blank');
-            }
-          }}
-          className={styles.callBtn}>
-          <MapPin size={14} /> View route from office
-        </a>
-        <Link href={`/tickets/${job.ticketNumber}`} className={styles.callBtn}>
-          <ChevronRight size={14} /> Detail
+        <button
+          type="button"
+          onClick={() => openRoute(job)}
+          className={styles.iconChip}
+          aria-label="View route"
+        >
+          <MapPin size={14} />
+        </button>
+        <Link href={`/tickets/${job.ticketNumber}`} className={styles.detailLink}>
+          Detail <ChevronRight size={14} />
         </Link>
       </div>
 
       <div className={styles.jobActions}>
-        <button className={styles.btnPrimary} disabled={!canEnRoute || !!busy}
-                onClick={() => onMark('en-route')}>
-          <Car size={14} /> En route
-        </button>
-        <button className={styles.btnPrimary} disabled={!canOnSite || !!busy}
-                onClick={() => onMark('on-site')}>
-          <Home size={14} /> On site
-        </button>
-        <button className={styles.btnPrimary} disabled={!canStart || !!busy}
-                onClick={() => onMark('in-progress')}>
-          <Hammer size={14} /> Start work
-        </button>
+        {canEnRoute && (
+          <button
+            className={styles.btnPrimary}
+            disabled={!!busy}
+            onClick={() => onMark('en-route')}
+          >
+            <Car size={14} /> En Route
+          </button>
+        )}
+        {canOnSite && (
+          <button
+            className={styles.btnPrimary}
+            disabled={!!busy}
+            onClick={() => onMark('on-site')}
+          >
+            <Home size={14} /> {stage === 'EN_ROUTE' ? 'Arrived' : 'On Site'}
+          </button>
+        )}
+        {canStart && (
+          <button
+            className={styles.btnPrimary}
+            disabled={!!busy}
+            onClick={() => onMark('in-progress')}
+          >
+            <Hammer size={14} /> Start Work
+          </button>
+        )}
         <button className={styles.btnGhost} onClick={onRaisePart}>
-          <PackagePlus size={14} /> Need part
+          <PackagePlus size={14} /> Need Part
         </button>
         <button className={styles.btnGhost} onClick={onNeedHelp}>
-          <HandHelping size={14} /> Need help
+          <HandHelping size={14} /> Need Help
         </button>
         <button className={styles.btnDanger} onClick={onCannotAttend}>
-          <AlertTriangle size={14} /> Can't attend
+          <AlertTriangle size={14} /> Can't Attend
         </button>
       </div>
     </article>
   );
 }
 
-/* ─────────────────────────────────────────────────────────── */
+async function openRoute(job) {
+  try {
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('aes_token') || localStorage.getItem('aes_access_token')
+      : '';
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
+    const res = await fetch(`${base}/maps/route/${job.ticketNumber}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const body = await res.json();
+    const url = body?.data?.directionsUrl
+      || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.locality || job.propertyLabel || '')}`,
+      '_blank'
+    );
+  }
+}
+
+/* ─── Pills ────────────────────────────────────────────── */
+function PriorityChip({ priority }) {
+  const map = {
+    P1: { label: 'P1 · URGENT',  tone: 'p1' },
+    P2: { label: 'P2 · HIGH',    tone: 'p2' },
+    P3: { label: 'P3 · STANDARD',tone: 'p3' },
+  };
+  const m = map[priority] || { label: priority || 'STANDARD', tone: 'p3' };
+  return <span className={`${styles.priChip} ${styles[`pri_${m.tone}`]}`}>{m.label}</span>;
+}
+
+function StatusPill({ status }) {
+  const label = STATUS_LABEL[status] || status || '—';
+  const tone =
+    status === 'EN_ROUTE' || status === 'ON_SITE' || status === 'IN_PROGRESS'
+      ? 'work'
+      : status === 'RESOLVED'
+        ? 'done'
+        : 'ack';
+  return <span className={`${styles.statusPill} ${styles[`tone_${tone}`]}`}>{label}</span>;
+}
+
+/* ─── Modals (unchanged logic, restyled CSS) ───────────── */
 function CannotAttendModal({ job, onClose, onDone }) {
   const toast = useToast();
   const [reason, setReason] = useState('');
@@ -419,17 +521,14 @@ function CannotAttendModal({ job, onClose, onDone }) {
     } finally { setBusy(false); }
   };
   return (
-    <ModalFrame title={`Cannot attend ${job.ticketNumber}`} onClose={onClose}
-                accent="var(--error)" icon={AlertTriangle}>
+    <ModalFrame title={`Cannot attend ${job.ticketNumber}`} onClose={onClose} icon={AlertTriangle}>
       <div className={styles.formRow}>
         <label>Reason*</label>
-        <input value={reason} onChange={(e) => setReason(e.target.value)}
-               placeholder="Vehicle breakdown, illness…" />
+        <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Vehicle breakdown, illness…" />
       </div>
       <div className={styles.formRow}>
         <label>Details (optional)</label>
-        <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3}
-                  placeholder="Anything the next engineer should know" />
+        <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="Anything the next engineer should know" />
       </div>
       <div className={styles.modalFoot}>
         <button className={styles.btnGhost} onClick={onClose} disabled={busy}>Cancel</button>
@@ -458,15 +557,13 @@ function NeedHelpModal({ job, onClose, onDone }) {
     } finally { setBusy(false); }
   };
   return (
-    <ModalFrame title={`Need help on ${job.ticketNumber}`} onClose={onClose}
-                accent="var(--warning)" icon={ShieldAlert}>
+    <ModalFrame title={`Need help on ${job.ticketNumber}`} onClose={onClose} icon={ShieldAlert}>
       <p className={styles.modalSub}>
         A senior engineer / Service Manager will get a notification. You remain assigned to the ticket.
       </p>
       <div className={styles.formRow}>
         <label>Reason*</label>
-        <input value={reason} onChange={(e) => setReason(e.target.value)}
-               placeholder="Complex VRF, second pair of hands…" />
+        <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Complex VRF, second pair of hands…" />
       </div>
       <div className={styles.formRow}>
         <label>Details (optional)</label>
@@ -509,8 +606,7 @@ function RaisePartModal({ job, onClose, onDone }) {
     } finally { setBusy(false); }
   };
   return (
-    <ModalFrame title={`Raise part — ${job.ticketNumber}`} onClose={onClose}
-                accent="var(--secondary)" icon={PackagePlus}>
+    <ModalFrame title={`Raise part — ${job.ticketNumber}`} onClose={onClose} icon={PackagePlus}>
       <div className={styles.formRow}>
         <label>Part name*</label>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Capacitor 35µF" />
@@ -550,17 +646,23 @@ function RaisePartModal({ job, onClose, onDone }) {
   );
 }
 
-function ModalFrame({ title, onClose, accent, icon: Icon, children }) {
+function ModalFrame({ title, onClose, icon: Icon, children }) {
   return (
-    <motion.div className={styles.modalScrim}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={onClose}>
-      <motion.div className={styles.modal}
-                  initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}>
-        <header className={styles.modalHead} style={{ borderColor: accent }}>
-          <h3 style={{ color: accent }}><Icon size={18} /> {title}</h3>
-          <button className={styles.iconBtn} onClick={onClose}><X size={18} /></button>
+    <motion.div
+      className={styles.modalScrim}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className={styles.modal}
+        initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className={styles.modalHead}>
+          <h3><Icon size={18} /> {title}</h3>
+          <button className={styles.modalClose} onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
         </header>
         <div className={styles.modalBody}>{children}</div>
       </motion.div>

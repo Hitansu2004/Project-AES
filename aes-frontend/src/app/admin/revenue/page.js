@@ -1,57 +1,79 @@
 'use client';
 
 /**
- * V14 — Super Admin "Revenue HQ".
+ * Super Admin "Revenue HQ" — Rose Luxury redesign.
  *
  * Owner-tier dashboard showing live KPIs (today / week / month / year /
  * lifetime), the latest paid transactions, per-team workload, and a
- * snapshot of every Service Engineer on the floor.  Refreshes every
- * 15 s and pings on the {@code /topic/ops/inbox} STOMP channel when a
- * payment completes or a ticket changes hands.
+ * snapshot of every Service Engineer on the floor. Refreshes every 15s
+ * and pings on the /topic/ops/inbox STOMP channel when a payment lands.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  TrendingUp, Users, Wrench, RefreshCw, Crown, IndianRupee,
-  Calendar, BarChart3, Briefcase, CircleDot, LogOut, Bell, ChevronRight,
+  CalendarDays,
+  TrendingUp,
+  BarChart3,
+  Calendar,
+  Diamond,
+  RefreshCw,
+  Crown,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
 import { adminRevenue as revenueApi } from '@/lib/api';
 import useStompTopic from '@/hooks/useStompTopic';
-import Logo from '@/components/ui/Logo';
-
-const PALETTE = {
-  today:    { bg: 'linear-gradient(135deg,#0ea5e9 0%,#22d3ee 100%)', fg: '#fff' },
-  week:     { bg: 'linear-gradient(135deg,#22c55e 0%,#10b981 100%)', fg: '#fff' },
-  month:    { bg: 'linear-gradient(135deg,#a855f7 0%,#8b5cf6 100%)', fg: '#fff' },
-  year:     { bg: 'linear-gradient(135deg,#f97316 0%,#f59e0b 100%)', fg: '#fff' },
-  lifetime: { bg: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', fg: '#fff' },
-};
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
+import styles from './revenue.module.css';
 
 function fmtINR(paise) {
   const v = Number(paise || 0);
-  if (v >= 1_00_00_000) return `₹${(v / 1_00_00_000).toFixed(2)} Cr`;
-  if (v >= 1_00_000)    return `₹${(v / 1_00_000).toFixed(2)} L`;
-  if (v >= 1_000)       return `₹${(v / 1_000).toFixed(1)} K`;
-  return `₹${v.toLocaleString('en-IN')}`;
+  if (v >= 1_00_00_000) return { num: (v / 1_00_00_000).toFixed(2), unit: 'Cr' };
+  if (v >= 1_00_000)    return { num: (v / 1_00_000).toFixed(2),    unit: 'L'  };
+  if (v >= 1_000)       return { num: (v / 1_000).toFixed(1),       unit: 'K'  };
+  return { num: v.toLocaleString('en-IN'), unit: '' };
 }
 
-function fmtTime(iso) {
+function fmtAmount(paise) {
+  const { num, unit } = fmtINR(paise);
+  return `₹${num}${unit ? ' ' + unit : ''}`;
+}
+
+function relTime(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleString('en-IN', {
-    hour: '2-digit', minute: '2-digit',
-    day: '2-digit', month: 'short',
-  });
+  const ms = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function greetingFor(h = new Date().getHours()) {
+  if (h < 12) return 'Good Morning';
+  if (h < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+const greetingDeltas = (kpi) => ({
+  today:    pct(kpi.todayPctVsYesterday),
+  thisWeek: pct(kpi.thisWeekPctVsLastWeek),
+  thisMonth: pct(kpi.thisMonthPctVsLastMonth),
+  thisYear:  pct(kpi.thisYearPctVsLastYear),
+});
+function pct(v) {
+  if (v == null) return null;
+  const sign = v >= 0 ? '+' : '';
+  return `${sign}${Number(v).toFixed(1)}%`;
 }
 
 export default function RevenueDashboard() {
   const router = useRouter();
-  const { user, loading: authLoading, logout } = useAuth();
-  const { unread } = useNotifications();
+  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,7 +82,7 @@ export default function RevenueDashboard() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.replace('/login?next=/admin/revenue'); return; }
-    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
+    if (!['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
       router.replace(defaultRouteForRole(user.role));
     }
   }, [user, authLoading, router]);
@@ -87,224 +109,132 @@ export default function RevenueDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Live ping when any back-office event lands
   useStompTopic('/topic/ops/inbox', () => fetchData(true));
 
   const kpi = data?.kpi || {};
   const transactions = data?.transactions || [];
   const teams = data?.teams || [];
   const engineers = data?.engineers || [];
+  const deltas = greetingDeltas(kpi);
 
   const engineerStats = useMemo(() => {
     const total   = engineers.length;
     const onShift = engineers.filter((e) => e.onShift).length;
     const busy    = engineers.filter((e) => Number(e.activeJobs) > 0).length;
-    return { total, onShift, busy, idle: onShift - busy };
+    return { total, onShift, busy };
   }, [engineers]);
 
-  if (authLoading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+  if (authLoading || !user || (loading && !data)) {
+    return <RoseSplash message="Loading Revenue HQ…" />;
   }
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--surface-container-lowest, #f8fafc)',
-      padding: '0 0 64px',
-    }}>
-      {/* ── Top bar ── */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 30,
-        background: 'var(--surface, #fff)',
-        borderBottom: '1px solid var(--border-light)',
-        padding: '12px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 16,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Logo />
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 10px', borderRadius: 999,
-            background: 'linear-gradient(135deg,#facc15 0%,#fb923c 100%)',
-            color: '#0f172a', fontSize: 12, fontWeight: 700, letterSpacing: 0.3,
-          }}>
-            <Crown size={14} /> Revenue HQ
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
-            {refreshing ? 'Refreshing…' : lastUpdated ? `Updated ${fmtTime(lastUpdated.toISOString())}` : ''}
-          </span>
-          <button
-            type="button"
-            onClick={() => fetchData(true)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '6px 10px', borderRadius: 8,
-              border: '1px solid var(--border-light)',
-              background: 'var(--surface)', cursor: 'pointer',
-              color: 'var(--on-surface)',
-            }}
-          >
-            <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
-            Refresh
-          </button>
-          <Link href="/notifications" aria-label="Notifications" style={{
-            position: 'relative', display: 'inline-flex',
-            width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8, border: '1px solid var(--border-light)',
-            color: 'var(--on-surface)',
-          }}>
-            <Bell size={16} />
-            {unread > 0 && <span style={{
-              position: 'absolute', top: -4, right: -4,
-              background: '#ef4444', color: '#fff', borderRadius: 999,
-              fontSize: 10, fontWeight: 700, padding: '2px 6px',
-            }}>{unread > 99 ? '99+' : unread}</span>}
-          </Link>
-          <button type="button" onClick={logout} aria-label="Sign out" style={{
-            display: 'inline-flex', width: 36, height: 36,
-            alignItems: 'center', justifyContent: 'center',
-            borderRadius: 8, border: '1px solid var(--border-light)',
-            background: 'var(--surface)', color: 'var(--on-surface)', cursor: 'pointer',
-          }}>
-            <LogOut size={16} />
-          </button>
-        </div>
-      </header>
+  const firstName = user.name?.split(' ')[0] || 'there';
 
-      {/* ── Hello ── */}
-      <section style={{ padding: '20px 24px 4px' }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>
-          Hi {user.name?.split(' ')[0] || 'there'} 👋
-        </h1>
-        <p style={{ margin: '4px 0 0', color: 'var(--on-surface-variant)', fontSize: 14 }}>
+  const hero = (
+    <div className={styles.hero}>
+      <div className={styles.heroText}>
+        <span className={styles.heroChip}>
+          <Crown size={12} /> OWNER · REVENUE HQ
+        </span>
+        <h1 className={styles.heroTitle}>{greetingFor()}, {firstName}.</h1>
+        <p className={styles.heroSub}>
           Here&apos;s how AES is doing — updated live as payments land.
         </p>
+      </div>
+      <div className={styles.heroActions}>
+        <span className={styles.heroMeta}>
+          {refreshing ? 'Refreshing…' : lastUpdated && `Updated ${relTime(lastUpdated.toISOString())}`}
+        </span>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={() => fetchData(true)}
+          disabled={refreshing}
+          aria-label="Refresh"
+        >
+          <RefreshCw size={16} className={refreshing ? styles.spin : ''} />
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <RoseShell hero={hero}>
+      {/* ── Revenue tiles (5) ───────────────────────────── */}
+      <section className={styles.revTiles}>
+        <RevTile label="Today"      amount={kpi.today}     icon={CalendarDays} delta={deltas.today}    deltaNote="vs yesterday" />
+        <RevTile label="This Week"  amount={kpi.thisWeek}  icon={Calendar}     delta={deltas.thisWeek} deltaNote="vs last week" />
+        <RevTile label="This Month" amount={kpi.thisMonth} icon={BarChart3}    delta={deltas.thisMonth} deltaNote="vs last month" />
+        <RevTile label="This Year"  amount={kpi.thisYear}  icon={TrendingUp}   delta={deltas.thisYear}  deltaNote="vs last year" />
+        <RevTile
+          label="Lifetime"
+          amount={kpi.lifetime}
+          icon={Diamond}
+          dark
+          sub={`${(kpi.paidCount || 0).toLocaleString('en-IN')} paid tickets · avg ${fmtAmount(kpi.avgTicket)}`}
+        />
       </section>
 
-      {/* ── KPI tiles ── */}
-      {loading ? (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-          gap: 14, padding: '16px 24px',
-        }}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton" style={{ height: 112, borderRadius: 16 }} />
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-          gap: 14, padding: '16px 24px',
-        }}>
-          <KpiTile theme={PALETTE.today}    label="Today"       value={fmtINR(kpi.today)}    icon={IndianRupee} />
-          <KpiTile theme={PALETTE.week}     label="This Week"   value={fmtINR(kpi.thisWeek)} icon={TrendingUp} />
-          <KpiTile theme={PALETTE.month}    label="This Month"  value={fmtINR(kpi.thisMonth)} icon={Calendar} />
-          <KpiTile theme={PALETTE.year}     label="This Year"   value={fmtINR(kpi.thisYear)} icon={BarChart3} />
-          <KpiTile theme={PALETTE.lifetime} label="Lifetime"    value={fmtINR(kpi.lifetime)} icon={Crown}
-                   sub={`${(kpi.paidCount || 0).toLocaleString('en-IN')} paid tickets · avg ${fmtINR(kpi.avgTicket)}`} />
-        </div>
-      )}
+      {/* ── Secondary stat strip ────────────────────────── */}
+      <section className={styles.statStrip}>
+        <Stat label="Open Tickets"   value={data?.openTickets ?? '—'} />
+        <Stat label="Critical (P1)"  value={data?.criticalOpen ?? '—'} danger />
+        <Stat label="Eng On Shift"   value={`${engineerStats.onShift}`} />
+        <Stat label="Eng Busy"       value={`${engineerStats.busy}`} />
+      </section>
 
-      {/* ── Secondary stat row ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-        gap: 14, padding: '0 24px 16px',
-      }}>
-        <SmallStat label="Open tickets" value={data?.openTickets ?? '—'} icon={Briefcase} />
-        <SmallStat label="Critical (P1) open" value={data?.criticalOpen ?? '—'} icon={CircleDot} tone="warn" />
-        <SmallStat label="Engineers on shift" value={`${engineerStats.onShift} / ${engineerStats.total}`} icon={Users} />
-        <SmallStat label="Engineers busy" value={engineerStats.busy} icon={Wrench} tone="ok" />
-      </div>
-
-      {/* ── Main grid: transactions + teams ── */}
-      <section style={{
-        display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
-        gap: 16, padding: '0 24px',
-      }} className="rev-grid">
-        {/* Transactions */}
-        <div style={{
-          background: 'var(--surface)', borderRadius: 16,
-          border: '1px solid var(--border-light)',
-          overflow: 'hidden',
-        }}>
-          <header style={{
-            padding: '14px 18px', borderBottom: '1px solid var(--border-light)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 16 }}>Recent transactions</h2>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-                Latest 30 paid tickets · auto-updates
-              </p>
-            </div>
-          </header>
+      {/* ── Transactions + Teams ────────────────────────── */}
+      <section className={styles.duo}>
+        <Panel
+          title="Recent Transactions"
+          subtitle="Latest paid tickets — auto-updates"
+          action={{ href: '/admin', label: 'VIEW ALL' }}
+        >
           {transactions.length === 0 ? (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-              No transactions yet today.
-            </div>
+            <EmptyRow>No transactions yet today.</EmptyRow>
           ) : (
-            <div style={{ maxHeight: 520, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'var(--surface-container-low)' }}>
+            <div className={styles.txWrap}>
+              <table className={styles.txTable}>
+                <thead>
                   <tr>
-                    <Th>Ticket</Th>
-                    <Th>Customer</Th>
-                    <Th>Method</Th>
-                    <Th>Team</Th>
-                    <Th align="right">Amount</Th>
-                    <Th align="right">Paid</Th>
+                    <th>Ticket</th>
+                    <th>Customer</th>
+                    <th>Method</th>
+                    <th>Team</th>
+                    <th align="right">Amount</th>
+                    <th align="right">Paid</th>
                   </tr>
                 </thead>
                 <tbody>
                   <AnimatePresence initial={false}>
-                    {transactions.map((tx) => (
+                    {transactions.slice(0, 12).map((tx) => (
                       <motion.tr
                         key={`${tx.ticketNumber}-${tx.paidAt}`}
                         layout
-                        initial={{ opacity: 0, backgroundColor: '#dcfce7' }}
-                        animate={{ opacity: 1, backgroundColor: 'transparent' }}
-                        transition={{ backgroundColor: { duration: 1.2 } }}
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                        initial={{ opacity: 0, backgroundColor: 'rgba(255,217,224,0.6)' }}
+                        animate={{ opacity: 1, backgroundColor: 'rgba(0,0,0,0)' }}
+                        transition={{ backgroundColor: { duration: 1.4 } }}
                       >
-                        <Td>
-                          <Link href={`/tickets/${tx.ticketNumber}`} style={{
-                            color: 'var(--primary)', fontWeight: 600, textDecoration: 'none',
-                          }}>
-                            {tx.ticketNumber}
+                        <td>
+                          <Link href={`/tickets/${tx.ticketNumber}`} className={styles.txTicket}>
+                            #{tx.ticketNumber}
                           </Link>
-                          {tx.priority && (
-                            <span style={{
-                              marginLeft: 6, fontSize: 10, fontWeight: 700,
-                              padding: '1px 6px', borderRadius: 999,
-                              background: tx.priority === 'P1' ? '#fee2e2' : tx.priority === 'P2' ? '#fef3c7' : '#e0f2fe',
-                              color: tx.priority === 'P1' ? '#b91c1c' : tx.priority === 'P2' ? '#92400e' : '#075985',
-                            }}>{tx.priority}</span>
-                          )}
-                        </Td>
-                        <Td>
-                          <div style={{ fontWeight: 500 }}>{tx.customerName || '—'}</div>
-                          <div style={{ fontSize: 11, color: 'var(--on-surface-variant)' }}>{tx.customerPhone || ''}</div>
-                        </Td>
-                        <Td>
-                          <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
-                            {tx.method || 'MOCK'}
+                        </td>
+                        <td className={styles.txCustomer}>
+                          {tx.customerName || '—'}
+                        </td>
+                        <td>
+                          <span className={styles.methodChip}>
+                            {(tx.method || 'MOCK').toString().toUpperCase()}
                           </span>
-                          {tx.reference && (
-                            <div style={{ fontSize: 10, color: 'var(--on-surface-variant)' }}>
-                              {String(tx.reference).slice(0, 18)}
-                            </div>
-                          )}
-                        </Td>
-                        <Td>{tx.team || '—'}</Td>
-                        <Td align="right">
-                          <span style={{ fontWeight: 700 }}>{fmtINR(tx.amount)}</span>
-                        </Td>
-                        <Td align="right">
-                          <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>{fmtTime(tx.paidAt)}</span>
-                        </Td>
+                        </td>
+                        <td className={styles.txTeam}>{tx.team || '—'}</td>
+                        <td align="right" className={styles.txAmount}>
+                          {fmtAmount(tx.amount)}
+                        </td>
+                        <td align="right" className={styles.txMeta}>
+                          {relTime(tx.paidAt)}
+                        </td>
                       </motion.tr>
                     ))}
                   </AnimatePresence>
@@ -312,178 +242,127 @@ export default function RevenueDashboard() {
               </table>
             </div>
           )}
-        </div>
+        </Panel>
 
-        {/* Teams */}
-        <div style={{
-          background: 'var(--surface)', borderRadius: 16,
-          border: '1px solid var(--border-light)',
-          overflow: 'hidden',
-        }}>
-          <header style={{
-            padding: '14px 18px', borderBottom: '1px solid var(--border-light)',
-          }}>
-            <h2 style={{ margin: 0, fontSize: 16 }}>Team workload</h2>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-              Active tickets · resolved today · revenue today
-            </p>
-          </header>
+        <Panel title="Revenue by Team" subtitle="Today">
           {teams.length === 0 ? (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-              No team activity yet.
-            </div>
+            <EmptyRow>No team activity yet.</EmptyRow>
           ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul className={styles.teamList}>
               {teams.map((tm) => (
-                <li key={tm.teamName} style={{
-                  padding: '12px 18px', borderBottom: '1px solid var(--border-light)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 12,
-                }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{tm.teamName}</div>
-                    <div style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
-                      {tm.activeTickets} active · {tm.resolvedToday} resolved today
-                    </div>
+                <li key={tm.teamName} className={styles.teamRow}>
+                  <div className={styles.teamHead}>
+                    <p className={styles.teamName}>{tm.teamName}</p>
+                    <p className={styles.teamMeta}>
+                      {tm.activeTickets} active · {tm.resolvedToday} solved
+                    </p>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, color: 'var(--success, #16a34a)' }}>
-                      {fmtINR(tm.revenueToday)}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--on-surface-variant)' }}>
-                      revenue today
-                    </div>
-                  </div>
+                  <p className={styles.teamRev}>{fmtAmount(tm.revenueToday)}</p>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </Panel>
       </section>
 
-      {/* ── Engineer floor ── */}
-      <section style={{
-        padding: '16px 24px 32px', display: 'grid', gap: 12,
-      }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>Service Engineers · live status</h2>
-          <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+      {/* ── Engineers floor ─────────────────────────────── */}
+      <section className={styles.floor}>
+        <header className={styles.floorHead}>
+          <h2 className={styles.floorTitle}>Service Engineers Floor</h2>
+          <span className={styles.floorMeta}>
             {engineerStats.onShift} on shift · {engineerStats.busy} on jobs
           </span>
         </header>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
-          gap: 10,
-        }}>
-          {engineers.map((e) => (
-            <div key={e.id} style={{
-              padding: 12, borderRadius: 12,
-              background: 'var(--surface)',
-              border: `1px solid ${e.onShift ? 'var(--success, #86efac)' : 'var(--border-light)'}`,
-              opacity: e.onShift ? 1 : 0.7,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{e.name}</div>
-                <span style={{
-                  fontSize: 10, fontWeight: 700,
-                  padding: '2px 8px', borderRadius: 999,
-                  background: e.onShift ? '#dcfce7' : '#f1f5f9',
-                  color:     e.onShift ? '#15803d' : '#475569',
-                }}>
-                  {e.onShift ? 'ON' : 'OFF'}
-                </span>
-              </div>
-              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--on-surface-variant)' }}>
-                {e.teamName || 'No team'} · {Number(e.activeJobs)} active job{Number(e.activeJobs) === 1 ? '' : 's'}
-              </div>
-            </div>
-          ))}
-        </div>
+        {engineers.length === 0 ? (
+          <EmptyRow>No engineer roster.</EmptyRow>
+        ) : (
+          <div className={styles.engRow}>
+            {engineers.map((e) => (
+              <EngineerChip key={e.id} eng={e} />
+            ))}
+          </div>
+        )}
       </section>
-
-      <style jsx>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        :global(.spin) { animation: spin 900ms linear infinite; }
-        @media (max-width: 900px) {
-          .rev-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
+    </RoseShell>
   );
 }
 
-function KpiTile({ theme, label, value, icon: Icon, sub }) {
+/* ─── Tiles & subcomponents ────────────────────────────── */
+
+function RevTile({ label, amount, icon: Icon, dark, sub, delta, deltaNote }) {
+  const { num, unit } = fmtINR(amount);
+  const positive = delta && delta.startsWith('+');
   return (
     <motion.div
-      whileHover={{ y: -2 }}
-      style={{
-        background: theme.bg, color: theme.fg,
-        borderRadius: 16, padding: 18, position: 'relative', overflow: 'hidden',
-        boxShadow: '0 10px 30px -12px rgba(0,0,0,.18)',
-      }}
+      whileHover={{ y: -3 }}
+      className={`${styles.revTile} ${dark ? styles.revTileDark : ''}`}
     >
-      <div style={{
-        position: 'absolute', right: -10, bottom: -10,
-        opacity: 0.15,
-      }}>
-        <Icon size={84} strokeWidth={1.4} />
+      <div className={styles.revTileHead}>
+        <span className={styles.revTileLabel}>{label}</span>
+        <Icon size={16} strokeWidth={2} />
       </div>
-      <div style={{ fontSize: 12, opacity: 0.9, letterSpacing: 0.3, textTransform: 'uppercase' }}>
-        {label}
+      <div className={styles.revTileBody}>
+        <span className={styles.revCurrency}>₹</span>
+        <span className={styles.revAmount}>{num}</span>
+        {unit && <span className={styles.revUnit}>{unit}</span>}
       </div>
-      <div style={{ marginTop: 4, fontSize: 28, fontWeight: 800, lineHeight: 1.1 }}>
-        {value}
-      </div>
-      {sub && (
-        <div style={{ marginTop: 6, fontSize: 11, opacity: 0.85 }}>
-          {sub}
-        </div>
+      {delta && !dark && (
+        <p className={`${styles.revDelta} ${positive ? styles.revDeltaUp : styles.revDeltaDown}`}>
+          {delta} <span className={styles.revDeltaNote}>{deltaNote}</span>
+        </p>
       )}
+      {sub && <p className={styles.revSub}>{sub}</p>}
     </motion.div>
   );
 }
 
-function SmallStat({ label, value, icon: Icon, tone }) {
-  const colour = tone === 'warn' ? '#b91c1c' : tone === 'ok' ? '#16a34a' : 'var(--on-surface)';
+function Stat({ label, value, danger }) {
   return (
-    <div style={{
-      background: 'var(--surface)', border: '1px solid var(--border-light)',
-      borderRadius: 12, padding: '12px 14px',
-      display: 'flex', alignItems: 'center', gap: 10,
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 10,
-        background: 'var(--surface-container-low)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: colour,
-      }}>
-        <Icon size={18} />
-      </div>
-      <div>
-        <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', letterSpacing: 0.2 }}>{label}</div>
-        <div style={{ fontWeight: 700, fontSize: 16, color: colour }}>{value}</div>
-      </div>
+    <div className={styles.stat}>
+      <span className={`${styles.statLabel} ${danger ? styles.statLabelDanger : ''}`}>
+        {label}
+      </span>
+      <span className={`${styles.statValue} ${danger ? styles.statValueDanger : ''}`}>
+        {value}
+      </span>
     </div>
   );
 }
 
-function Th({ children, align }) {
+function Panel({ title, subtitle, action, children }) {
   return (
-    <th style={{
-      textAlign: align || 'left', padding: '10px 14px',
-      fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-      color: 'var(--on-surface-variant)', textTransform: 'uppercase',
-      borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap',
-    }}>{children}</th>
+    <section className={styles.panel}>
+      <header className={styles.panelHead}>
+        <div>
+          <h2 className={styles.panelTitle}>{title}</h2>
+          {subtitle && <p className={styles.panelSub}>{subtitle}</p>}
+        </div>
+        {action && (
+          <Link href={action.href} className={styles.panelAction}>
+            {action.label} <ChevronRight size={14} />
+          </Link>
+        )}
+      </header>
+      <div className={styles.panelBody}>{children}</div>
+    </section>
   );
 }
 
-function Td({ children, align }) {
+function EmptyRow({ children }) {
+  return <div className={styles.empty}>{children}</div>;
+}
+
+function EngineerChip({ eng }) {
+  const onShift = !!eng.onShift;
   return (
-    <td style={{
-      padding: '10px 14px', fontSize: 13,
-      color: 'var(--on-surface)', textAlign: align || 'left',
-      verticalAlign: 'top',
-    }}>{children}</td>
+    <div
+      className={`${styles.engChip} ${onShift ? styles.engChipOn : styles.engChipOff}`}
+      title={`${eng.name} · ${eng.teamName || 'No team'} · ${Number(eng.activeJobs)} active job(s)`}
+    >
+      <span className={styles.engDot} />
+      <span className={styles.engName}>
+        {(eng.name || '').split(' ').slice(0, 2).map((p, i) => i === 0 ? `${p[0]}.` : p).join(' ')}
+      </span>
+    </div>
   );
 }

@@ -1,17 +1,61 @@
-.shell {
-  min-height: 100dvh;
-  background: var(--surface);
+/* ============================================================
+   Installation Detail — Rose Luxury redesign
+   Body lives inside RoseShell main; hero classes feed RoseShell.hero
+   ============================================================ */
+
+.heroRow {
   display: flex;
-  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
 }
+.heroText { display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.heroEyebrow {
+  font-family: var(--aes-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--aes-primary);
+}
+.heroTitle {
+  font-family: var(--aes-font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1024px) { .heroTitle { font-size: 40px; } }
+.heroSub {
+  font-family: var(--aes-font-body);
+  font-size: 14.5px;
+  color: var(--aes-on-surface-variant);
+  line-height: 1.45;
+}
+.backCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: var(--aes-surface-container-lowest);
+  color: var(--aes-on-surface);
+  border: 1px solid var(--aes-outline-variant);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.backCta:hover { background: var(--aes-surface-container-low); border-color: var(--aes-primary-fixed-dim); }
+
 .body {
-  width: 100%;
-  max-width: var(--max-width-detail);
-  margin: 0 auto;
-  padding: 16px var(--page-pad-x) 32px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .statusCard {
@@ -198,4 +242,17 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 6px;
+}
+
+/* ============================================================
+   Mobile (≤768px) — stacked hero, single-column body
+   ============================================================ */
+@media (max-width: 768px) {
+  .heroRow { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .heroTitle { font-size: 24px; }
+  .heroSub { font-size: 13px; }
+  .backCta { width: 100%; justify-content: center; }
+  .body { gap: 14px; }
+  .card { padding: 16px; border-radius: var(--radius-lg); }
+  .decisionRow { grid-template-columns: 1fr; gap: 8px; }
 }

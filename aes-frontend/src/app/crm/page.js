@@ -5,15 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Inbox, ListChecks, AlertTriangle, CheckCircle2, Settings, LogOut,
-  Bell, Phone, Check, ArrowUp, Wrench, Filter, Search,
+  Inbox, ListChecks, AlertTriangle, CheckCircle2,
+  Phone, Check, ArrowUp, Wrench, Filter, Search,
   X, MapPin, User, Send, PackageSearch, Package, Clock, Timer,
   FileText, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp,
   Hash, Layers, AlertCircle, DollarSign, ClipboardList, RefreshCw,
   Sparkles, UserPlus, Users, TrendingUp,
 } from 'lucide-react';
 import { useAuth, defaultRouteForRole } from '@/context/AuthContext';
-import { useNotifications } from '@/context/NotificationContext';
 import {
   tickets as ticketsApi,
   ticketActions,
@@ -29,8 +28,9 @@ import PriorityBadge, { PriorityDot } from '@/components/ui/PriorityBadge';
 import SlaCountdown from '@/components/ui/SlaCountdown';
 import useSlaCountdown, { formatRemaining } from '@/hooks/useSlaCountdown';
 import useStompTopic from '@/hooks/useStompTopic';
-import Logo from '@/components/ui/Logo';
 import ShiftToggle from '@/components/ui/ShiftToggle';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './crm.module.css';
 
 const VIEWS = [
@@ -79,8 +79,7 @@ function relMin(stamp) {
 
 export default function CrmDashboard() {
   const router = useRouter();
-  const { user, loading: authLoading, logout, fetchUser } = useAuth();
-  const { unread } = useNotifications();
+  const { user, loading: authLoading, fetchUser } = useAuth();
   const toast = useToast();
 
   // V14: default to the live Pool (stockbroker view). Agents pick from
@@ -421,86 +420,81 @@ export default function CrmDashboard() {
   };
 
   if (authLoading || !user) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading CRM workbench…" />;
   }
 
   const sidebarLabel = user.role === 'CRM_AGENT'
-    ? 'CRM Dashboard — Level 1'
+    ? "Level 1 · CRM Pool"
     : user.role === 'SERVICE_MANAGER'
-      ? 'Service Managers — L2'
-      : 'Admin — All Tickets';
+      ? 'Service Managers · L2'
+      : 'Admin · All Tickets';
 
-  return (
-    <div className={styles.shell}>
-      {/* ─── Top bar ─── */}
-      <header className={styles.topBar}>
-        <div className={styles.topBarLeft}>
-          <Logo />
-          <span className={styles.topBarRole}>{sidebarLabel}</span>
+  const hero = (
+    <div className={styles.heroBlock}>
+      <div className={styles.heroRow}>
+        <div className={styles.heroText}>
+          <span className={styles.heroEyebrow}>{sidebarLabel}</span>
+          <h1 className={styles.heroTitle}>Today&apos;s Pool</h1>
+          <p className={styles.heroSub}>
+            Live ticket queue — pick from the pool, manage your inbox, run parts and quote approvals.
+          </p>
         </div>
-        <div className={styles.topBarRight}>
+        <div className={styles.heroSide}>
           <div className={styles.searchBox}>
-            <Search size={16} />
+            <Search size={14} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ticket, customer, room..."
+              placeholder="Search ticket, customer, room…"
             />
           </div>
-          <span className={styles.agentBadge}>Agent: {user.name?.split(' ')[0] || 'Agent'}</span>
-          <Link href="/notifications" className={styles.iconBtn} aria-label="Notifications">
-            <Bell size={18} />
-            {unread > 0 && <span className={styles.notifDot}>{unread > 99 ? '99+' : unread}</span>}
-          </Link>
-          <button type="button" className={styles.iconBtn} onClick={logout} aria-label="Sign out">
-            <LogOut size={18} />
-          </button>
+          <ShiftToggle
+            onShift={!!user?.onShift}
+            activeWork={{ tickets: counts.inbox, offers: counts.offers }}
+            onChange={() => { fetchUser(); fetchAll(); }}
+          />
         </div>
-      </header>
+      </div>
 
+      {/* View tabs as horizontal segmented control */}
+      <div className={styles.viewTabs} role="tablist" aria-label="CRM views">
+        {VIEWS.map(({ key, label, icon: Icon }) => {
+          const count = key === 'pool'      ? counts.pool
+                      : key === 'inbox'     ? counts.inbox
+                      : key === 'parts'     ? counts.parts
+                      : key === 'quotes'    ? counts.quotes
+                      : key === 'escalated' ? counts.escalated
+                      : key === 'resolved'  ? counts.resolvedToday
+                      : null;
+          const active = view === key;
+          const isAlert = key === 'escalated' || key === 'pool';
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setView(key)}
+              className={`${styles.viewTab} ${active ? styles.viewTabActive : ''}`}
+            >
+              <Icon size={14} strokeWidth={active ? 2.2 : 1.8} />
+              <span>{label}</span>
+              {count != null && count > 0 && (
+                <span className={`${styles.viewBadge} ${isAlert ? styles.viewBadgeAlert : ''}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <RoseShell hero={hero}>
       <div className={styles.frame}>
-        {/* ─── Sidebar ─── */}
-        <aside className={styles.sidebar}>
-          {VIEWS.map(({ key, label, icon: Icon }) => {
-            const count = key === 'pool'      ? counts.pool
-                        : key === 'inbox'     ? counts.inbox
-                        : key === 'parts'     ? counts.parts
-                        : key === 'quotes'    ? counts.quotes
-                        : key === 'escalated' ? counts.escalated
-                        : key === 'resolved'  ? counts.resolvedToday
-                        : null;
-            const active = view === key;
-            const isAlert = key === 'escalated' || key === 'pool';
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setView(key)}
-                className={`${styles.sideItem} ${active ? styles.sideItemActive : ''}`}
-              >
-                <span className={styles.sideItemIcon}><Icon size={18} /></span>
-                <span className={styles.sideItemLabel}>{label}</span>
-                {count != null && count > 0 && (
-                  <span className={`${styles.sideCount} ${isAlert ? styles.sideCountAlert : ''}`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-          <div className={styles.sideFooter}>
-            <div style={{ padding: '8px 12px' }}>
-              <ShiftToggle
-                onShift={!!user?.onShift}
-                activeWork={{ tickets: counts.inbox, offers: counts.offers }}
-                onChange={() => { fetchUser(); fetchAll(); }}
-              />
-            </div>
-          </div>
-        </aside>
-
-        {/* ─── Main ─── */}
         <main className={styles.main}>
           {/* SLA breach alert banner */}
           <AnimatePresence>
@@ -677,7 +671,7 @@ export default function CrmDashboard() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </RoseShell>
   );
 }
 

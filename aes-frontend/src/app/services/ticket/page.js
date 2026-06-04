@@ -49,7 +49,8 @@ function isPlaceholderAddress(p) {
 }
 import { TIME_SLOTS, PROBLEM_CATEGORIES, slotLabel } from '@/lib/constants';
 import { lookupErrorCode } from '@/lib/errorCodes';
-import AppTopBar from '@/components/ui/AppTopBar';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import StepIndicator from '@/components/ui/StepIndicator';
 import DayPicker from '@/components/ui/DayPicker';
 import PriorityBadge from '@/components/ui/PriorityBadge';
@@ -88,7 +89,7 @@ const acStatusBadge = (status) => {
 
 export default function ServiceTicketWizardPage() {
   return (
-    <Suspense fallback={<div className="loading-page"><div className="spinner" /></div>}>
+    <Suspense fallback={<RoseSplash message="Loading service request…" />}>
       <ServiceTicketWizard />
     </Suspense>
   );
@@ -458,26 +459,42 @@ function ServiceTicketWizard() {
   };
 
   if (authLoading || !user || !hydrated) {
-    return <div className="loading-page"><div className="spinner" /></div>;
+    return <RoseSplash message="Loading service request…" />;
   }
 
   if (submittedTicket) {
     return <SuccessScreen ticket={submittedTicket} onHome={() => router.replace('/dashboard')} />;
   }
 
-  return (
-    <div className={styles.shell}>
-      <AppTopBar
-        title="Service Request"
-        onBack={goBack}
-        right={
-          <div className={styles.topRight}>
-            {effectivePriority && <PriorityBadge priority={effectivePriority} dense />}
-            <StepIndicator current={step} total={TOTAL_STEPS} />
-          </div>
-        }
-      />
+  const STEP_TITLES = [
+    { eyebrow: 'Step 1 of 4', title: 'How urgent is this?', sub: 'We use this to route your ticket to the right team in real time.' },
+    { eyebrow: 'Step 2 of 4', title: 'Which AC needs attention?', sub: 'Pick the unit from your saved properties — or add a new one.' },
+    { eyebrow: 'Step 3 of 4', title: 'Tell us what\u2019s wrong', sub: 'A few details help us send the right engineer with the right parts.' },
+    { eyebrow: 'Step 4 of 4', title: 'Schedule the visit',      sub: 'Pick the date and slot that suits you best.' },
+  ];
+  const stepHero = STEP_TITLES[step - 1] || STEP_TITLES[0];
 
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroText}>
+        <span className={styles.heroEyebrow}>{stepHero.eyebrow}</span>
+        <h1 className={styles.heroTitle}>{stepHero.title}</h1>
+        <p className={styles.heroSub}>{stepHero.sub}</p>
+      </div>
+      <div className={styles.heroSide}>
+        {effectivePriority && <PriorityBadge priority={effectivePriority} dense />}
+        <StepIndicator current={step} total={TOTAL_STEPS} />
+        {step > 1 && (
+          <button type="button" className={styles.heroBackBtn} onClick={goBack}>
+            <ArrowLeft size={14} /> Back
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <RoseShell hero={hero} focused>
       <div className={styles.body}>
         <AnimatePresence custom={direction} mode="wait" initial={false}>
           {step === 1 && (
@@ -602,9 +619,20 @@ function ServiceTicketWizard() {
 
       <div className={styles.actionBar}>
         <div className={styles.actionInner}>
+          {step > 1 && (
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={goBack}
+              disabled={submitting}
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+          )}
           {step === 4 ? (
             <button
-              className="btn btn-primary btn-full btn-lg"
+              type="button"
+              className={styles.primaryBtn}
               disabled={
                 !step4Valid || submitting ||
                 (effectivePriority === 'P3' && (pricingLoading || isPlaceholderAddress(ticketProperty)))
@@ -614,27 +642,26 @@ function ServiceTicketWizard() {
               {submitting ? <span className="spinner spinner-sm" /> : (
                 effectivePriority === 'P3'
                   ? (isPlaceholderAddress(ticketProperty)
-                      ? <>Add your address to continue <ArrowRight size={18} /></>
-                      : <>Continue to Payment {priceQuote ? `· ₹${priceQuote.total.toLocaleString('en-IN')}` : ''} <ArrowRight size={18} /></>)
-                  : <>Raise Service Ticket <ArrowRight size={18} /></>
+                      ? <>Add your address to continue <ArrowRight size={16} /></>
+                      : <>Continue to Payment {priceQuote ? `· ₹${priceQuote.total.toLocaleString('en-IN')}` : ''} <ArrowRight size={16} /></>)
+                  : <>Raise Service Ticket <ArrowRight size={16} /></>
               )}
             </button>
           ) : step === 2 ? (
-            <p className={styles.tipFootnote}>
-              Tap an AC unit to continue
-            </p>
+            <p className={styles.tipFootnote}>Tap an AC unit to continue</p>
           ) : (
             <button
-              className="btn btn-primary btn-full btn-lg"
+              type="button"
+              className={styles.primaryBtn}
               disabled={!stepValid}
               onClick={goNext}
             >
-              Continue <ArrowRight size={18} />
+              Continue <ArrowRight size={16} />
             </button>
           )}
         </div>
       </div>
-    </div>
+    </RoseShell>
   );
 }
 
@@ -1478,7 +1505,7 @@ function PriceCard({ quote, loading, couponInput, onCouponChange, property, acMe
             border: '1px solid var(--border-light, #e2e8f0)',
           }}
         >
-          <MapPinned size={16} color="var(--secondary, #0ea5e9)" style={{ marginTop: 2, flexShrink: 0 }} />
+          <MapPinned size={16} color="var(--secondary, #780037)" style={{ marginTop: 2, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase' }}>
               Visit address
@@ -1492,7 +1519,7 @@ function PriceCard({ quote, loading, couponInput, onCouponChange, property, acMe
               </div>
             )}
           </div>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary, #0ea5e9)' }}>Change</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary, #780037)' }}>Change</span>
         </button>
       )}
 
@@ -1629,7 +1656,7 @@ function SummarySelect({ icon, label, value, onChange, options, placeholder, hin
 function SuccessScreen({ ticket, onHome }) {
   const router = useRouter();
   return (
-    <div className={styles.shell}>
+    <RoseShell bare focused contentClassName={styles.successCanvas}>
       <div className={styles.successInner}>
         <motion.div
           className={styles.successRing}
@@ -1704,20 +1731,22 @@ function SuccessScreen({ ticket, onHome }) {
 
         <div className={styles.successCtaRow}>
           <button
-            className="btn btn-outline btn-full"
+            type="button"
+            className={styles.secondaryBtn}
             onClick={() => router.replace(`/tickets/${ticket.ticketNumber}`)}
           >
             Track This Ticket
           </button>
           <button
-            className="btn btn-primary btn-full"
+            type="button"
+            className={styles.primaryBtn}
             onClick={onHome}
           >
             Back to Home
           </button>
         </div>
       </div>
-    </div>
+    </RoseShell>
   );
 }
 

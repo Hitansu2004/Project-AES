@@ -8,12 +8,14 @@ import {
 } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import LocationPicker from '@/components/ui/LocationPicker';
-import { MapPin, Check } from 'lucide-react';
+import { MapPin, Check, User, Home, ClipboardCheck, LogOut } from 'lucide-react';
+import RoseShell from '@/components/rose/RoseShell';
+import RoseSplash from '@/components/rose/RoseSplash';
 import styles from './account.module.css';
 
 export default function AccountPageWrapper() {
   return (
-    <Suspense fallback={<div className="loading-page"><div className="spinner" /></div>}>
+    <Suspense fallback={<RoseSplash message="Loading your account…" />}>
       <AccountPage />
     </Suspense>
   );
@@ -165,35 +167,52 @@ function AccountPage() {
     router.push('/login');
   };
 
-  if (authLoading || loading) return <div className="loading-page"><div className="spinner"></div></div>;
+  if (authLoading || loading) return <RoseSplash message="Loading your account…" />;
+
+  const initials = (user?.name || 'U').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+
+  const hero = (
+    <div className={styles.heroRow}>
+      <div className={styles.heroAvatar}>{initials}</div>
+      <div className={styles.heroText}>
+        <h1 className={styles.heroTitle}>{user?.name || 'Your Account'}</h1>
+        <p className={styles.heroSub}>
+          {user?.phoneNumber || user?.email}
+          {user?.role && (
+            <span className={styles.heroRolePill}>{user.role.replace(/_/g, ' ')}</span>
+          )}
+        </p>
+      </div>
+      <button
+        type="button"
+        className={styles.heroSignOut}
+        onClick={handleLogout}
+        aria-label="Sign out"
+      >
+        <LogOut size={14} /> Sign Out
+      </button>
+    </div>
+  );
 
   return (
-    <div className={`page-enter ${styles.page}`}>
-      <div className="container page-content">
-        {/* Profile Header */}
-        <div className={styles.profileHeader}>
-          <div className={styles.avatar}>{(user?.name || 'U')[0]}</div>
-          <div>
-            <h1 className={styles.profileName}>{user?.name || 'User'}</h1>
-            <p className={styles.profilePhone}>{user?.phoneNumber || user?.email}</p>
-            <span className={`badge ${user?.role === 'CUSTOMER' ? 'badge-warranty' : user?.role === 'CRM_AGENT' ? 'badge-amc' : 'badge-paid'}`}>
-              {user?.role?.replace(/_/g, ' ')}
-            </span>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className={styles.tabs}>
-          {[
-            { id: 'profile', label: '👤 Profile' },
-            { id: 'properties', label: '🏠 Properties' },
-            { id: 'amc', label: '📋 AMC' },
-          ].map(t => (
-            <button key={t.id} className={`${styles.tab} ${tab === t.id ? styles.tabActive : ''}`} onClick={() => setTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+    <RoseShell hero={hero}>
+      <div className={styles.tabs}>
+        {[
+          { id: 'profile',    label: 'Profile',    Icon: User },
+          { id: 'properties', label: 'Properties', Icon: Home },
+          { id: 'amc',        label: 'AMC',        Icon: ClipboardCheck },
+        ].map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            className={`${styles.tab} ${tab === id ? styles.tabActive : ''}`}
+            onClick={() => setTab(id)}
+            type="button"
+          >
+            <Icon size={15} /> {label}
+          </button>
+        ))}
+      </div>
+      <div className={styles.tabSurface}>
 
         {/* Profile Tab */}
         {tab === 'profile' && (
@@ -356,7 +375,7 @@ function AccountPage() {
                               background:'var(--surface-container-low, #f8fafc)',
                               border:'1px dashed var(--border-light, #cbd5e1)',
                             }}>
-                      <MapPin size={16} color="var(--secondary, #0ea5e9)" />
+                      <MapPin size={16} color="var(--secondary, #780037)" />
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:13, fontWeight:600, color:'var(--on-surface)' }}>
                           Pin on map (recommended)
@@ -436,7 +455,7 @@ function AccountPage() {
           </div>
         )}
       </div>
-    </div>
+    </RoseShell>
   );
 }
 
@@ -520,7 +539,7 @@ function AcUnitRow({ unit, property }) {
             alignSelf: 'flex-start',
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '7px 14px', borderRadius: 8,
-            background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', color: '#fff',
+            background: 'linear-gradient(135deg, #780037, #9d174d)', color: '#fff',
             border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer',
           }}>
           {requesting ? 'Sending…' : '⭐ Upgrade to AMC'}

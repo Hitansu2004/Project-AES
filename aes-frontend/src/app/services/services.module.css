@@ -1,206 +1,213 @@
-.shell {
-  min-height: 100dvh;
-  background: var(--surface);
-  width: 100%;
-  max-width: var(--max-width-content);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: calc(var(--nav-height) + 24px);
-}
+/* ============================================================
+   Services chooser hub — Rose Luxury redesign
+   ============================================================ */
 
-.intro {
-  padding: 24px var(--page-pad-x) 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-@media (min-width: 768px) {
-  .intro { padding-top: 32px; }
-  .heading { font-size: 26px; }
-  .sub { font-size: 14px; }
-}
-.heading {
-  font-size: 22px;
+.heroTitle {
+  font-family: var(--aes-font-display);
+  font-size: 36px;
   font-weight: 700;
-  color: var(--on-surface);
+  line-height: 1.05;
   letter-spacing: -0.02em;
+  color: var(--aes-on-surface-strong);
+  margin-bottom: 8px;
 }
-.sub {
-  font-size: 13px;
-  color: var(--on-surface-variant);
-}
-
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px var(--page-pad-x) 0;
-}
-@media (min-width: 768px) {
-  .cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-  .cards .card:first-child {
-    grid-column: 1 / -1;
-  }
-}
-@media (min-width: 1024px) {
-  .cards { grid-template-columns: 1fr 1fr 1fr; }
-  .cards .card:first-child { grid-column: auto; }
-}
-
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 22px 22px 20px;
-  border-radius: 18px;
-  color: #fff;
-  overflow: hidden;
-  text-decoration: none;
-  min-height: 200px;
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms ease;
-  box-shadow: var(--shadow);
-}
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-.card:active { transform: scale(0.99); }
-
-.install { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); }
-.service { background: linear-gradient(135deg, var(--secondary-strong) 0%, var(--secondary) 70%, var(--secondary-light) 130%); }
-.amc     { background: linear-gradient(135deg, var(--tertiary-strong) 0%, var(--tertiary) 100%); }
-.catalog { background: linear-gradient(135deg, #0f3a52 0%, #1f6f99 60%, #34a3c8 130%); }
-
-.cardDeco {
-  position: absolute;
-  right: -32px;
-  bottom: -32px;
-  color: rgba(255, 255, 255, 0.10);
-  pointer-events: none;
-}
-
-.iconWrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-}
-
-.eyebrow {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.78);
-  position: absolute;
-  top: 18px; right: 18px;
-  background: rgba(255, 255, 255, 0.16);
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-}
-
-.cardTitle {
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin-top: 4px;
-}
-.cardDesc {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.82);
+@media (min-width: 1024px) { .heroTitle { font-size: 48px; } }
+.heroSub {
+  font-family: var(--aes-font-body);
+  font-size: 15px;
+  color: var(--aes-on-surface-variant);
+  max-width: 640px;
   line-height: 1.5;
 }
 
-.chipRow { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+/* ── Cards grid ─────────────────────────────────────────── */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-bottom: 40px;
 }
+@media (min-width: 768px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .cards { grid-template-columns: repeat(3, 1fr); } }
 
-.cardArrow {
-  margin-top: auto;
-  align-self: flex-end;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-.helpLine {
-  margin: 18px 20px 0;
-  padding: 14px;
-  background: var(--surface-container-lowest);
-  border: 1px dashed var(--outline-variant);
-  border-radius: 12px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--on-surface-variant);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-decoration: none;
-}
-.helpLine strong { color: var(--secondary); font-weight: 700; }
-
-/* Authorised dealer brand strip */
-.brandStrip {
-  margin: 28px var(--page-pad-x) 0;
-  max-width: var(--max-width-content);
-  padding: 16px;
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--border-light);
-  border-radius: 16px;
+.card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: center;
+  gap: 20px;
+  padding: 26px 24px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px solid rgba(120, 0, 55, 0.04);
+  border-radius: var(--aes-radius-xl);
+  box-shadow: var(--aes-shadow-card);
+  color: var(--aes-on-surface);
+  text-decoration: none;
+  min-height: 240px;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  position: relative;
+  overflow: hidden;
 }
-@media (min-width: 1024px) {
-  .brandStrip { margin-left: auto; margin-right: auto; }
+.card::after {
+  content: '';
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 220px;
+  height: 220px;
+  background:
+    radial-gradient(circle at center, rgba(255, 177, 195, 0.20) 0%, transparent 70%);
+  pointer-events: none;
+  transition: opacity 220ms ease;
+  opacity: 0;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--aes-shadow-card-hover);
+  border-color: var(--aes-primary-fixed-dim);
+}
+.card:hover::after { opacity: 1; }
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cardIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-lg);
+}
+.eyebrow {
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--aes-on-surface-variant);
+  text-transform: uppercase;
+  padding-top: 6px;
+}
+
+.cardBody { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.cardTitle {
+  font-family: var(--aes-font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--aes-on-surface-strong);
+  line-height: 1.2;
+}
+.cardDesc {
+  font-family: var(--aes-font-body);
+  font-size: 14px;
+  color: var(--aes-on-surface-variant);
+  line-height: 1.5;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--aes-outline-variant);
+  padding-top: 16px;
+}
+.chipRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  padding: 4px 10px;
+  background: var(--aes-surface-container-low);
+  color: var(--aes-secondary);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cardArrow {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: var(--aes-primary);
+  color: var(--aes-on-primary);
+  border-radius: var(--aes-radius-full);
+  box-shadow: var(--aes-shadow-cta);
+  transition: transform 220ms ease, background 220ms ease;
+  flex-shrink: 0;
+}
+.card:hover .cardArrow { background: var(--aes-primary-hover); transform: rotate(-8deg); }
+
+/* ── Brand strip ────────────────────────────────────────── */
+.brandStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--aes-surface-container-lowest);
+  border: 1px solid rgba(120, 0, 55, 0.04);
+  border-radius: var(--aes-radius-xl);
+  margin-bottom: 24px;
 }
 .brandLabel {
-  font-size: 10.5px;
-  letter-spacing: 0.6px;
-  font-weight: 700;
+  font-family: var(--aes-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--aes-on-surface-variant);
   text-transform: uppercase;
-  color: var(--on-surface-variant);
 }
 .brandLogos {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  width: 100%;
-}
-@media (min-width: 720px) {
-  .brandLogos { grid-template-columns: repeat(5, 1fr); }
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 28px;
 }
 .brandLogos img {
-  width: 100%;
-  height: 48px;
-  object-fit: contain;
-  filter: saturate(0.85);
-  opacity: 0.85;
-  transition: opacity 200ms ease, filter 200ms ease;
+  height: 30px;
+  width: auto;
+  opacity: 0.7;
+  filter: grayscale(1);
+  transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
 }
-.brandLogos img:hover { opacity: 1; filter: saturate(1.1); }
+.brandLogos img:hover {
+  opacity: 1;
+  filter: grayscale(0);
+  transform: scale(1.04);
+}
+
+/* ── Help line ──────────────────────────────────────────── */
+.helpLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  background: var(--aes-primary-fixed);
+  color: var(--aes-primary);
+  border-radius: var(--aes-radius-full);
+  font-family: var(--aes-font-body);
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.helpLine strong { font-weight: 700; color: var(--aes-primary); }
+.helpLine:hover { background: var(--aes-primary); color: var(--aes-on-primary); transform: translateY(-1px); }
+.helpLine:hover strong { color: var(--aes-on-primary); }
+
+/* ============================================================
+   Mobile (≤768px) — compact vertical cards
+   ============================================================ */
+@media (max-width: 768px) {
+  .heroTitle { font-size: 28px; }
+  .heroSub { font-size: 14px; }
+  .cards { gap: 12px; margin-bottom: 24px; }
+  .card { min-height: auto; padding: 18px; gap: 10px; border-radius: var(--aes-radius-lg); }
+  .helpLine { padding: 14px; flex-wrap: wrap; }
+}

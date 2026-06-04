@@ -32,7 +32,7 @@ function applyToDom(resolved) {
   document.documentElement.setAttribute('data-theme', resolved);
   // Match the browser chrome (Android nav bar, iOS status bar) to the theme.
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0b1220' : '#003366');
+  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0f0b0d' : '#780037');
 }
 
 export function ThemeProvider({ children }) {

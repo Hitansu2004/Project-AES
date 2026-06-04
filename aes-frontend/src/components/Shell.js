@@ -11,25 +11,24 @@ import NotificationToastBridge from '@/components/NotificationToastBridge';
  * their own top bar.
  */
 const NO_CHROME_PREFIXES = [
+  '/',          // root splash redirector
   '/login',
-  '/services/installation',
-  '/services/ticket',
-  '/services/select',
-  '/services/error-codes',
+  '/services',
   '/ops',
   '/crm',
   '/engineer',
   '/admin',
   '/notifications',
   '/quotes',
+  // Rose redesign — these pages render their own RoseShell sidebar
+  '/dashboard',
+  '/tickets',
+  '/installations',
+  '/account',
 ];
-
-/** /tickets is the list (chrome on); /tickets/{n} is detail (chrome off). */
-const TICKET_DETAIL_REGEX = /^\/tickets\/[^/]+\/?$/;
 
 function shouldHideChrome(pathname) {
   if (!pathname) return true;
-  if (TICKET_DETAIL_REGEX.test(pathname)) return true;
   return NO_CHROME_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
