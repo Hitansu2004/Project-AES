@@ -1,0 +1,1118 @@
+
+Claude finished the response
+
+COST_RESEARCH_DEEP_DIVE.md
+md
+
+
+AES_Quotation_Basic_Starter_3L07K_v2.docx
+docx
+
+
+AES_Quotation_Professional_Suite_6L09K_v2.docx
+docx
+
+
+AES_Quotation_Standard_Portal_5L08K_v2.docx
+docx
+
+
+SOW_AES-SOW-2026-001_BASIC_DIGITAL_STARTER.docx
+docx
+
+
+SOW_AES-SOW-2026-002_STANDARD_CUSTOMER_PORTAL.docx
+docx
+
+
+SOW_AES-SOW-2026-003_PROFESSIONAL_FULL-SUITE.docx
+docx
+
+
+AES-TECH Questionnaire-2026-001 REVISED.docx
+docx
+
+
+AES-TECH_Response_2026-001_FILLED.docx
+docx
+
+verify all these prices till today and tell me if everything is fine 
+now create a resecrh folder and do a deep resecrh on it read all quates 3 differnt qoates and read all three sows and read questioneire asked from clint and also read the answer we are giving from our side ead everything and things we included and thing that are real and may cause as extra money the base cahnreg will not change but tell me what are hidden costs like the apple deploy is 99 dollars but we have mention 8200 and cloud pricing and all lets assume the app has 2000 active uusers considering atht tell me evrything menas everything there wll be a web applucation a ios one and a andriod one there wilklk be 4 environements and everything replated to app you can see here and just tell me what we are missing and whatbmay cause us ome money from our account and creta resech md file and reread all m=tell me what we are misisng because we have to be acrefull before we hgiving any thing to clint or tell anything to them so do a dep resrch of todays lates dya nd tekl me everything for the cmplet app we we goole cloud we deply there we deploy in app store paly store and everything what we are miiisng a complete deep resrch about this topic also read the complete project and tell me if we deploy this today in cloud how muc. it iwll cost per day and all per year how much and all all environments combned ci cd of github and all jenkins terraform k8s and all
+just create a word cocs in cpmarision view what i mes in for everyty price thing it shoul be clear picture in clint mond like for 1 environment how much it will cost for 2 env how much i till codst and for 3 for 4 like everywhere give proper option so tat clint can choose how much they wnat and all and doa. deep resrch n these thing adn tell me if everything is okay 
+doa. deep recrhc as of todtand real pricing s and cretae the best word cocs accoridngly i dont care how ;ong or big it is it shoul have evrything clear picture in mind
+
+Show more
+12:48
+
+Prepared to excavate comprehensive pricing documentation and research
+Prepared to excavate comprehensive pricing documentation and research
+Now let me read the cost research file and then do live price research:
+
+
+Orchestrated comprehensive pricing verification and deep-cost analysis research
+Orchestrated comprehensive pricing verification and deep-cost analysis research
+Now let me verify all prices live as of today:
+
+
+Orchestrated comprehensive cost audit and document structure planning
+Orchestrated comprehensive cost audit and document structure planning
+Now let me create the research folder and the comprehensive Word document:
+
+
+Ran 2 commands
+Ran 2 commands
+Now let me write the massive Word document:
+
+
+Create the comprehensive Word document build script
+Create the comprehensive Word document build script
+
+Create the comprehensive Word document build script
+bash
+
+cat > /home/claude/research/build_docx.js << 'JSEOF'
+const {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  AlignmentType, HeadingLevel, BorderStyle, WidthType, ShadingType,
+  VerticalAlign, PageNumber, PageBreak, LevelFormat, Header, Footer,
+  TabStopType, TabStopPosition, PageOrientation
+} = require('docx');
+const fs = require('fs');
+
+// --- Color palette ---
+const C = {
+  // Brand / header
+  darkBlue: '1F3864',
+  midBlue: '2E75B6',
+  lightBlue: 'BDD7EE',
+  veryLightBlue: 'DEEAF1',
+  
+  // Status colors
+  red: 'C00000',
+  redLight: 'FFCCCC',
+  orange: 'E26B0A',
+  orangeLight: 'FDE9D9',
+  green: '375623',
+  greenLight: 'EBF1DE',
+  yellow: 'FFFF00',
+  yellowLight: 'FFFACD',
+  amber: 'ED7D31',
+
+  // Neutrals
+  darkGray: '404040',
+  midGray: '595959',
+  lightGray: 'D6DCE4',
+  veryLightGray: 'F2F2F2',
+  white: 'FFFFFF',
+  black: '000000',
+
+  // Section headers
+  sectionBlue: 'D6E4F0',
+  sectionDark: '17375E',
+  tableHeader: '17375E',
+  tableHeaderText: 'FFFFFF',
+  altRow: 'EBF3FB',
+};
+
+const border = (color, size) => ({ style: BorderStyle.SINGLE, size: size || 4, color: color || 'CCCCCC' });
+const allBorders = (color, size) => ({ top: border(color, size), bottom: border(color, size), left: border(color, size), right: border(color, size) });
+const noBorder = () => ({ style: BorderStyle.NONE, size: 0, color: 'FFFFFF' });
+const noBorders = () => ({ top: noBorder(), bottom: noBorder(), left: noBorder(), right: noBorder() });
+
+function spacer(pts) {
+  return new Paragraph({ spacing: { before: 0, after: pts || 60 }, children: [new TextRun('')] });
+}
+
+function heading1(text, color) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 320, after: 120 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: C.midBlue } },
+    children: [new TextRun({ text, bold: true, size: 36, color: color || C.darkBlue, font: 'Arial' })]
+  });
+}
+
+function heading2(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 240, after: 80 },
+    children: [new TextRun({ text, bold: true, size: 28, color: C.midBlue, font: 'Arial' })]
+  });
+}
+
+function heading3(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_3,
+    spacing: { before: 180, after: 60 },
+    children: [new TextRun({ text, bold: true, size: 24, color: C.sectionDark, font: 'Arial' })]
+  });
+}
+
+function para(text, opts) {
+  const o = opts || {};
+  return new Paragraph({
+    spacing: { before: o.before || 60, after: o.after || 100 },
+    children: [new TextRun({ text, size: o.size || 22, bold: o.bold || false, color: o.color || C.darkGray, font: 'Arial', italics: o.italics || false })]
+  });
+}
+
+function richPara(runs, opts) {
+  const o = opts || {};
+  return new Paragraph({
+    spacing: { before: o.before || 60, after: o.after || 100 },
+    alignment: o.align || AlignmentType.LEFT,
+    children: runs.map(r => new TextRun({ text: r.text, size: r.size || 22, bold: r.bold || false, color: r.color || C.darkGray, font: 'Arial', italics: r.italics || false }))
+  });
+}
+
+function sectionBanner(text) {
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: noBorders(),
+      shading: { fill: C.tableHeader, type: ShadingType.CLEAR },
+      margins: { top: 120, bottom: 120, left: 240, right: 240 },
+      width: { size: 9360, type: WidthType.DXA },
+      children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text, bold: true, size: 28, color: C.white, font: 'Arial' })] })]
+    })] })]
+  });
+}
+
+function statusBadge(text, bg, textColor) {
+  return new TextRun({ text: ` ${text} `, bold: true, size: 18, color: textColor || C.white, highlight: bg || 'red', font: 'Arial' });
+}
+
+// Table helpers
+function tableHeaderCell(text, width, bgColor, textColor) {
+  return new TableCell({
+    borders: allBorders(C.midBlue, 4),
+    shading: { fill: bgColor || C.tableHeader, type: ShadingType.CLEAR },
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    width: { size: width, type: WidthType.DXA },
+    verticalAlign: VerticalAlign.CENTER,
+    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, bold: true, size: 20, color: textColor || C.white, font: 'Arial' })] })]
+  });
+}
+
+function tableCell(text, width, opts) {
+  const o = opts || {};
+  return new TableCell({
+    borders: allBorders(C.lightGray, 4),
+    shading: { fill: o.bg || C.white, type: ShadingType.CLEAR },
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    width: { size: width, type: WidthType.DXA },
+    verticalAlign: VerticalAlign.CENTER,
+    children: [new Paragraph({
+      alignment: o.align || AlignmentType.LEFT,
+      children: [new TextRun({ text, bold: o.bold || false, size: o.size || 20, color: o.color || C.darkGray, font: 'Arial', italics: o.italics || false })]
+    })]
+  });
+}
+
+function tableCellMultiLine(lines, width, opts) {
+  const o = opts || {};
+  return new TableCell({
+    borders: allBorders(C.lightGray, 4),
+    shading: { fill: o.bg || C.white, type: ShadingType.CLEAR },
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    width: { size: width, type: WidthType.DXA },
+    verticalAlign: VerticalAlign.CENTER,
+    children: lines.map((l, i) => new Paragraph({
+      spacing: { before: 0, after: i === lines.length-1 ? 0 : 40 },
+      children: [new TextRun({ text: l.text, bold: l.bold || o.bold || false, size: l.size || o.size || 20, color: l.color || o.color || C.darkGray, font: 'Arial' })]
+    }))
+  });
+}
+
+// Status cell with color
+function statusCell(text, width) {
+  let bg, color;
+  if (text.startsWith('✅') || text.includes('Correct') || text.includes('VERIFIED') || text.includes('FREE') || text.includes('✓')) { bg = C.greenLight; color = C.green; }
+  else if (text.startsWith('🔴') || text.includes('CRITICAL') || text.includes('MISSING') || text.includes('UNDERSTATED') || text.includes('WRONG') || text.includes('URGENT')) { bg = C.redLight; color = C.red; }
+  else if (text.startsWith('⚠️') || text.includes('UPDATE') || text.includes('CHECK') || text.includes('SLIGHTLY')) { bg = C.orangeLight; color = C.orange; }
+  else { bg = C.white; color = C.darkGray; }
+  return tableCell(text, width, { bg, color, bold: true, size: 18 });
+}
+
+function pageBreak() {
+  return new Paragraph({ children: [new PageBreak()] });
+}
+
+// ============================
+// BUILD THE DOCUMENT
+// ============================
+const sections = [];
+const children = [];
+
+// ============================================================
+// COVER PAGE
+// ============================================================
+children.push(spacer(600));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [9360],
+  rows: [new TableRow({ children: [new TableCell({
+    borders: noBorders(),
+    shading: { fill: C.darkBlue, type: ShadingType.CLEAR },
+    margins: { top: 400, bottom: 400, left: 400, right: 400 },
+    width: { size: 9360, type: WidthType.DXA },
+    children: [
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 160 }, children: [new TextRun({ text: 'ARIAL ENGINEERING SERVICES', bold: true, size: 36, color: C.white, font: 'Arial' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 200 }, children: [new TextRun({ text: 'AES Service Application', bold: false, size: 28, color: C.lightBlue, font: 'Arial' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 }, children: [new TextRun({ text: 'COMPLETE COST DEEP RESEARCH', bold: true, size: 52, color: C.white, font: 'Arial' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 100 }, children: [new TextRun({ text: '& ENVIRONMENT COMPARISON GUIDE', bold: true, size: 44, color: C.lightBlue, font: 'Arial' })] }),
+      spacer(160),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 }, children: [new TextRun({ text: 'Live Pricing Verified: June 8, 2026', bold: false, size: 24, color: C.lightBlue, font: 'Arial' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 }, children: [new TextRun({ text: '1 USD = ₹95.2 (Live Mid-Market Rate)', bold: false, size: 24, color: C.lightBlue, font: 'Arial' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: 0 }, children: [new TextRun({ text: 'Prepared by: Hitansu Parichha (Lead Engineer) & Mahender Vengala', bold: false, size: 22, color: 'AAAAAA', font: 'Arial' })] }),
+    ]
+  })] })]
+}));
+children.push(spacer(300));
+
+// Key stats summary box
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2340, 2340, 2340, 2340],
+  rows: [
+    new TableRow({ children: [
+      tableHeaderCell('3 Quotations', 2340, C.midBlue),
+      tableHeaderCell('3 SOWs Reviewed', 2340, C.midBlue),
+      tableHeaderCell('1 Q&A Response', 2340, C.midBlue),
+      tableHeaderCell('4 Environments', 2340, C.midBlue),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Basic · Standard · Professional', 2340, { align: AlignmentType.CENTER, bold: true }),
+      tableCell('SOW-001 · SOW-002 · SOW-003', 2340, { align: AlignmentType.CENTER, bold: true }),
+      tableCell('AES-TECH-2026-001 REVISED', 2340, { align: AlignmentType.CENTER, bold: true }),
+      tableCell('Dev · QA · Staging · Production', 2340, { align: AlignmentType.CENTER, bold: true }),
+    ]}),
+  ]
+}));
+children.push(spacer(200));
+children.push(richPara([
+  { text: 'Scope: ', bold: true, color: C.midBlue },
+  { text: '2,000 Active Users | Web Portal (Next.js) + Android App (Kotlin) + iOS App (Swift) | Spring Boot + PostgreSQL on Google Cloud (Mumbai) | CI/CD via GitHub Actions | Terraform (IaC) | Cloud Run (NOT GKE)' }
+]));
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 1: EXECUTIVE SUMMARY
+// ============================================================
+children.push(sectionBanner('SECTION 1  ▸  EXECUTIVE SUMMARY'));
+children.push(spacer(120));
+children.push(para('This document is a complete, line-by-line cost audit and forward-looking infrastructure guide for the AES Service Application project. Every price in all three quotations, three Statements of Work, the Technology Questionnaire, and the Vendor Response has been cross-checked against live pricing pages as of June 8, 2026.', { size: 22 }));
+children.push(spacer(60));
+children.push(para('BOTTOM LINE FOR THE TEAM BEFORE TALKING TO THE CLIENT:', { bold: true, color: C.red, size: 22 }));
+children.push(spacer(40));
+
+// Summary alert table
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [4680, 4680],
+  rows: [
+    new TableRow({ children: [
+      tableHeaderCell('What the Documents Say', 4680, C.orange),
+      tableHeaderCell('What It Actually Costs (Verified June 8, 2026)', 4680, C.red),
+    ]}),
+    new TableRow({ children: [
+      tableCell('₹40,000/year — cloud hosting', 4680, { bold: true }),
+      tableCell('₹2,74,000–3,31,000/year (ALL services + 4 environments)', 4680, { bg: C.redLight, color: C.red, bold: true }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Questionnaire revised: ₹1,40,000–2,10,000/year', 4680),
+      tableCell('Still only production. Add 3 more environments = add ~$780–1,080/year', 4680, { bg: C.orangeLight, color: C.orange }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('₹8,400/year Apple Developer', 4680),
+      tableCell('$99/year = ₹9,425 at current ₹95.2 rate', 4680, { bg: C.orangeLight }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('₹2,000 one-time Google Play', 4680),
+      tableCell('$25 = ₹2,380 at current rate', 4680, { bg: C.orangeLight }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Email: ₹6,000–15,000/year (SendGrid)', 4680),
+      tableCell('🔴 SendGrid FREE TIER IS GONE (May 2025). Must switch to Amazon SES (~₹1,150/year)', 4680, { bg: C.redLight, color: C.red, bold: true }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('DLT Registration: NOT MENTIONED', 4680),
+      tableCell('🔴 ₹15,000–25,000 one-time. MANDATORY before first SMS. Takes 3–7 days.', 4680, { bg: C.redLight, color: C.red, bold: true }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('GitHub CI/CD: mentioned but not costed', 4680),
+      tableCell('~₹21,229/year for Team plan + overage minutes. Not in any document.', 4680, { bg: C.orangeLight, color: C.orange }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Redis/Memorystore: in tech stack but not costed', 4680),
+      tableCell('~₹79,968/year (Memorystore Basic 1GB, prod+staging). Never costed anywhere.', 4680, { bg: C.redLight, color: C.red, bold: true }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Google Maps API: mentioned, not costed', 4680),
+      tableCell('Maps SDK = FREE. Routes/ETA API = $60–120/year WITH caching. $1,800–2,520 WITHOUT caching.', 4680, { bg: C.orangeLight, color: C.orange }),
+    ]}),
+    new TableRow({ children: [
+      tableCell('GCP GST (18%): not mentioned', 4680),
+      tableCell('18% GST on every GCP bill. Cash outflow is 18% higher. ITC claimable if GST registered.', 4680, { bg: C.orangeLight }),
+    ]}),
+  ]
+}));
+children.push(spacer(120));
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 2: DOCUMENT REVIEW — ALL 8 DOCUMENTS
+// ============================================================
+children.push(sectionBanner('SECTION 2  ▸  ALL DOCUMENTS REVIEWED — PRICE CHECK STATUS'));
+children.push(spacer(80));
+children.push(heading2('2.1  Three Quotations (AES-Q-2026-001, 002, 003)'));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2800, 1600, 1600, 3360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Document', 2800), tableHeaderCell('Total Value', 1600), tableHeaderCell('Timeline', 1600), tableHeaderCell('Price Accuracy Status', 3360)] }),
+    new TableRow({ children: [tableCell('AES-Q-2026-001 — Basic Digital Starter', 2800), tableCell('₹3,77,500', 1600, { align: AlignmentType.CENTER }), tableCell('8–10 Weeks', 1600, { align: AlignmentType.CENTER }), statusCell('✅ Development cost totals verified correct', 3360)] }),
+    new TableRow({ children: [tableCell('AES-Q-2026-002 — Standard Customer Portal', 2800), tableCell('₹5,78,000', 1600, { align: AlignmentType.CENTER }), tableCell('11–13 Weeks', 1600, { align: AlignmentType.CENTER }), statusCell('✅ Development cost totals verified correct', 3360)] }),
+    new TableRow({ children: [tableCell('AES-Q-2026-003 — Professional Full-Suite', 2800), tableCell('₹6,79,500', 1600, { align: AlignmentType.CENTER }), tableCell('13–15 Weeks', 1600, { align: AlignmentType.CENTER }), statusCell('✅ Development cost totals verified correct', 3360)] }),
+  ]
+}));
+children.push(spacer(80));
+children.push(para('ALL THREE QUOTATIONS: Development phase totals are internally consistent and the grand totals are arithmetically correct. The recurring cost Section 8 figures in all three quotes are where the issues lie — particularly the ₹40,000/year cloud hosting figure which is significantly understated.', { italics: true, color: C.midGray }));
+
+children.push(heading2('2.2  Annual Recurring Costs — Quoted vs. Reality (Section 8 of all quotes)'));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2600, 1600, 1800, 1360, 2000],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Line Item', 2600), tableHeaderCell('Basic Quote', 1600), tableHeaderCell('Standard Quote', 1800), tableHeaderCell('Pro Quote', 1360), tableHeaderCell('Verified Reality (June 2026)', 2000)] }),
+    new TableRow({ children: [tableCell('Cloud Hosting', 2600), tableCell('₹40,000/yr', 1600, { bg: C.redLight, color: C.red, bold: true }), tableCell('₹40,000/yr', 1800, { bg: C.redLight, color: C.red, bold: true }), tableCell('₹40,000/yr', 1360, { bg: C.redLight, color: C.red, bold: true }), tableCell('₹2,74,000–3,31,000/yr (4 envs)', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+    new TableRow({ children: [tableCell('Domain Renewal', 2600), tableCell('₹1,500–2,000', 1600, { bg: C.greenLight }), tableCell('₹1,500–2,000', 1800, { bg: C.greenLight }), tableCell('₹1,500–2,000', 1360, { bg: C.greenLight }), tableCell('✅ Correct', 2000, { bg: C.greenLight, color: C.green })] }),
+    new TableRow({ children: [tableCell('SSL Certificate', 2600), tableCell('Free (Let\'s Encrypt)', 1600, { bg: C.greenLight }), tableCell('Free', 1800, { bg: C.greenLight }), tableCell('Free', 1360, { bg: C.greenLight }), tableCell('✅ Correct (Cloud Run manages it)', 2000, { bg: C.greenLight, color: C.green })] }),
+    new TableRow({ children: [tableCell('Transactional SMS', 2600), tableCell('₹10,000–30,000', 1600, { bg: C.orangeLight }), tableCell('₹15,000–50,000', 1800, { bg: C.greenLight }), tableCell('₹20,000–60,000', 1360, { bg: C.greenLight }), tableCell('⚠️ ₹36,000–84,000/yr (higher end)', 2000, { bg: C.orangeLight, color: C.orange })] }),
+    new TableRow({ children: [tableCell('WhatsApp Business API', 2600), tableCell('Not included', 1600), tableCell('Not included', 1800), tableCell('₹15,000–40,000', 1360, { bg: C.orangeLight }), tableCell('⚠️ ~$43–72/yr utility OR $600+/yr if marketing msgs', 2000, { bg: C.orangeLight, color: C.orange })] }),
+    new TableRow({ children: [tableCell('Email (SendGrid listed)', 2600), tableCell('₹10,000–30,000 SMS note', 1600), tableCell('₹6,000–15,000', 1800, { bg: C.redLight }), tableCell('₹6,000–15,000', 1360, { bg: C.redLight }), tableCell('🔴 SendGrid free tier GONE. Switch to SES: ~₹1,150–3,400/yr', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+    new TableRow({ children: [tableCell('DB Backups & Monitoring', 2600), tableCell('Not listed', 1600), tableCell('₹5,000–10,000', 1800), tableCell('₹8,000–15,000', 1360), tableCell('⚠️ Included in Cloud SQL cost — not separate', 2000, { bg: C.orangeLight })] }),
+    new TableRow({ children: [tableCell('Apple Developer Account', 2600), tableCell('₹8,400/yr', 1600, { bg: C.orangeLight }), tableCell('₹8,400/yr', 1800, { bg: C.orangeLight }), tableCell('₹8,400/yr', 1360, { bg: C.orangeLight }), tableCell('⚠️ $99 = ₹9,425 at current rate (was ₹8,400 at old ₹84 rate)', 2000, { bg: C.orangeLight, color: C.orange })] }),
+    new TableRow({ children: [tableCell('Google Play (one-time)', 2600), tableCell('₹2,000', 1600, { bg: C.orangeLight }), tableCell('₹2,000', 1800, { bg: C.orangeLight }), tableCell('₹2,000', 1360, { bg: C.orangeLight }), tableCell('⚠️ $25 = ₹2,380 at current rate', 2000, { bg: C.orangeLight, color: C.orange })] }),
+    new TableRow({ children: [tableCell('Redis/Memorystore', 2600, { bg: C.redLight, color: C.red }), tableCell('NOT MENTIONED', 1600, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1800, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1360, { bg: C.redLight, color: C.red, bold: true }), tableCell('🔴 ~₹79,968/yr. MAJOR MISSING COST.', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+    new TableRow({ children: [tableCell('GitHub Actions/CI/CD', 2600, { bg: C.redLight, color: C.red }), tableCell('NOT MENTIONED', 1600, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1800, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1360, { bg: C.redLight, color: C.red, bold: true }), tableCell('🔴 ~₹21,229/yr Team plan. MISSING.', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+    new TableRow({ children: [tableCell('Google Maps Routes API', 2600, { bg: C.orangeLight }), tableCell('NOT MENTIONED', 1600, { bg: C.orangeLight }), tableCell('NOT MENTIONED', 1800, { bg: C.orangeLight }), tableCell('NOT MENTIONED', 1360, { bg: C.orangeLight }), tableCell('⚠️ $60–120/yr WITH caching. $1,800–2,520 WITHOUT.', 2000, { bg: C.orangeLight, color: C.orange })] }),
+    new TableRow({ children: [tableCell('DLT Registration (India)', 2600, { bg: C.redLight, color: C.red }), tableCell('NOT MENTIONED', 1600, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1800, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1360, { bg: C.redLight, color: C.red, bold: true }), tableCell('🔴 ₹15,000–25,000 one-time. MANDATORY. Day 1.', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+    new TableRow({ children: [tableCell('GCP GST (18%)', 2600, { bg: C.redLight, color: C.red }), tableCell('NOT MENTIONED', 1600, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1800, { bg: C.redLight, color: C.red, bold: true }), tableCell('NOT MENTIONED', 1360, { bg: C.redLight, color: C.red, bold: true }), tableCell('🔴 18% added to every GCP bill. ITC claimable.', 2000, { bg: C.redLight, color: C.red, bold: true })] }),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 3: ENVIRONMENT COMPARISON — THE BIG TABLE
+// ============================================================
+children.push(sectionBanner('SECTION 3  ▸  ENVIRONMENT COMPARISON: 1 vs 2 vs 3 vs 4 ENVIRONMENTS'));
+children.push(spacer(80));
+children.push(para('This is the core pricing guide for the client. Each column shows exactly what it costs to run the application in each number of environments. The client can choose based on their budget and quality requirements.', { size: 22 }));
+children.push(spacer(60));
+children.push(para('Environments defined: (1) Production only | (2) Prod + Staging/UAT | (3) Prod + Staging + QA/Testing | (4) Prod + Staging + QA + Dev (full recommended setup per SOW)', { italics: true, color: C.midGray }));
+children.push(spacer(80));
+
+// BIG ENVIRONMENT COMPARISON TABLE
+const envCols = [2200, 1600, 1640, 1640, 1680]; // service | 1env | 2env | 3env | 4env (total 8760)
+const adjustedEnvCols = [2400, 1680, 1680, 1680, 1920]; // total = 9360
+
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: adjustedEnvCols,
+  rows: [
+    // Header
+    new TableRow({ children: [
+      tableHeaderCell('Service / Component', adjustedEnvCols[0]),
+      tableHeaderCell('1 Env (Prod Only)', adjustedEnvCols[1], C.green),
+      tableHeaderCell('2 Envs (Prod + Staging)', adjustedEnvCols[2], C.midBlue),
+      tableHeaderCell('3 Envs (+QA)', adjustedEnvCols[3], C.darkBlue),
+      tableHeaderCell('4 Envs (+Dev) [Recommended]', adjustedEnvCols[4], C.sectionDark),
+    ]}),
+    // Sub-header: GCP INFRASTRUCTURE
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'GCP INFRASTRUCTURE', bold:true, color:C.sectionDark}], adjustedEnvCols[0], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[1], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[2], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[3], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[4], {bg:C.sectionBlue}),
+    ]}),
+    // Cloud SQL
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud SQL for PostgreSQL'},{text:'1 vCPU, 3.75 GB RAM, 50 GB SSD',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'1 instance',bold:true},{text:'$69/mo = ₹6,569/mo',size:18,color:C.darkGray},{text:'₹78,828/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'1 prod + 1 staging (shared-core)',bold:true},{text:'$69+$10/mo = ₹7,521/mo',size:18},{text:'₹90,252/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'Prod + Staging + QA',bold:true},{text:'$69+$10+$10/mo = ₹8,474/mo',size:18},{text:'₹1,01,688/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'All 4 environments',bold:true},{text:'$69+$10+$10+$10/mo = ₹9,426/mo',size:18},{text:'₹1,13,112/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Redis
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Memorystore for Redis'},{text:'1 GB Basic Tier',italics:true,size:18},{text:'Used: JWT sessions, rate-limit, WebSocket',italics:true,size:16}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'1 instance (prod)',bold:true},{text:'$35/mo = ₹3,332/mo',size:18},{text:'₹39,984/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'1 prod + 1 staging',bold:true},{text:'$35+$35/mo = ₹6,664/mo',size:18},{text:'₹79,968/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'Prod + Staging',bold:true},{text:'QA can use in-memory mock',size:18},{text:'$70/mo = ₹79,968/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'Prod + Staging',bold:true},{text:'Dev/QA use in-memory',size:18},{text:'$70/mo = ₹79,968/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Cloud Run
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud Run (Spring Boot Backend)'},{text:'Auto-scales to zero',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'~$2–5/mo',bold:true},{text:'₹190–476/mo',size:18},{text:'₹2,280–5,700/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'~$3–7/mo',bold:true},{text:'Prod always-on, staging scale-to-zero',size:18},{text:'₹2,850–6,650/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'~$5–10/mo',bold:true},{text:'₹4,750–9,500/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'~$5–12/mo',bold:true},{text:'₹5,700–11,424/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Next.js Frontend
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud Run (Next.js Frontend)'},{text:'Or Firebase Hosting (cheaper)',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'$0–2/mo',bold:true},{text:'Firebase Hosting free tier covers it',size:18},{text:'₹0–2,280/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'$0–4/mo',bold:true},{text:'₹0–4,560/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'$0–6/mo',bold:true},{text:'₹0–6,840/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'$0–8/mo',bold:true},{text:'₹0–9,120/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Cloud Storage
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud Storage'},{text:'Media, uploads, app assets',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'$2/mo',bold:true},{text:'₹190/mo | ₹2,280/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'$3/mo',bold:true},{text:'₹285/mo | ₹3,420/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'$3.50/mo',bold:true},{text:'₹333/mo | ₹3,990/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'$4/mo',bold:true},{text:'₹381/mo | ₹4,560/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Monitoring + Logging
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud Monitoring + Logging'},{text:'Alerts, dashboards, uptime',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'~$0–3/mo',bold:true},{text:'Within free tier at 2K users',size:18},{text:'₹0–3,420/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'~$2–5/mo',bold:true},{text:'₹2,280–5,700/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'~$3–7/mo',bold:true},{text:'₹3,420–7,980/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'~$4–8/mo',bold:true},{text:'₹4,560–9,120/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Secret Manager
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Google Secret Manager'},{text:'API keys, DB passwords',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'~$1.35/mo',bold:true},{text:'₹128/mo | ₹1,539/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'~$2/mo',bold:true},{text:'₹190/mo | ₹2,280/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'~$2.70/mo',bold:true},{text:'₹257/mo | ₹3,082/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'~$3.50/mo',bold:true},{text:'₹333/mo | ₹3,990/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Cloud DNS + Static IP
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Cloud DNS + Static IPs'},{text:'Domain zones, SQL IPs',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'~$9.60/mo (SQL IP)',bold:true},{text:'₹914/mo | ₹10,965/yr',bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'~$14/mo',bold:true},{text:'₹1,333/mo | ₹15,998/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'~$19/mo',bold:true},{text:'₹1,809/mo | ₹21,704/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'~$28/mo',bold:true},{text:'₹2,666/mo | ₹31,987/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // GCP Sub-total
+    new TableRow({ children: [
+      tableCell('GCP INFRASTRUCTURE SUBTOTAL / YEAR', adjustedEnvCols[0], {bg:C.lightBlue, bold:true}),
+      tableCell('~₹1,35,876/yr', adjustedEnvCols[1], {bg:C.greenLight, bold:true, color:C.green, align:AlignmentType.CENTER}),
+      tableCell('~₹2,02,368/yr', adjustedEnvCols[2], {bg:C.lightBlue, bold:true, color:C.midBlue, align:AlignmentType.CENTER}),
+      tableCell('~₹2,22,282/yr', adjustedEnvCols[3], {bg:C.veryLightBlue, bold:true, color:C.darkBlue, align:AlignmentType.CENTER}),
+      tableCell('~₹2,58,281/yr', adjustedEnvCols[4], {bg:C.sectionBlue, bold:true, color:C.sectionDark, align:AlignmentType.CENTER}),
+    ]}),
+    // GCP + GST note
+    new TableRow({ children: [
+      tableCell('GCP + 18% GST (cash outflow, ITC claimable)', adjustedEnvCols[0], {italics:true, size:18}),
+      tableCell('~₹1,60,333/yr', adjustedEnvCols[1], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹2,38,794/yr', adjustedEnvCols[2], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹2,62,293/yr', adjustedEnvCols[3], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹3,04,771/yr', adjustedEnvCols[4], {italics:true, size:18, align:AlignmentType.CENTER}),
+    ]}),
+    // Sub-header: APP STORES
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'APP STORES & DEVELOPER ACCOUNTS', bold:true, color:C.sectionDark}], adjustedEnvCols[0], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[1], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[2], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[3], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[4], {bg:C.sectionBlue}),
+    ]}),
+    // Apple Dev
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Apple Developer Program'},{text:'$99/year — ANNUAL RENEWAL REQUIRED',italics:true,size:18,color:C.red}], adjustedEnvCols[0]),
+      tableCell('$99 = ₹9,425/yr', adjustedEnvCols[1], {bg:C.veryLightGray, align:AlignmentType.CENTER}),
+      tableCell('$99 = ₹9,425/yr', adjustedEnvCols[2], {bg:C.veryLightBlue, align:AlignmentType.CENTER}),
+      tableCell('$99 = ₹9,425/yr', adjustedEnvCols[3], {align:AlignmentType.CENTER}),
+      tableCell('$99 = ₹9,425/yr', adjustedEnvCols[4], {bg:C.veryLightBlue, align:AlignmentType.CENTER}),
+    ]}),
+    // Google Play
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Google Play Developer Account'},{text:'$25 ONE-TIME — not annual',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('$25 = ₹2,380 (once)', adjustedEnvCols[1], {bg:C.veryLightGray, align:AlignmentType.CENTER}),
+      tableCell('Same — $25 once', adjustedEnvCols[2], {bg:C.veryLightBlue, align:AlignmentType.CENTER}),
+      tableCell('Same — $25 once', adjustedEnvCols[3], {align:AlignmentType.CENTER}),
+      tableCell('Same — $25 once', adjustedEnvCols[4], {bg:C.veryLightBlue, align:AlignmentType.CENTER}),
+    ]}),
+    // TestFlight/Beta
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'TestFlight (iOS Beta Testing)'},{text:'Apple\'s free beta distribution',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('FREE (up to 10,000 testers)', adjustedEnvCols[1], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER, bold:true}),
+      tableCell('FREE', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER, bold:true}),
+      tableCell('FREE', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER, bold:true}),
+      tableCell('FREE', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER, bold:true}),
+    ]}),
+    // Apple commission
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Apple/Google Revenue Commission'},{text:'ONLY if using In-App Purchase (IAP). Razorpay webview = NOT applicable.',italics:true,size:18,color:C.green}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'₹0',bold:true,color:C.green},{text:'Razorpay webview avoids this completely',size:16,italics:true}], adjustedEnvCols[1], {bg:C.greenLight}),
+      tableCell('₹0 — Same', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, bold:true}),
+      tableCell('₹0 — Same', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, bold:true}),
+      tableCell('₹0 — Same', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, bold:true}),
+    ]}),
+    // Sub-header: MESSAGING
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'MESSAGING & NOTIFICATIONS', bold:true, color:C.sectionDark}], adjustedEnvCols[0], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[1], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[2], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[3], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[4], {bg:C.sectionBlue}),
+    ]}),
+    // Firebase FCM / APNs
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Firebase FCM + Apple APNs'},{text:'Push notifications — Android + iOS',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('COMPLETELY FREE', adjustedEnvCols[1], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+    ]}),
+    // SMS MSG91
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'SMS — MSG91'},{text:'OTPs + engineer alerts + booking confirmations. 10,000–20,000 SMS/month estimated.',italics:true,size:16}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'₹3,000–7,000/mo',bold:true},{text:'₹36,000–84,000/yr',bold:true,color:C.orange}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'Same as 1-env',bold:true},{text:'(messaging is prod-only)',size:18},{text:'₹36,000–84,000/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'Same',bold:true},{text:'₹36,000–84,000/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'Same',bold:true},{text:'₹36,000–84,000/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // DLT
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'DLT Registration (TRAI — INDIA MANDATORY)',bold:true,color:C.red},{text:'Entity + Sender ID + Templates. Must be done BEFORE first SMS.',italics:true,size:16,color:C.red}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'₹15,000–25,000',bold:true,color:C.red},{text:'ONE-TIME — Required on all plans',size:18,color:C.red}], adjustedEnvCols[1], {bg:C.redLight}),
+      tableCell('Same — one-time', adjustedEnvCols[2], {bg:C.redLight, color:C.red}),
+      tableCell('Same — one-time', adjustedEnvCols[3], {bg:C.redLight, color:C.red}),
+      tableCell('Same — one-time', adjustedEnvCols[4], {bg:C.redLight, color:C.red}),
+    ]}),
+    // WhatsApp
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'WhatsApp Business API — Gupshup'},{text:'Booking/ETA/job-complete = Utility. AMC reminders = Marketing.',italics:true,size:16}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'Utility only: ~$43–72/yr',bold:true},{text:'With marketing msgs: ~$600–800/yr',size:18,color:C.orange}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'Same as 1-env',bold:true},{text:'Prod-only service',size:18}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCell('Same — ₹4,094–76,160/yr', adjustedEnvCols[3]),
+      tableCell('Same — ₹4,094–76,160/yr', adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Email
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Transactional Email',bold:true},{text:'RECOMMENDATION: Switch from SendGrid to Amazon SES NOW. SendGrid free tier is gone since May 2025.',italics:true,size:16,color:C.red}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'Amazon SES: $1/mo',bold:true,color:C.green},{text:'₹12–36/yr (SES)',bold:true,color:C.green},{text:'vs SendGrid paid: $239/yr',size:18,color:C.red}], adjustedEnvCols[1], {bg:C.greenLight}),
+      tableCellMultiLine([{text:'Same — $1–3/mo',bold:true},{text:'₹1,142–3,427/yr',bold:true}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCell('Same — ₹1,142–3,427/yr', adjustedEnvCols[3]),
+      tableCell('Same — ₹1,142–3,427/yr', adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Sub-header: CI/CD & DEVOPS
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'CI/CD, DEVOPS & TOOLING', bold:true, color:C.sectionDark}], adjustedEnvCols[0], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[1], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[2], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[3], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[4], {bg:C.sectionBlue}),
+    ]}),
+    // GitHub Actions
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'GitHub Actions CI/CD'},{text:'Team plan ($4/user/mo × 2 developers) + overage minutes. Linux runner: $0.008/min after 3,000 free mins/mo. New $0.002/min platform fee from March 2026.',italics:true,size:16}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'$18.56/mo (Team: 2 users)',bold:true},{text:'+ overage ~$127/yr',size:18},{text:'Total: ~$223–326/yr = ₹21,230–31,043/yr',bold:true,color:C.orange}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'Same seat cost',bold:true},{text:'More CI runs = more overage. Budget $350–450/yr',size:18},{text:'~₹33,320–42,840/yr',bold:true,color:C.orange}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCellMultiLine([{text:'3–4 envs = more runs',bold:true},{text:'~$400–500/yr',size:18},{text:'~₹38,080–47,600/yr',bold:true}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'Full 4-env pipeline',bold:true},{text:'Budget $450–600/yr',size:18},{text:'~₹42,840–57,120/yr',bold:true}], adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Terraform
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Terraform (Infrastructure as Code)'},{text:'Open-source CLI + GCS backend for state file storage',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('FREE (Terraform CLI + GCS state)', adjustedEnvCols[1], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+    ]}),
+    // Jenkins
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Jenkins (NOT recommended for this project)',bold:true,color:C.orange},{text:'Jenkins adds operational overhead with no benefit for a 2-person team. GitHub Actions already covers all CI/CD needs.',italics:true,size:16,color:C.midGray}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'If added: ~$180/yr',color:C.orange},{text:'e2-small VM to run Jenkins',size:18,italics:true}], adjustedEnvCols[1], {bg:C.orangeLight}),
+      tableCell('If added: ~$180/yr extra', adjustedEnvCols[2], {bg:C.orangeLight, color:C.orange}),
+      tableCell('If added: ~$180/yr extra', adjustedEnvCols[3], {bg:C.orangeLight, color:C.orange}),
+      tableCell('If added: ~$180/yr extra', adjustedEnvCols[4], {bg:C.orangeLight, color:C.orange}),
+    ]}),
+    // Kubernetes
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Kubernetes — GKE Autopilot vs Cloud Run',bold:true},{text:'STRONG RECOMMENDATION: Use Cloud Run, NOT GKE. GKE cluster management alone = $864/yr per cluster × 4 envs = $3,456/yr extra. Cloud Run = $24–60/yr total.',italics:true,size:16,color:C.red}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'Cloud Run: ₹2,280–5,700/yr ✅',bold:true,color:C.green},{text:'GKE Autopilot: ₹82,253+/yr per cluster ❌',size:18,color:C.red}], adjustedEnvCols[1], {bg:C.greenLight}),
+      tableCellMultiLine([{text:'Cloud Run: cheaper, scales to zero',bold:true,color:C.green},{text:'GKE: $72/mo mgmt × 2 = $1,728/yr EXTRA',size:18,color:C.red}], adjustedEnvCols[2]),
+      tableCellMultiLine([{text:'Cloud Run recommended',bold:true,color:C.green},{text:'GKE: add $2,592/yr for 3 clusters',size:18,color:C.red}], adjustedEnvCols[3]),
+      tableCellMultiLine([{text:'Cloud Run saves $3,456/yr vs GKE',bold:true,color:C.green},{text:'GKE would cost ₹3,29,011 MORE per year',size:18,color:C.red}], adjustedEnvCols[4], {bg:C.greenLight}),
+    ]}),
+    // Sub-header: THIRD PARTY APIs
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'THIRD-PARTY APIs & SERVICES', bold:true, color:C.sectionDark}], adjustedEnvCols[0], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[1], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[2], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[3], {bg:C.sectionBlue}),
+      tableCell('', adjustedEnvCols[4], {bg:C.sectionBlue}),
+    ]}),
+    // Razorpay
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Razorpay Payment Gateway'},{text:'Account setup: FREE. Fee per transaction: 2% + 18% GST on fee = 2.36% effective.',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'₹0 account setup',bold:true,color:C.green},{text:'Deduction per ₹1,000 collected: ₹23.60',size:18,color:C.orange},{text:'Per ₹1L processed: ₹2,360 Razorpay cut',size:18,bold:true}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'Same transaction rate',bold:true},{text:'100 txns × ₹2,000 avg = ₹4,720/mo = ₹56,640/yr',size:18,color:C.orange}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCell('Same rate — scales with transaction volume', adjustedEnvCols[3]),
+      tableCell('Same rate — scales with transaction volume', adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Google Maps
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Google Maps Platform'},{text:'Maps SDK (Android/iOS): FREE. Web Dynamic Maps: FREE under 70K loads/mo. Routes API for ETA: PAID.',italics:true,size:16}], adjustedEnvCols[0]),
+      tableCellMultiLine([{text:'Maps SDK: FREE ✅',bold:true,color:C.green},{text:'Routes API WITH caching: $60–120/yr',size:18},{text:'WITHOUT caching: $1,800–2,520/yr ❌',size:18,color:C.red}], adjustedEnvCols[1], {bg:C.veryLightGray}),
+      tableCellMultiLine([{text:'Same as 1-env',bold:true},{text:'Maps APIs are prod-only',size:18}], adjustedEnvCols[2], {bg:C.veryLightBlue}),
+      tableCell('Same — prod-only', adjustedEnvCols[3]),
+      tableCell('Same — prod-only', adjustedEnvCols[4], {bg:C.veryLightBlue}),
+    ]}),
+    // Domain
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'Domain Name (.com renewal)'},{text:'One zone used for all environments (subdomains)',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('₹1,500–2,000/yr', adjustedEnvCols[1], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER}),
+      tableCell('Same — 1 domain', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER}),
+      tableCell('Same — 1 domain', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER}),
+      tableCell('Same — 1 domain', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, align:AlignmentType.CENTER}),
+    ]}),
+    // SSL
+    new TableRow({ children: [
+      tableCellMultiLine([{text:'SSL/TLS Certificate'},{text:'Cloud Run manages SSL automatically via Google-managed certificates',italics:true,size:18}], adjustedEnvCols[0]),
+      tableCell('FREE (auto-managed by Cloud Run)', adjustedEnvCols[1], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[2], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[3], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+      tableCell('FREE', adjustedEnvCols[4], {bg:C.greenLight, color:C.green, bold:true, align:AlignmentType.CENTER}),
+    ]}),
+    // Grand total row
+    new TableRow({ children: [
+      tableCell('GRAND TOTAL — ESTIMATED YEAR 1 (recurring only, excl. one-time + Razorpay transaction %)', adjustedEnvCols[0], {bg:C.tableHeader, bold:true, color:C.white}),
+      tableCellMultiLine([{text:'~₹1,80,000–2,50,000/yr',bold:true,size:22},{text:'(Prod only)',size:18}], adjustedEnvCols[1], {bg:C.greenLight, color:C.green}),
+      tableCellMultiLine([{text:'~₹2,50,000–3,20,000/yr',bold:true,size:22},{text:'(Prod + Staging)',size:18}], adjustedEnvCols[2], {bg:C.lightBlue, color:C.darkBlue}),
+      tableCellMultiLine([{text:'~₹2,70,000–3,50,000/yr',bold:true,size:22},{text:'(3 envs)',size:18}], adjustedEnvCols[3], {bg:C.veryLightBlue, color:C.darkBlue}),
+      tableCellMultiLine([{text:'~₹3,00,000–4,00,000/yr',bold:true,size:22},{text:'(Full 4-env recommended)',size:18}], adjustedEnvCols[4], {bg:C.sectionBlue, color:C.sectionDark}),
+    ]}),
+    // Grand total + DLT
+    new TableRow({ children: [
+      tableCell('Add one-time costs (Year 1 only): DLT + Play Store + domain setup', adjustedEnvCols[0], {italics:true, size:18}),
+      tableCellMultiLine([{text:'Add ₹17,380–27,380',size:18},{text:'(DLT + Play Store one-time)',size:16,italics:true}], adjustedEnvCols[1], {bg:C.orangeLight}),
+      tableCell('Same one-time costs', adjustedEnvCols[2], {bg:C.orangeLight, size:18}),
+      tableCell('Same one-time costs', adjustedEnvCols[3], {bg:C.orangeLight, size:18}),
+      tableCell('Same one-time costs', adjustedEnvCols[4], {bg:C.orangeLight, size:18}),
+    ]}),
+    // True Year 1 Total
+    new TableRow({ children: [
+      tableCell('TRUE YEAR 1 TOTAL (recurring + one-time + GST, excl. Razorpay % on transactions)', adjustedEnvCols[0], {bg:C.red, bold:true, color:C.white}),
+      tableCell('~₹2,00,000–2,80,000', adjustedEnvCols[1], {bg:C.greenLight, bold:true, color:C.green, align:AlignmentType.CENTER}),
+      tableCell('~₹2,70,000–3,50,000', adjustedEnvCols[2], {bg:C.lightBlue, bold:true, color:C.darkBlue, align:AlignmentType.CENTER}),
+      tableCell('~₹2,90,000–3,80,000', adjustedEnvCols[3], {bg:C.veryLightBlue, bold:true, color:C.darkBlue, align:AlignmentType.CENTER}),
+      tableCell('~₹3,20,000–4,30,000', adjustedEnvCols[4], {bg:C.sectionBlue, bold:true, color:C.sectionDark, align:AlignmentType.CENTER}),
+    ]}),
+    // Daily cost
+    new TableRow({ children: [
+      tableCell('Equivalent DAILY COST (production-only portion, 365 days)', adjustedEnvCols[0], {italics:true, size:18}),
+      tableCell('~₹548–767/day', adjustedEnvCols[1], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹740–958/day', adjustedEnvCols[2], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹795–1,041/day', adjustedEnvCols[3], {italics:true, size:18, align:AlignmentType.CENTER}),
+      tableCell('~₹877–1,178/day', adjustedEnvCols[4], {italics:true, size:18, align:AlignmentType.CENTER}),
+    ]}),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 4: HIDDEN COSTS DEEP DIVE
+// ============================================================
+children.push(sectionBanner('SECTION 4  ▸  HIDDEN COSTS — COMPLETE ANALYSIS'));
+children.push(spacer(80));
+
+children.push(heading2('4.1  Cloud SQL for PostgreSQL — THE SINGLE BIGGEST COST DRIVER'));
+children.push(para('Cloud SQL has NO free tier. Billing starts from minute 1, regardless of traffic. This is the most underestimated cost in the entire project.', { bold: true, color: C.red }));
+children.push(spacer(60));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2200, 1500, 1500, 1500, 2660],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Component', 2200), tableHeaderCell('Rate', 1500), tableHeaderCell('Monthly', 1500), tableHeaderCell('Annual', 1500), tableHeaderCell('Notes', 2660)] }),
+    new TableRow({ children: [tableCell('1 vCPU (Enterprise)', 2200), tableCell('$0.0413/vCPU-hr', 1500), tableCell('$29.7', 1500), tableCell('$356', 1500), tableCell('Minimum for production', 2660)] }),
+    new TableRow({ children: [tableCell('3.75 GB RAM', 2200), tableCell('$0.0070/GB-hr', 1500), tableCell('$18.9', 1500), tableCell('$227', 1500), tableCell('1 vCPU instance includes 3.75GB', 2660)] }),
+    new TableRow({ children: [tableCell('50 GB SSD Storage', 2200), tableCell('$0.17/GB-mo', 1500), tableCell('$8.5', 1500), tableCell('$102', 1500), tableCell('Grows as data grows', 2660)] }),
+    new TableRow({ children: [tableCell('Static IP (required by Cloud SQL)', 2200), tableCell('$0.013/hr', 1500), tableCell('$9.4', 1500), tableCell('$113', 1500, {bg:C.orangeLight}), tableCell('⚠️ Often forgotten', 2660, {bg:C.orangeLight})] }),
+    new TableRow({ children: [tableCell('Automated Backups (30 GB)', 2200), tableCell('$0.08/GB-mo', 1500), tableCell('$2.4', 1500), tableCell('$29', 1500), tableCell('30-day retention = ~30GB', 2660)] }),
+    new TableRow({ children: [tableCell('TOTAL — 1 vCPU Production (no HA)', 2200, {bg:C.lightBlue, bold:true}), tableCell('—', 1500, {bg:C.lightBlue}), tableCell('~$69/mo', 1500, {bg:C.lightBlue, bold:true}), tableCell('~$828/yr = ₹78,826', 1500, {bg:C.lightBlue, bold:true}), tableCell('YEAR 1: Recommended for 2,000 users. Add HA (2× compute) only after 5,000 users.', 2660, {bg:C.lightBlue})] }),
+  ]
+}));
+children.push(para('CRITICAL: The documents quote ₹40,000/year for ALL cloud hosting. Cloud SQL alone (one production instance, no HA) costs $828/year = ₹78,826. That is DOUBLE the entire quoted hosting budget for just the database.', { bold: true, color: C.red }));
+
+children.push(heading2('4.2  Memorystore for Redis — The Invisible ₹80K/Year Cost'));
+children.push(para('Redis is baked into the architecture (JWT sessions, rate limiting, WebSocket presence). It cannot be removed. It was mentioned in the tech stack questionnaire but never appears in any cost estimate anywhere.', { color: C.darkGray }));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2500, 1500, 1500, 1700, 2160],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Tier', 2500), tableHeaderCell('Capacity', 1500), tableHeaderCell('Monthly', 1500), tableHeaderCell('Annual', 1700), tableHeaderCell('Recommendation', 2160)] }),
+    new TableRow({ children: [tableCell('Basic (no HA)', 2500), tableCell('1 GB', 1500), tableCell('~$35/mo', 1500), tableCell('~$420/yr = ₹39,984', 1700, {bg:C.orangeLight}), tableCell('Use in PRODUCTION — adequate for 2K users', 2160)] }),
+    new TableRow({ children: [tableCell('Standard (HA/failover)', 2500), tableCell('1 GB', 1500), tableCell('~$70/mo', 1500), tableCell('~$840/yr = ₹79,968', 1700, {bg:C.redLight, color:C.red}), tableCell('Use in STAGING — mirrors production', 2160)] }),
+    new TableRow({ children: [tableCell('Dev + QA environments', 2500), tableCell('N/A', 1500), tableCell('$0', 1500), tableCell('$0', 1700, {bg:C.greenLight, color:C.green}), tableCell('Use in-memory Redis mock (Spring cache) — saves $840/yr', 2160, {bg:C.greenLight})] }),
+    new TableRow({ children: [tableCell('Total (Prod Basic + Staging Basic)', 2500, {bg:C.lightBlue, bold:true}), tableCell('2 × 1 GB', 1500, {bg:C.lightBlue}), tableCell('$70/mo', 1500, {bg:C.lightBlue, bold:true}), tableCell('$840/yr = ₹79,968', 1700, {bg:C.lightBlue, bold:true}), tableCell('NOT in any document. Needs to be added to all estimates.', 2160, {bg:C.redLight, color:C.red})] }),
+  ]
+}));
+
+children.push(heading2('4.3  GitHub Actions CI/CD — Completely Missing from All Documents'));
+children.push(para('GitHub Actions is listed in the tech stack but never costed. The 2026 pricing changes (January 1, 2026: runner cost reductions; March 1, 2026: new $0.002/min platform fee for self-hosted runners) make this a real budget line item for 4 environments.', { color: C.darkGray }));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 1500, 1500, 3360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Component', 3000), tableHeaderCell('Monthly', 1500), tableHeaderCell('Annual', 1500), tableHeaderCell('Detail', 3360)] }),
+    new TableRow({ children: [tableCell('GitHub Team plan (2 users × $4/mo)', 3000), tableCell('$8/mo', 1500), tableCell('$96/yr', 1500), tableCell('Includes 3,000 free Linux minutes/month. Required for private org repos.', 3360)] }),
+    new TableRow({ children: [tableCell('CI overage minutes (4 envs, ~4,320 min/mo total → 1,320 overage)', 3000), tableCell('~$10.56/mo', 1500), tableCell('$127/yr', 1500), tableCell('Linux @ $0.008/min + $0.002 platform fee = $0.010/min effective from Mar 2026', 3360)] }),
+    new TableRow({ children: [tableCell('Total GitHub Annual Cost', 3000, {bg:C.lightBlue, bold:true}), tableCell('~$18.56/mo', 1500, {bg:C.lightBlue, bold:true}), tableCell('~$223–326/yr = ₹21,229–31,031', 1500, {bg:C.lightBlue, bold:true}), tableCell('Not in any document. Client will see this charge in their GitHub org billing from Day 1.', 3360, {bg:C.orangeLight, color:C.orange})] }),
+  ]
+}));
+
+children.push(heading2('4.4  Google Maps Platform — Free Parts and the One Expensive Part'));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 1500, 1500, 3360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('API / SDK', 3000), tableHeaderCell('Cost', 1500), tableHeaderCell('Annual', 1500), tableHeaderCell('Notes', 3360)] }),
+    new TableRow({ children: [tableCell('Maps SDK for Android', 3000), tableCell('FREE', 1500, {bg:C.greenLight, color:C.green, bold:true}), tableCell('₹0', 1500, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Zero charges per map load — confirmed by Google Maps India pricing page', 3360)] }),
+    new TableRow({ children: [tableCell('Maps SDK for iOS (MapKit/Apple Maps on iOS, Maps JS on Web)', 3000), tableCell('FREE', 1500, {bg:C.greenLight, color:C.green, bold:true}), tableCell('₹0', 1500, {bg:C.greenLight, color:C.green, bold:true}), tableCell('iOS uses Apple Maps (MapKit) — free. Web JS API free up to 70,000 loads/month', 3360)] }),
+    new TableRow({ children: [tableCell('Dynamic Maps (Web JS API) — Live map display', 3000), tableCell('Free (under 70K/mo)', 1500, {bg:C.greenLight, color:C.green}), tableCell('₹0 at 2K users', 1500, {bg:C.greenLight, color:C.green}), tableCell('10,000 map loads/month at 2,000 users — well within 70K free tier', 3360)] }),
+    new TableRow({ children: [tableCell('Routes API / Directions API — ETA calculation', 3000), tableCell('$5–7/1,000 calls', 1500, {bg:C.redLight, color:C.red}), tableCell('$60–2,520/yr', 1500, {bg:C.orangeLight}), tableCell('WITHOUT caching: 30,000 calls/mo = $150–210/mo = $1,800–2,520/yr. WITH aggressive caching: $60–120/yr. IMPLEMENT CACHING.', 3360, {bg:C.orangeLight})] }),
+    new TableRow({ children: [tableCell('Maps API key restriction', 3000, {bg:C.redLight}), tableCell('Risk: $1,000s', 1500, {bg:C.redLight}), tableCell('If unrestricted', 1500, {bg:C.redLight}), tableCell('🔴 RESTRICT ALL API KEYS before beta testing. Unrestricted keys can be abused — unexpected billing of thousands of dollars.', 3360, {bg:C.redLight, color:C.red})] }),
+  ]
+}));
+
+children.push(heading2('4.5  DLT Registration — India-Specific, Mandatory, and Completely Missing'));
+children.push(para('TRAI (Telecom Regulatory Authority of India) mandates that every business sending SMS in India must register on the DLT (Distributed Ledger Technology) platform. Without DLT registration, ALL SMS messages — including OTPs — are silently blocked by telecom operators. The app cannot function without it.', { bold: true, color: C.red }));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 2000, 4360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('DLT Requirement', 3000), tableHeaderCell('Cost (INR, one-time)', 2000), tableHeaderCell('Notes', 4360)] }),
+    new TableRow({ children: [tableCell('Entity Registration', 3000), tableCell('₹5,900 + 18% GST = ₹6,962', 2000, {bg:C.redLight}), tableCell('Register the business on DLT portal. Takes 3–7 business days for approval.', 4360)] }),
+    new TableRow({ children: [tableCell('Sender ID / Header Registration', 3000), tableCell('₹5,900 + 18% GST = ₹6,962', 2000, {bg:C.redLight}), tableCell('The alphanumeric sender name (e.g. ARIAES). One per brand.', 4360)] }),
+    new TableRow({ children: [tableCell('SMS Template Registration', 3000), tableCell('₹0–5,900 per template', 2000, {bg:C.orangeLight}), tableCell('Every SMS format must be pre-approved. OTP template, booking confirmation, engineer ETA = minimum 3 templates.', 4360)] }),
+    new TableRow({ children: [tableCell('TOTAL DLT SETUP (estimated)', 3000, {bg:C.tableHeader, bold:true}), tableCell('₹15,000–25,000', 2000, {bg:C.redLight, bold:true, color:C.red}), tableCell('🔴 ONE-TIME. Must be initiated at least 2 weeks before first SMS is sent. NOT in any document. Font in red because this is a go-live blocker.', 4360, {bg:C.redLight, color:C.red})] }),
+  ]
+}));
+
+children.push(heading2('4.6  SendGrid Free Tier — GONE Since May 27, 2025'));
+children.push(para('The documents reference SendGrid for transactional email. SendGrid permanently removed its free tier on May 27, 2025. New accounts only get a 60-day trial. After that, the cheapest paid plan is $19.95/month ($239/year).', { bold: true, color: C.red }));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [1800, 1500, 1500, 1500, 3060],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Email Provider', 1800), tableHeaderCell('Free Tier', 1500), tableHeaderCell('Monthly', 1500), tableHeaderCell('Annual', 1500), tableHeaderCell('Best For', 3060)] }),
+    new TableRow({ children: [tableCell('SendGrid (currently in SOW)', 1800, {bg:C.redLight}), tableCell('60-day trial only ❌', 1500, {bg:C.redLight, color:C.red}), tableCell('$19.95+', 1500, {bg:C.redLight}), tableCell('$239/yr', 1500, {bg:C.redLight}), tableCell('🔴 FREE TIER GONE. Don\'t use unless volume exceeds 50K emails/mo.', 3060, {bg:C.redLight, color:C.red})] }),
+    new TableRow({ children: [tableCell('Amazon SES ✅ RECOMMENDED', 1800, {bg:C.greenLight}), tableCell('3,000/mo first 12 months', 1500, {bg:C.greenLight}), tableCell('$1/mo', 1500, {bg:C.greenLight}), tableCell('$12/yr', 1500, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Pay per use. 10,000 emails/month at 2,000 users costs ~$1. 20× cheaper than SendGrid.', 3060, {bg:C.greenLight, color:C.green})] }),
+    new TableRow({ children: [tableCell('Brevo (Sendinblue)', 1800), tableCell('300/day FOREVER', 1500), tableCell('$0–15', 1500), tableCell('$0–180/yr', 1500), tableCell('Free forever if under 9,000 emails/month (300×30=9,000). Enough for early-stage.', 3060)] }),
+    new TableRow({ children: [tableCell('Resend', 1800), tableCell('3,000/mo FOREVER', 1500), tableCell('$0–20', 1500), tableCell('$0–240/yr', 1500), tableCell('Developer-friendly. 3,000 free emails/month covers early-stage needs.', 3060)] }),
+  ]
+}));
+
+children.push(heading2('4.7  Apple Developer Account — INR Price Has Changed'));
+children.push(para('The documents quote ₹8,400/year. This was accurate when the USD/INR rate was ~₹84. At the current rate of ₹95.2, the $99 fee converts to ₹9,425. Apple also charges in local INR tiers (not directly by exchange rate), and some sources now report ₹8,500 as the current local INR price. Either way, ₹8,400 is an underestimate.', { color: C.darkGray }));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [2500, 1500, 1500, 3860],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Item', 2500), tableHeaderCell('Quoted', 1500), tableHeaderCell('Verified 2026', 1500), tableHeaderCell('Notes', 3860)] }),
+    new TableRow({ children: [tableCell('Apple Developer Program (annual)', 2500), tableCell('₹8,400/yr', 1500, {bg:C.orangeLight}), tableCell('$99 = ~₹9,425', 1500, {bg:C.orangeLight, color:C.orange}), tableCell('⚠️ Difference: ~₹1,025 more. Auto-renews. If lapsed, iOS app removed from App Store within 24 hours — not 30 days as the research file says. UPDATE THE DOCUMENTS.', 3860, {bg:C.orangeLight})] }),
+    new TableRow({ children: [tableCell('Google Play Developer Account', 2500), tableCell('₹2,000 one-time', 1500, {bg:C.orangeLight}), tableCell('$25 = ~₹2,380', 1500, {bg:C.orangeLight, color:C.orange}), tableCell('⚠️ Difference: ~₹380 more. One-time fee. Must be under client\'s company Google account.', 3860, {bg:C.orangeLight})] }),
+    new TableRow({ children: [tableCell('Apple Revenue Commission (In-App Purchase)', 2500), tableCell('NOT MENTIONED', 1500, {bg:C.greenLight}), tableCell('0% (for Razorpay)', 1500, {bg:C.greenLight}), tableCell('✅ SAFE. Razorpay uses webview payment — NOT Apple IAP — so Apple\'s 15–30% commission does NOT apply. This was a correct architectural decision. DO NOT CHANGE TO NATIVE STOREKIT PAYMENTS.', 3860, {bg:C.greenLight, color:C.green})] }),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 5: DAILY / MONTHLY / ANNUAL COST BREAKDOWN
+// ============================================================
+children.push(sectionBanner('SECTION 5  ▸  DAILY, MONTHLY & ANNUAL COST BREAKDOWN'));
+children.push(spacer(80));
+children.push(para('These figures are for the PRODUCTION environment only running at 2,000 active users. Exchange rate: 1 USD = ₹95.2 (June 8, 2026).', { italics: true, color: C.midGray }));
+children.push(spacer(60));
+
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 1500, 1860, 1500, 1500],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Service', 3000), tableHeaderCell('Daily Cost', 1500), tableHeaderCell('Monthly Cost', 1860), tableHeaderCell('Annual Cost', 1500), tableHeaderCell('Currency', 1500)] }),
+    // GCP items
+    new TableRow({ children: [tableCell('Cloud SQL — 1 vCPU, 3.75GB RAM, 50GB SSD (no HA)', 3000), tableCell('₹221/day', 1500), tableCell('₹6,569/mo', 1860), tableCell('₹78,828/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Memorystore Redis — 1GB Basic (prod only)', 3000), tableCell('₹111/day', 1500, {bg:C.orangeLight}), tableCell('₹3,332/mo', 1860, {bg:C.orangeLight}), tableCell('₹39,984/yr', 1500, {bg:C.orangeLight}), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Cloud Run (Spring Boot + Next.js, scales to zero)', 3000), tableCell('₹6/day', 1500), tableCell('₹190/mo', 1860), tableCell('₹2,280/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Cloud Storage (media + uploads, 50GB)', 3000), tableCell('₹6/day', 1500), tableCell('₹190/mo', 1860), tableCell('₹2,280/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Cloud Monitoring + Logging', 3000), tableCell('₹6/day', 1500), tableCell('₹190/mo', 1860), tableCell('₹2,280/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Secret Manager (20 secrets + access calls)', 3000), tableCell('₹4/day', 1500), tableCell('₹128/mo', 1860), tableCell('₹1,539/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Cloud DNS + Static IPs', 3000), tableCell('₹30/day', 1500), tableCell('₹914/mo', 1860), tableCell('₹10,965/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('GCP SUBTOTAL (no GST)', 3000, {bg:C.lightBlue, bold:true}), tableCell('₹384/day', 1500, {bg:C.lightBlue, bold:true}), tableCell('₹11,513/mo', 1860, {bg:C.lightBlue, bold:true}), tableCell('₹1,38,156/yr', 1500, {bg:C.lightBlue, bold:true}), tableCell('', 1500, {bg:C.lightBlue})] }),
+    new TableRow({ children: [tableCell('GCP + 18% GST (cash outflow, ITC claimable)', 3000, {italics:true}), tableCell('₹453/day', 1500, {italics:true}), tableCell('₹13,585/mo', 1860, {italics:true}), tableCell('₹1,63,024/yr', 1500, {italics:true}), tableCell('', 1500)] }),
+    // Non-GCP
+    new TableRow({ children: [tableCell('SMS — MSG91 (avg ~10,000 SMS/mo)', 3000), tableCell('₹150/day', 1500, {bg:C.orangeLight}), tableCell('₹4,500/mo', 1860, {bg:C.orangeLight}), tableCell('₹54,000/yr', 1500, {bg:C.orangeLight}), tableCell('INR', 1500)] }),
+    new TableRow({ children: [tableCell('WhatsApp — Gupshup (utility messages only)', 3000), tableCell('₹19/day', 1500), tableCell('₹570/mo', 1860), tableCell('₹6,840/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Email — Amazon SES (10,000 emails/mo)', 3000), tableCell('₹3/day', 1500), tableCell('₹95/mo', 1860), tableCell('₹1,142/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Apple Developer Program (amortized daily)', 3000), tableCell('₹26/day', 1500), tableCell('₹785/mo', 1860), tableCell('₹9,425/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('GitHub Team plan + CI overage (amortized)', 3000), tableCell('₹58/day', 1500, {bg:C.orangeLight}), tableCell('₹1,770/mo', 1860, {bg:C.orangeLight}), tableCell('₹21,230/yr', 1500, {bg:C.orangeLight}), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Google Maps Routes API (with caching, 2,000 users)', 3000), tableCell('₹25/day', 1500), tableCell('₹762/mo', 1860), tableCell('₹9,139/yr', 1500), tableCell('USD → INR', 1500)] }),
+    new TableRow({ children: [tableCell('Domain Renewal (amortized daily)', 3000), tableCell('₹5/day', 1500), tableCell('₹146/mo', 1860), tableCell('₹1,750/yr', 1500), tableCell('INR', 1500)] }),
+    // Grand total
+    new TableRow({ children: [
+      tableCell('PRODUCTION GRAND TOTAL / DAY / MONTH / YEAR', 3000, {bg:C.tableHeader, bold:true, color:C.white}),
+      tableCell('~₹719/day', 1500, {bg:C.tableHeader, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('~₹21,564/mo', 1860, {bg:C.tableHeader, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('~₹2,58,772/yr', 1500, {bg:C.tableHeader, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('All currencies', 1500, {bg:C.tableHeader, color:C.white}),
+    ]}),
+    new TableRow({ children: [tableCell('Add: non-prod environments (Staging + QA + Dev)', 3000, {italics:true}), tableCell('₹158/day', 1500, {italics:true}), tableCell('₹4,750/mo', 1860, {italics:true}), tableCell('₹57,000/yr', 1500, {italics:true}), tableCell('', 1500)] }),
+    new TableRow({ children: [
+      tableCell('4-ENVIRONMENT TOTAL / DAY / MONTH / YEAR', 3000, {bg:C.sectionDark, bold:true, color:C.white}),
+      tableCell('~₹877/day', 1500, {bg:C.sectionDark, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('~₹26,314/mo', 1860, {bg:C.sectionDark, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('~₹3,15,772/yr', 1500, {bg:C.sectionDark, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('', 1500, {bg:C.sectionDark}),
+    ]}),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 6: RISK REGISTER
+// ============================================================
+children.push(sectionBanner('SECTION 6  ▸  RISK REGISTER — WHAT WILL COST MONEY IF YOU GET IT WRONG'));
+children.push(spacer(80));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [200, 2400, 1500, 1860, 3400],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('#', 200), tableHeaderCell('Risk', 2400), tableHeaderCell('Severity', 1500), tableHeaderCell('Estimated Impact', 1860), tableHeaderCell('Action Required', 3400)] }),
+    new TableRow({ children: [tableCell('1', 200), tableCell('DLT not registered before first SMS', 2400, {bold:true, color:C.red}), tableCell('🔴 CRITICAL', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('OTP completely blocked; app unusable on launch day', 1860, {bg:C.redLight}), tableCell('Register on TRAI portal IMMEDIATELY. Process takes 3–7 days. Cost: ₹15,000–25,000.', 3400)] }),
+    new TableRow({ children: [tableCell('2', 200), tableCell('Google Maps API keys left unrestricted', 2400, {bold:true, color:C.red}), tableCell('🔴 CRITICAL', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('Potential $1,000s–$10,000s in fraudulent API usage billed to Arial', 1860, {bg:C.redLight}), tableCell('Restrict all Maps API keys by: package name (Android), bundle ID (iOS), HTTP referrer (Web). Do this BEFORE any beta testing.', 3400)] }),
+    new TableRow({ children: [tableCell('3', 200), tableCell('SendGrid used without paid plan', 2400, {bold:true, color:C.red}), tableCell('🔴 CRITICAL', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('Emails stop working after 60-day trial. OTP emails fail.', 1860, {bg:C.redLight}), tableCell('Switch to Amazon SES immediately. Takes 1 day to set up. Costs ~$1/month for 2K users.', 3400)] }),
+    new TableRow({ children: [tableCell('4', 200), tableCell('Apple Developer renewal missed', 2400), tableCell('🟠 HIGH', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('iOS app removed from App Store within 24 hours of expiry', 1860, {bg:C.orangeLight}), tableCell('Enable auto-renewal in Apple Developer account. Set calendar reminder 30 days before expiry. $99/year = ~₹9,425.', 3400)] }),
+    new TableRow({ children: [tableCell('5', 200), tableCell('GKE used instead of Cloud Run', 2400), tableCell('🟠 HIGH', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('$864/yr per cluster × 4 envs = $3,456/yr EXTRA = ₹3,29,011 more', 1860, {bg:C.orangeLight}), tableCell('Confirm Cloud Run in architecture review. GKE is NOT needed at 2,000 users. Switch only at 50,000+ users with complex microservices needs.', 3400)] }),
+    new TableRow({ children: [tableCell('6', 200), tableCell('Cloud NAT used instead of Cloud SQL Auth Proxy', 2400), tableCell('🟠 HIGH', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('$32.4/month = $389/year PER ENVIRONMENT = $1,556/yr for 4 envs', 1860, {bg:C.orangeLight}), tableCell('Use Cloud SQL Auth Proxy (free) for Cloud Run → Cloud SQL connectivity. Saves ~₹1,48,217/yr for 4 envs.', 3400)] }),
+    new TableRow({ children: [tableCell('7', 200), tableCell('Routes API called without caching (live ETA)', 2400), tableCell('🟠 HIGH', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('$1,800–2,520/yr vs $60–120/yr with caching', 1860, {bg:C.orangeLight}), tableCell('Cache route for 10 mins. Recalculate only on >200m deviation. Or: show GPS dot only (no route line) = ₹0 Routes API cost.', 3400)] }),
+    new TableRow({ children: [tableCell('8', 200), tableCell('Twilio used as primary SMS provider', 2400), tableCell('🟠 HIGH', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('Twilio India rates are 7–8× more expensive than MSG91', 1860, {bg:C.orangeLight}), tableCell('Confirm MSG91 is PRIMARY. Twilio should be fallback only (voice OTP). Confirm in code/config before go-live.', 3400)] }),
+    new TableRow({ children: [tableCell('9', 200), tableCell('DR region (Delhi) enabled from Day 1', 2400), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight, color:C.darkGray}), tableCell('$828–1,200/yr extra for Cloud SQL read replica in Delhi', 1860, {bg:C.yellowLight}), tableCell('Defer DR until user base exceeds 2,000 active users. Enable at Month 6 or first major milestone.', 3400)] }),
+    new TableRow({ children: [tableCell('10', 200), tableCell('No GCP billing budget alerts configured', 2400), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight, color:C.darkGray}), tableCell('A misconfigured Cloud SQL instance left running 24/7 = $84+/month unexpected cost', 1860, {bg:C.yellowLight}), tableCell('Set billing alerts at 50%, 90%, 100% of monthly budget in GCP Console Billing → Budgets & Alerts. Do this on Day 1.', 3400)] }),
+    new TableRow({ children: [tableCell('11', 200), tableCell('GST 18% on GCP not budgeted', 2400), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight, color:C.darkGray}), tableCell('Cash outflow is 18% higher than base GCP bill until ITC is credited', 1860, {bg:C.yellowLight}), tableCell('Arial must be GST registered to claim ITC. First ITC cycle may take 30–45 days. Budget the 18% GST as a float requirement.', 3400)] }),
+    new TableRow({ children: [tableCell('12', 200), tableCell('Apple App Review rejection delays', 2400), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight, color:C.darkGray}), tableCell('App Store review: 1–7 days, ~40% first-submission rejection rate', 1860, {bg:C.yellowLight}), tableCell('Build in 7–10 business days buffer for App Store submission in the project timeline. Week 15 is already tight.', 3400)] }),
+    new TableRow({ children: [tableCell('13', 200), tableCell('Razorpay KYC not started in time', 2400), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight, color:C.darkGray}), tableCell('Razorpay KYC takes 1–3 business days. Payment fails completely without it.', 1860, {bg:C.yellowLight}), tableCell('Initiate Razorpay account setup at Week 1 (project kickoff). Requires Arial\'s GST, PAN, and bank account details.', 3400)] }),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 7: WHAT IS CORRECT IN DOCUMENTS
+// ============================================================
+children.push(sectionBanner('SECTION 7  ▸  WHAT IS VERIFIED CORRECT — GREEN LIGHTS'));
+children.push(spacer(80));
+children.push(para('Not everything is wrong. The following items in the documents have been verified as accurate as of June 8, 2026:', { color: C.darkGray }));
+children.push(spacer(60));
+
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 1800, 1560, 3000],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Item', 3000), tableHeaderCell('Documents Say', 1800), tableHeaderCell('Verified Status', 1560), tableHeaderCell('Notes', 3000)] }),
+    new TableRow({ children: [tableCell('SSL Certificate', 3000), tableCell('Free (Let\'s Encrypt)', 1800), tableCell('✅ CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Cloud Run auto-provisions Google-managed SSL. Zero cost.', 3000)] }),
+    new TableRow({ children: [tableCell('Firebase FCM push notifications (Android)', 3000), tableCell('Implied free', 1800), tableCell('✅ FREE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('FCM is completely free — unlimited messages, no per-message charge.', 3000)] }),
+    new TableRow({ children: [tableCell('Apple APNs push notifications (iOS)', 3000), tableCell('Implied free', 1800), tableCell('✅ FREE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('APNs itself charges nothing. Firebase manages APNs delivery for free.', 3000)] }),
+    new TableRow({ children: [tableCell('Maps SDK for Android (live map display)', 3000), tableCell('Google Maps SDK used', 1800), tableCell('✅ FREE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Maps SDK India = zero charges per map load.', 3000)] }),
+    new TableRow({ children: [tableCell('Terraform (IaC)', 3000), tableCell('Mentioned in tech stack', 1800), tableCell('✅ FREE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Terraform CLI open source. GCS backend for state = free.', 3000)] }),
+    new TableRow({ children: [tableCell('Razorpay account setup', 3000), tableCell('Implied free', 1800), tableCell('✅ FREE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Account activation, KYC, dashboard access all free.', 3000)] }),
+    new TableRow({ children: [tableCell('Apple revenue commission avoidance via Razorpay', 3000), tableCell('Not addressed (but implemented correctly)', 1800), tableCell('✅ SAFE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Razorpay webview = NOT Apple IAP. No 15–30% Apple commission.', 3000)] }),
+    new TableRow({ children: [tableCell('Domain renewal range', 3000), tableCell('₹1,500–2,000/year', 1800), tableCell('✅ CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('.com renewal rates in India: ₹1,000–2,000/year depending on registrar.', 3000)] }),
+    new TableRow({ children: [tableCell('WhatsApp utility message rates (booking/ETA/job)', 3000), tableCell('₹15,000–40,000/yr (slightly overstated)', 1800), tableCell('✅ IN RANGE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('At 2,000 users, utility-only WhatsApp = $43–72/yr. The range in docs is conservative (assumes some marketing). Correct direction.', 3000)] }),
+    new TableRow({ children: [tableCell('SMS volume range (Standard/Professional packages)', 3000), tableCell('₹15,000–60,000/yr', 1800), tableCell('✅ CLOSE', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('Verified: ₹36,000–84,000/yr. Standard/Pro quotes are in the right ballpark — slightly understated for the high end.', 3000)] }),
+    new TableRow({ children: [tableCell('Development phase totals (all 3 quotations)', 3000), tableCell('₹3,77,500 / ₹5,78,000 / ₹6,79,500', 1800), tableCell('✅ CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('All arithmetic checked. Phase sub-totals add to grand totals correctly. No errors found.', 3000)] }),
+    new TableRow({ children: [tableCell('Payment milestones (5-milestone revised schedule)', 3000), tableCell('5 × ₹1,35,900 = ₹6,79,500', 1800), tableCell('✅ CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('5 × ₹1,35,900 = ₹6,79,500. Math confirmed correct.', 3000)] }),
+    new TableRow({ children: [tableCell('PostgreSQL region: asia-south1 (Mumbai)', 3000), tableCell('✅ Confirmed in tech response', 1800), tableCell('✅ CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('All data stays in India. No data residency concerns.', 3000)] }),
+    new TableRow({ children: [tableCell('Cloud Run (not GKE) for deployment', 3000), tableCell('Cloud Run / GKE Autopilot mentioned', 1800), tableCell('✅ CLOUD RUN IS CORRECT', 1560, {bg:C.greenLight, color:C.green, bold:true}), tableCell('At 2,000 users, Cloud Run is 20–40× cheaper than GKE. Correct choice.', 3000)] }),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 8: RECOMMENDATIONS
+// ============================================================
+children.push(sectionBanner('SECTION 8  ▸  ACTION ITEMS — DO THESE BEFORE TALKING TO THE CLIENT'));
+children.push(spacer(80));
+children.push(para('These are ranked by urgency. Items marked BLOCKER must be resolved before go-live or client sign-off.', { bold: true, color: C.red }));
+children.push(spacer(60));
+
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [500, 3000, 1500, 4360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Priority', 500), tableHeaderCell('Action', 3000), tableHeaderCell('Urgency', 1500), tableHeaderCell('Detail', 4360)] }),
+    new TableRow({ children: [tableCell('1', 500, {bg:C.redLight, bold:true, color:C.red}), tableCell('Register for DLT (India SMS compliance)', 3000, {bold:true, color:C.red}), tableCell('🔴 DAY 1 BLOCKER', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('Without DLT registration, no SMS = no OTP = no login = app completely broken. Start registration on TRAI portal NOW. Budget ₹15,000–25,000.', 4360)] }),
+    new TableRow({ children: [tableCell('2', 500, {bg:C.redLight, bold:true, color:C.red}), tableCell('Switch from SendGrid to Amazon SES', 3000, {bold:true, color:C.red}), tableCell('🔴 PRE-LAUNCH BLOCKER', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('SendGrid free tier gone. On day 61 after sign-up, all emails stop. Switch to Amazon SES: 1 day setup, $1/month for 2K users. 20× cheaper.', 4360)] }),
+    new TableRow({ children: [tableCell('3', 500, {bg:C.redLight, bold:true, color:C.red}), tableCell('Restrict all Google Maps API keys', 3000, {bold:true, color:C.red}), tableCell('🔴 PRE-BETA CRITICAL', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('Restrict by package name (Android), bundle ID (iOS), HTTP referrer (Web). Unrestricted keys can be scraped and abused — potentially $1,000s in fraudulent billing.', 4360)] }),
+    new TableRow({ children: [tableCell('4', 500, {bg:C.redLight, bold:true, color:C.red}), tableCell('DO NOT quote ₹40,000/year for cloud hosting', 3000, {bold:true, color:C.red}), tableCell('🔴 BEFORE CLIENT MEETING', 1500, {bg:C.redLight, color:C.red, bold:true}), tableCell('Update ALL documents. The correct figure is ₹3,00,000–4,00,000/year for 4 environments (all services, all costs, with GST). Use this Word doc as evidence for the updated estimate.', 4360)] }),
+    new TableRow({ children: [tableCell('5', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Implement Google Maps route caching', 3000, {bold:true}), tableCell('🟠 HIGH — DEVELOPMENT', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('Without caching, Routes API for live ETA = $1,800–2,520/yr. With caching (10-min TTL, recalculate on >200m deviation) = $60–120/yr. Simple change, massive cost difference.', 4360)] }),
+    new TableRow({ children: [tableCell('6', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Confirm Cloud Run (NOT GKE) in architecture', 3000, {bold:true}), tableCell('🟠 HIGH — ARCHITECTURE', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('GKE would add $3,456/yr in management fees for 4 environments. Cloud Run is the right choice at 2,000 users. Document this decision in the architecture guide.', 4360)] }),
+    new TableRow({ children: [tableCell('7', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Use Cloud SQL Auth Proxy (not Cloud NAT)', 3000, {bold:true}), tableCell('🟠 HIGH — ARCHITECTURE', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('Cloud NAT costs $32.4/mo per environment. Cloud SQL Auth Proxy is free and the recommended pattern for Cloud Run → Cloud SQL. Saves up to ₹1,48,217/yr for 4 environments.', 4360)] }),
+    new TableRow({ children: [tableCell('8', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Update Apple/Google Play pricing in documents', 3000, {bold:true}), tableCell('🟠 HIGH — DOCUMENTS', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('Apple: Change ₹8,400 to ₹9,425 ($99 × ₹95.2). Google Play: Change ₹2,000 to ₹2,380 ($25 × ₹95.2). Minor but should be correct before client sees final numbers.', 4360)] }),
+    new TableRow({ children: [tableCell('9', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Add Redis/Memorystore to all cost estimates', 3000, {bold:true}), tableCell('🟠 HIGH — DOCUMENTS', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('₹79,968/yr for prod + staging Redis. Currently invisible in all documents. Must be added to annual recurring cost tables shown to client.', 4360)] }),
+    new TableRow({ children: [tableCell('10', 500, {bg:C.orangeLight, bold:true, color:C.orange}), tableCell('Add GitHub Actions cost to estimates', 3000, {bold:true}), tableCell('🟠 HIGH — DOCUMENTS', 1500, {bg:C.orangeLight, color:C.orange, bold:true}), tableCell('~₹21,229–57,120/yr depending on number of environments and build frequency. Currently not in any document.', 4360)] }),
+    new TableRow({ children: [tableCell('11', 500), tableCell('Start Razorpay KYC at Week 1', 3000), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight}), tableCell('Razorpay KYC takes 1–3 business days. Needs Arial\'s GST number, PAN, and bank account. Must be live before go-live. Start at project kickoff, not Week 14.', 4360)] }),
+    new TableRow({ children: [tableCell('12', 500), tableCell('Set GCP billing budget alerts', 3000), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight}), tableCell('Set alerts at 50%, 90%, 100% of monthly budget in GCP Billing → Budgets & Alerts. Protects against runaway spend from misconfigured instances.', 4360)] }),
+    new TableRow({ children: [tableCell('13', 500), tableCell('Defer Disaster Recovery region', 3000), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight}), tableCell('Delhi DR region was committed in questionnaire. Saves $828–1,200/yr by deferring to Month 6+. Mention this to client as a phased approach.', 4360)] }),
+    new TableRow({ children: [tableCell('14', 500), tableCell('Buffer 7–10 days for App Store review', 3000), tableCell('🟡 MEDIUM', 1500, {bg:C.yellowLight}), tableCell('Apple rejects ~40% of first submissions. Week 15 go-live date is tight if App Store review takes 7 days and requires revisions. Plan for this.', 4360)] }),
+  ]
+}));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 9: REVISED RECURRING COST TABLE FOR CLIENT
+// ============================================================
+children.push(sectionBanner('SECTION 9  ▸  REVISED ANNUAL RECURRING COST — SHARE THIS WITH CLIENT'));
+children.push(spacer(80));
+children.push(para('This is the corrected table to replace Section 8 of the current quotation and SOW documents. All figures verified June 8, 2026. 1 USD = ₹95.2.', { italics: true, color: C.midGray }));
+children.push(spacer(60));
+
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3400, 2200, 2400, 1360],
+  rows: [
+    new TableRow({ children: [tableHeaderCell('Service / Item', 3400), tableHeaderCell('Approximate Annual Cost', 2200), tableHeaderCell('Notes', 2400), tableHeaderCell('Paid By', 1360)] }),
+    new TableRow({ children: [tableCell('Cloud Infrastructure — Google Cloud Platform', 3400, {bold:true}), tableCell('₹2,74,000–3,31,000/year (4 envs) or ₹1,38,000–1,80,000/year (prod-only)', 2200, {bg:C.orangeLight, bold:true}), tableCell('Includes: Cloud SQL (DB), Cloud Run (app), Redis (cache), Storage, Monitoring, DNS, Secrets. +18% GST.', 2400), tableCell('Arial (directly)', 1360)] }),
+    new TableRow({ children: [tableCell('Domain Name Registration / Renewal', 3400), tableCell('₹1,500–2,000 / year', 2200), tableCell('.com renewal from any registrar (GoDaddy, Google Domains, etc.)', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('SSL / TLS Certificate', 3400), tableCell('FREE — Google-managed via Cloud Run', 2200, {bg:C.greenLight, color:C.green}), tableCell('Automatic provisioning and renewal by Cloud Run', 2400), tableCell('N/A', 1360)] }),
+    new TableRow({ children: [tableCell('Transactional SMS — MSG91 (OTPs, booking alerts, engineer ETA)', 3400), tableCell('₹36,000–84,000 / year', 2200, {bg:C.orangeLight}), tableCell('Based on 10,000–20,000 SMS/month at 2,000 users. Rate: ₹0.25–0.50/SMS. +18% GST.', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('DLT Registration — TRAI India (mandatory for all SMS)', 3400, {bold:true, color:C.red}), tableCell('₹15,000–25,000 ONE-TIME', 2200, {bg:C.redLight, bold:true, color:C.red}), tableCell('Entity registration + Sender ID + Templates. MUST be done before first SMS. Takes 3–7 days.', 2400, {bg:C.redLight}), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('WhatsApp Business API — Gupshup (booking confirmations, ETA, job updates)', 3400), tableCell('₹4,000–76,000 / year', 2200, {bg:C.orangeLight}), tableCell('Utility messages only (~₹4,000–7,000/yr). Add marketing/AMC reminders → higher. Per-message rate: ₹0.13–0.80.', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('Transactional Email — Amazon SES (OTPs, receipts, reports)', 3400), tableCell('₹1,000–3,500 / year', 2200, {bg:C.greenLight, color:C.green}), tableCell('Recommended switch from SendGrid (whose free tier is gone). SES: $0.10/1,000 emails.', 2400, {bg:C.greenLight}), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('Apple Developer Program (App Store publishing — annual)', 3400, {bold:true, color:C.orange}), tableCell('$99/year = ₹9,425/year', 2200, {bg:C.orangeLight}), tableCell('Must be renewed every year. If lapsed, app removed from App Store within 24 hours.', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('Google Play Developer Account (one-time registration)', 3400), tableCell('$25 = ₹2,380 ONE-TIME', 2200), tableCell('One-time only. Never billed again.', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('GitHub — CI/CD (Team plan + overage minutes)', 3400, {bold:true, color:C.orange}), tableCell('₹21,000–57,000 / year', 2200, {bg:C.orangeLight}), tableCell('Team plan: $4/user/mo × 2 devs. Overage minutes at $0.010/min. Scales with number of environments.', 2400), tableCell('Arial / Dev Team', 1360)] }),
+    new TableRow({ children: [tableCell('Google Maps Platform (Routes API — engineer ETA with caching)', 3400), tableCell('₹5,700–11,400 / year', 2200, {bg:C.greenLight, color:C.green}), tableCell('WITH aggressive caching = $60–120/yr. WITHOUT caching = $1,800–2,520/yr. Caching must be implemented.', 2400), tableCell('Arial', 1360)] }),
+    new TableRow({ children: [tableCell('Razorpay — Transaction Processing Fees', 3400), tableCell('2.36% of every payment processed', 2200, {bg:C.orangeLight}), tableCell('2% + 18% GST on fee. On ₹1,00,000 in transactions: ₹2,360 deducted. This is a % of revenue, not a fixed fee.', 2400), tableCell('Arial (deducted by Razorpay)', 1360)] }),
+    new TableRow({ children: [tableCell('Database Backups', 3400), tableCell('Included in Cloud SQL cost above', 2200, {bg:C.greenLight, color:C.green}), tableCell('Cloud SQL automated backups + Cloud Storage for backup files are already in the Cloud Infrastructure line.', 2400), tableCell('N/A', 1360)] }),
+    new TableRow({ children: [tableCell('Infrastructure Monitoring & Alerts', 3400), tableCell('Included in Cloud Infrastructure cost above', 2200, {bg:C.greenLight, color:C.green}), tableCell('Cloud Monitoring and Cloud Logging within free tier at 2,000 users. Included in infra cost estimate.', 2400), tableCell('N/A', 1360)] }),
+    // TOTALS
+    new TableRow({ children: [
+      tableCell('ESTIMATED TOTAL — YEAR 1 (Production only, excludes one-time DLT+PlayStore)', 3400, {bg:C.tableHeader, bold:true, color:C.white}),
+      tableCell('₹2,00,000–2,80,000 / year', 2200, {bg:C.tableHeader, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('Production environment + all messaging + developer accounts + CI/CD + Maps', 2400, {bg:C.tableHeader, color:C.white}),
+      tableCell('Arial', 1360, {bg:C.tableHeader, color:C.white}),
+    ]}),
+    new TableRow({ children: [
+      tableCell('ESTIMATED TOTAL — YEAR 1 (All 4 environments, excludes one-time costs)', 3400, {bg:C.sectionDark, bold:true, color:C.white}),
+      tableCell('₹3,00,000–4,00,000 / year', 2200, {bg:C.sectionDark, bold:true, color:C.white, align:AlignmentType.CENTER}),
+      tableCell('Full 4-environment setup (Dev + QA + Staging + Production) + all services', 2400, {bg:C.sectionDark, color:C.white}),
+      tableCell('Arial', 1360, {bg:C.sectionDark, color:C.white}),
+    ]}),
+    new TableRow({ children: [
+      tableCell('Add one-time Year-1 costs: DLT Registration + Google Play Account', 3400, {italics:true}),
+      tableCell('₹17,380–27,380 (one-time)', 2200, {italics:true, bg:C.orangeLight}),
+      tableCell('Never billed again after Year 1 (except Apple which is annual)', 2400, {italics:true}),
+      tableCell('Arial', 1360, {italics:true}),
+    ]}),
+  ]
+}));
+
+children.push(spacer(100));
+children.push(para('IMPORTANT NOTE TO CLIENT: All cloud infrastructure costs above are billed directly to Arial Engineering Services\' Google Cloud account. The development team (Arial Engineering Solution) never handles Arial\'s cloud billing. All amounts are estimates based on 2,000 active users in Year 1. Actual costs may vary based on traffic, transaction volume, and SMS/WhatsApp usage.', { italics: true, color: C.midGray, size: 20 }));
+
+children.push(pageBreak());
+
+// ============================================================
+// SECTION 10: FOOTER / DOCUMENT INFO
+// ============================================================
+children.push(sectionBanner('SECTION 10  ▸  DOCUMENT INFORMATION'));
+children.push(spacer(80));
+children.push(new Table({
+  width: { size: 9360, type: WidthType.DXA },
+  columnWidths: [3000, 6360],
+  rows: [
+    new TableRow({ children: [tableCell('Document Reference', 3000, {bold:true, bg:C.veryLightGray}), tableCell('AES-COST-RESEARCH-2026-001', 6360)] }),
+    new TableRow({ children: [tableCell('Date Prepared', 3000, {bold:true, bg:C.veryLightGray}), tableCell('June 8, 2026', 6360)] }),
+    new TableRow({ children: [tableCell('USD/INR Rate Used', 3000, {bold:true, bg:C.veryLightGray}), tableCell('1 USD = ₹95.2 (mid-market, June 8, 2026 — verified via MTFX, Investing.com)', 6360)] }),
+    new TableRow({ children: [tableCell('Project', 3000, {bold:true, bg:C.veryLightGray}), tableCell('AES Service Application — Professional Full-Suite (AES-Q-2026-003 / AES-SOW-2026-003)', 6360)] }),
+    new TableRow({ children: [tableCell('Documents Reviewed', 3000, {bold:true, bg:C.veryLightGray}), tableCell('AES-Q-2026-001, AES-Q-2026-002, AES-Q-2026-003, SOW-2026-001, SOW-2026-002, SOW-2026-003, AES-TECH-2026-001 REVISED (Questionnaire + Response)', 6360)] }),
+    new TableRow({ children: [tableCell('Prepared By', 3000, {bold:true, bg:C.veryLightGray}), tableCell('Hitansu Parichha (Lead Engineer) | Mahender Vengala (Project Lead)', 6360)] }),
+    new TableRow({ children: [tableCell('Assumption: Users', 3000, {bold:true, bg:C.veryLightGray}), tableCell('2,000 active users (Year 1 baseline)', 6360)] }),
+    new TableRow({ children: [tableCell('Assumption: Platforms', 3000, {bold:true, bg:C.veryLightGray}), tableCell('Web Portal (Next.js) + Android App (Kotlin) + iOS App (Swift)', 6360)] }),
+    new TableRow({ children: [tableCell('Assumption: Infrastructure', 3000, {bold:true, bg:C.veryLightGray}), tableCell('Google Cloud Platform (asia-south1 Mumbai) | Cloud Run + Cloud SQL + Memorystore | 4 environments: Dev, QA, Staging, Production', 6360)] }),
+    new TableRow({ children: [tableCell('Sources Verified', 3000, {bold:true, bg:C.veryLightGray}), tableCell('Google Cloud Pricing (cloud.google.com/sql/pricing), Apple developer.apple.com/programs, GitHub Changelog (github.blog), MSG91 pricing (msg91.com), Gupshup Partner Portal, Razorpay (razorpay.com/pricing), Meta WhatsApp Business Platform pricing, TRAI DLT portal, Amazon SES pricing', 6360)] }),
+    new TableRow({ children: [tableCell('DISCLAIMER', 3000, {bold:true, bg:C.redLight, color:C.red}), tableCell('All figures are estimates based on verified live pricing as of June 8, 2026. Cloud pricing changes frequently. Verify all figures against official pricing pages before sharing with the client.', 6360, {italics:true})] }),
+  ]
+}));
+
+// ============================================================
+// BUILD DOCUMENT
+// ============================================================
+const doc = new Document({
+  styles: {
+    default: {
+      document: { run: { font: 'Arial', size: 22 } }
+    },
+    paragraphStyles: [
+      { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { size: 36, bold: true, font: 'Arial', color: C.darkBlue },
+        paragraph: { spacing: { before: 320, after: 120 }, outlineLevel: 0 } },
+      { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { size: 28, bold: true, font: 'Arial', color: C.midBlue },
+        paragraph: { spacing: { before: 240, after: 80 }, outlineLevel: 1 } },
+      { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { size: 24, bold: true, font: 'Arial', color: C.sectionDark },
+        paragraph: { spacing: { before: 180, after: 60 }, outlineLevel: 2 } },
+    ]
+  },
+  sections: [{
+    properties: {
+      page: {
+        size: { width: 15840, height: 12240 },  // landscape
+        orientation: PageOrientation.LANDSCAPE,
+        margin: { top: 720, right: 720, bottom: 720, left: 720 }
+      }
+    },
+    children: children
+  }]
+});
+
+Packer.toBuffer(doc).then(buffer => {
+  fs.writeFileSync('/mnt/user-data/outputs/AES_Complete_Cost_Research_June2026.docx', buffer);
+  console.log('Document created successfully!');
+  console.log('Size:', buffer.length, 'bytes');
+}).catch(err => {
+  console.error('Error:', err);
+  process.exit(1);
+});
+JSEOF
+echo "JS file created. Running..."
+Output
+
+JS file created. Running...
+Done
+
+You are out of free messages until 5:40 PM
+Upgrade
+
+
+
+
+Claude is AI and can make mistakes. Please double-check cited sources.
+
+
+
+
+
+
+
+
+
