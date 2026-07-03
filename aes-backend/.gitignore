@@ -1,0 +1,65 @@
+# ─── Maven build output ──────────────────────────────────────────
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# ─── Logs & runtime data ─────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+# ─── IDE / editor files ──────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+.factorypath
+nbproject/
+*.swp
+*.swo
+
+# ─── macOS / Windows OS junk ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── Environment / secrets (never commit) ────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+application-local.properties
+application-secrets.properties
+*.pem
+*.p12
+*.jks
+*.keystore
+credentials.json
+service-account*.json
+
+# ─── Node / frontend (not applicable, but safe) ──────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Test coverage reports ───────────────────────────────────────
+coverage/
+.nyc_output/
+jacoco.exec
+
+# ─── Spring Boot / Java runtime ──────────────────────────────────
+HELP.md
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ─── Local dev overrides ─────────────────────────────────────────
+application-dev-local.properties
+docker-compose.override.yml
